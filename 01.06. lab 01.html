@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems: Module 1 Lab Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals (Stone) with Academic Blue and Warning Amber -->
+    <!-- Application Structure Plan: 
+         1. Dashboard: Overview of the module structure, weighting, and time estimates (Visualizing the "Syllabus").
+         2. Concepts (Part 1): Interactive explorer for theoretical concepts (Transparency, FHS, Virtualization).
+         3. Workstation (Part 2): A focused, step-by-step guide for the technical execution (VMs, Linux, SSH, Git).
+         4. Verification (Part 3): Troubleshooting guides and final checklist.
+         5. References: Searchable command glossary.
+         Why: The linear workbook is dense. This structure separates "Planning/Theory" from "Doing" and "Checking", reducing cognitive load.
+    -->
+    
+    <!-- Visualization & Content Choices:
+         1. Module Weighting -> Goal: Inform -> Doughnut Chart -> Interaction: Hover for details -> Justification: Quickly shows students where to focus effort (Part 2 is 50%).
+         2. Time Estimator -> Goal: Compare -> Bar Chart -> Interaction: None -> Justification: Helps students plan their lab session duration.
+         3. Transparency Explorer -> Goal: Organize -> Interactive Cards -> Interaction: Click to expand -> Justification: The 8 forms of transparency are abstract; cards make them distinct and digestible.
+         4. FHS Explorer -> Goal: Inform -> Grid Layout -> Interaction: Hover effects -> Justification: Visualizes the file system hierarchy better than a list.
+         5. Command Reference -> Goal: Organize -> Searchable Table -> Interaction: Real-time filtering -> Justification: Students need quick lookups while working in the terminal.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        /* Chart Container Strict Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f5f5f4; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d6d3d1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e; 
+        }
+
+        /* Code Block Styling */
+        .code-block {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1c1917;
+            color: #a8a29e;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .command-highlight {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Active Tab Styling */
+        .nav-item.active {
+            background-color: #e7e5e4; /* stone-200 */
+            border-left: 4px solid #0284c7; /* sky-600 */
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-[#fafaf9] text-stone-800 font-sans h-screen flex overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-stone-100 border-r border-stone-200 flex-shrink-0 hidden md:flex flex-col">
+        <div class="p-6 border-b border-stone-200">
+            <h1 class="text-xl font-bold text-stone-900 tracking-tight">DS: Module 1</h1>
+            <p class="text-xs text-stone-500 mt-1">Fundamentals & Setup</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+            <button onclick="renderSection('dashboard')" id="nav-dashboard" class="nav-item active w-full text-left px-4 py-3 rounded-md text-sm text-stone-700 hover:bg-stone-200 transition-colors flex items-center">
+                <span class="mr-3">📊</span> Dashboard
+            </button>
+            <div class="pt-4 pb-1 px-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">Theory</div>
+            <button onclick="renderSection('concepts')" id="nav-concepts" class="nav-item w-full text-left px-4 py-3 rounded-md text-sm text-stone-700 hover:bg-stone-200 transition-colors flex items-center">
+                <span class="mr-3">🧠</span> Foundational Concepts
+            </button>
+            <div class="pt-4 pb-1 px-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">Practice</div>
+            <button onclick="renderSection('implementation')" id="nav-implementation" class="nav-item w-full text-left px-4 py-3 rounded-md text-sm text-stone-700 hover:bg-stone-200 transition-colors flex items-center">
+                <span class="mr-3">💻</span> Core Implementation
+            </button>
+            <button onclick="renderSection('verification')" id="nav-verification" class="nav-item w-full text-left px-4 py-3 rounded-md text-sm text-stone-700 hover:bg-stone-200 transition-colors flex items-center">
+                <span class="mr-3">✅</span> Verification
+            </button>
+            <div class="pt-4 pb-1 px-4 text-xs font-semibold text-stone-400 uppercase tracking-wider">Tools</div>
+            <button onclick="renderSection('commands')" id="nav-commands" class="nav-item w-full text-left px-4 py-3 rounded-md text-sm text-stone-700 hover:bg-stone-200 transition-colors flex items-center">
+                <span class="mr-3">⌨️</span> Command Ref
+            </button>
+        </nav>
+        <div class="p-4 border-t border-stone-200">
+            <div class="bg-amber-50 border border-amber-200 rounded p-3">
+                <h4 class="text-xs font-bold text-amber-800 flex items-center">
+                    <span class="mr-1">⚠</span> Academic Notice
+                </h4>
+                <p class="text-[10px] text-amber-700 mt-1 leading-tight">
+                    Perform exercises ONLY on authorized systems. Unauthorized access is illegal.
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto relative" id="main-content">
+        <!-- Content injected via JS -->
+    </main>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-stone-200 h-16 flex items-center justify-between px-4 z-50">
+        <span class="font-bold text-stone-800">DS Module 1</span>
+        <select onchange="renderSection(this.value)" class="bg-stone-100 border-none rounded py-1 px-2 text-sm">
+            <option value="dashboard">Dashboard</option>
+            <option value="concepts">Concepts</option>
+            <option value="implementation">Implementation</option>
+            <option value="verification">Verification</option>
+            <option value="commands">Commands</option>
+        </select>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- DATA STORE ---
+        
+        const moduleData = {
+            objectives: [
+                "Articulate distributed system characteristics",
+                "Deploy networked virtual machines",
+                "Navigate Linux filesystem & shell",
+                "Establish passwordless SSH",
+                "Initialize Git version control"
+            ],
+            transparency: [
+                { type: "Access", desc: "Hides differences in data representation and invocation mechanisms.", example: "Different OSs communicating via standard protocols (HTTP/JSON)." },
+                { type: "Location", desc: "Hides where resources are located.", example: "URLs (example.com) don't reveal physical server IP/location." },
+                { type: "Concurrency", desc: "Hides that multiple processes operate on shared resources.", example: "Database locking mechanisms preventing write conflicts." },
+                { type: "Replication", desc: "Hides that multiple copies of resources exist.", example: "Distributed databases like Cassandra or CDN edge caching." },
+                { type: "Failure", desc: "Hides failure and recovery of resources.", example: "Retry logic in microservices or TCP packet retransmission." },
+                { type: "Mobility", desc: "Hides that resources may move.", example: "VM migration between physical hosts without dropping connections." },
+                { type: "Performance", desc: "Hides load variation handling.", example: "Auto-scaling groups adding instances during high traffic." },
+                { type: "Scaling", desc: "Hides expansion of system capacity.", example: "Adding nodes to a Kubernetes cluster without downtime." }
+            ],
+            fhs: [
+                { dir: "/bin", purpose: "Essential user binaries", content: "ls, cp, cat" },
+                { dir: "/etc", purpose: "Host-specific configuration", content: "ssh/sshd_config, hosts" },
+                { dir: "/home", purpose: "User home directories", content: "/home/vagrant" },
+                { dir: "/var", purpose: "Variable files", content: "logs, spools, caches" },
+                { dir: "/tmp", purpose: "Temporary files", content: "Session data" },
+                { dir: "/usr", purpose: "User utilities & applications", content: "/usr/bin, /usr/lib" },
+                { dir: "/opt", purpose: "Optional add-on software", content: "Third-party apps" },
+                { dir: "/proc", purpose: "Virtual filesystem for kernel/process info", content: "cpuinfo, meminfo" },
+                { dir: "/dev", purpose: "Device files", content: "sda (disk), tty (terminal)" },
+                { dir: "/root", purpose: "Root user home directory", content: "Admin scripts" }
+            ],
+            commands: [
+                { cmd: "ls", desc: "List directory contents", flags: "-l (long), -a (all), -h (human)" },
+                { cmd: "cd", desc: "Change directory", flags: "~ (home), .. (parent), - (prev)" },
+                { cmd: "cp", desc: "Copy files/dirs", flags: "-r (recursive)" },
+                { cmd: "mv", desc: "Move/Rename", flags: "" },
+                { cmd: "rm", desc: "Remove", flags: "-r (recursive), -i (interactive)" },
+                { cmd: "mkdir", desc: "Make directory", flags: "-p (parents)" },
+                { cmd: "chmod", desc: "Change mode (permissions)", flags: "u+x, 755" },
+                { cmd: "ssh-keygen", desc: "Generate auth keys", flags: "-t (type), -b (bits)" },
+                { cmd: "ssh-copy-id", desc: "Install public key", flags: "" },
+                { cmd: "vagrant up", desc: "Start VM environment", flags: "" },
+                { cmd: "vagrant ssh", desc: "Connect to VM", flags: "" },
+                { cmd: "git init", desc: "Initialize repo", flags: "" },
+                { cmd: "git commit", desc: "Record changes", flags: "-m (message)" }
+            ],
+            checklist: [
+                { id: "c1", text: "Two Ubuntu VMs running (node01, node02)" },
+                { id: "c2", text: "VMs communicate via ping on private network" },
+                { id: "c3", text: "SSH key pairs generated" },
+                { id: "c4", text: "Bidirectional Passwordless SSH configured" },
+                { id: "c5", text: "Git repo initialized with >1 commit" },
+                { id: "c6", text: "Project structure created (configs, scripts, logs)" },
+                { id: "c7", text: "Verification script passes on both nodes" }
+            ]
+        };
+
+        // --- RENDER FUNCTIONS ---
+
+        function renderSection(sectionId) {
+            const main = document.getElementById('main-content');
+            
+            // Update active state in sidebar
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.getElementById(`nav-${sectionId}`);
+            if(activeNav) activeNav.classList.add('active');
+
+            main.innerHTML = ''; // Clear content
+            window.scrollTo(0,0);
+
+            switch(sectionId) {
+                case 'dashboard':
+                    renderDashboard(main);
+                    break;
+                case 'concepts':
+                    renderConcepts(main);
+                    break;
+                case 'implementation':
+                    renderImplementation(main);
+                    break;
+                case 'verification':
+                    renderVerification(main);
+                    break;
+                case 'commands':
+                    renderCommands(main);
+                    break;
+            }
+        }
+
+        function renderDashboard(container) {
+            container.innerHTML = `
+                <div class="p-8 max-w-5xl mx-auto animate-fade">
+                    <header class="mb-10">
+                        <h2 class="text-3xl font-extrabold text-stone-900">Module Dashboard</h2>
+                        <p class="text-stone-600 mt-2 text-lg">
+                            Welcome to <strong>Distributed Systems Module 1</strong>. This dashboard provides an overview of the workload, time estimates, and core objectives for setting up your environment.
+                        </p>
+                    </header>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                        <!-- Chart 1: Weighting -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                            <h3 class="text-lg font-bold text-stone-800 mb-4">Module Weighting Structure</h3>
+                            <div class="chart-container">
+                                <canvas id="weightChart"></canvas>
+                            </div>
+                            <p class="text-center text-sm text-stone-500 mt-4 italic">Heaviest focus on Core Implementation (Part 2)</p>
+                        </div>
+
+                        <!-- Chart 2: Time Estimate -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                            <h3 class="text-lg font-bold text-stone-800 mb-4">Time Commitment Estimate</h3>
+                            <div class="chart-container">
+                                <canvas id="timeChart"></canvas>
+                            </div>
+                             <p class="text-center text-sm text-stone-500 mt-4 italic">Total estimated duration: 4+ Hours</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-sky-50 rounded-xl p-8 border border-sky-100">
+                        <h3 class="text-xl font-bold text-sky-900 mb-4">Learning Objectives</h3>
+                        <ul class="space-y-3">
+                            ${moduleData.objectives.map(obj => `
+                                <li class="flex items-start text-sky-800">
+                                    <span class="mr-2 text-sky-500">✔</span> ${obj}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            // Initialize Charts
+            initCharts();
+        }
+
+        function renderConcepts(container) {
+            container.innerHTML = `
+                <div class="p-8 max-w-5xl mx-auto animate-fade">
+                    <header class="mb-8">
+                        <h2 class="text-2xl font-bold text-stone-900">Part One: Foundational Concepts</h2>
+                        <p class="text-stone-600 mt-2">
+                            Before touching the terminal, you must understand the theoretical underpinnings. 
+                            Use the interactive elements below to explore Transparency and System Hierarchy.
+                        </p>
+                    </header>
+
+                    <!-- Exercise 1.1: Transparency -->
+                    <section class="mb-12">
+                        <h3 class="text-xl font-bold text-stone-800 mb-4 flex items-center">
+                            <span class="bg-stone-200 text-stone-600 text-xs px-2 py-1 rounded mr-3">Exercise 1.1</span>
+                            The 8 Forms of Transparency
+                        </h3>
+                        <p class="text-sm text-stone-500 mb-4">Click cards to reveal examples.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            ${moduleData.transparency.map((t, idx) => `
+                                <div class="bg-white p-5 rounded-lg shadow-sm border border-stone-200 cursor-pointer hover:border-sky-400 hover:shadow-md transition-all group" onclick="toggleCard('card-${idx}')">
+                                    <h4 class="font-bold text-stone-700 mb-2 group-hover:text-sky-600">${t.type}</h4>
+                                    <p class="text-xs text-stone-500 mb-3">${t.desc}</p>
+                                    <div id="card-${idx}" class="hidden pt-3 border-t border-stone-100">
+                                        <p class="text-xs text-sky-700 italic"><strong>Ex:</strong> ${t.example}</p>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <span class="text-stone-300 text-[10px] group-hover:text-sky-400">▼ Reveal Example</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+
+                    <!-- Exercise 1.1.2: FHS -->
+                    <section>
+                        <h3 class="text-xl font-bold text-stone-800 mb-4 flex items-center">
+                            <span class="bg-stone-200 text-stone-600 text-xs px-2 py-1 rounded mr-3">Task 1.1.2</span>
+                            Filesystem Hierarchy Standard (FHS)
+                        </h3>
+                        <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                            <table class="min-w-full divide-y divide-stone-200">
+                                <thead class="bg-stone-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Directory</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Purpose</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Example Contents</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-stone-200 text-sm text-stone-600">
+                                    ${moduleData.fhs.map(row => `
+                                        <tr class="hover:bg-stone-50">
+                                            <td class="px-6 py-3 font-mono text-sky-700 font-medium">${row.dir}</td>
+                                            <td class="px-6 py-3">${row.purpose}</td>
+                                            <td class="px-6 py-3 font-mono text-stone-400 text-xs">${row.content}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            `;
+        }
+
+        function renderImplementation(container) {
+            container.innerHTML = `
+                <div class="p-8 max-w-5xl mx-auto animate-fade">
+                    <header class="mb-8">
+                        <h2 class="text-2xl font-bold text-stone-900">Part Two: Core Implementation</h2>
+                        <p class="text-stone-600 mt-2">
+                            This is the primary technical work. Follow the steps below to deploy your VMs, configure SSH, and setup Git. 
+                            <strong>Estimated Time: 2 - 2.5 Hours.</strong>
+                        </p>
+                    </header>
+
+                    <div class="space-y-8">
+                        <!-- Step 1 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="w-8 h-8 rounded-full bg-stone-800 text-white flex items-center justify-center font-bold mr-3">1</div>
+                                <h3 class="text-lg font-bold text-stone-800">Initialize Environment</h3>
+                            </div>
+                            <p class="text-stone-600 mb-4 text-sm">Create your project directory and Vagrantfile.</p>
+                            <div class="code-block mb-4">
+mkdir -p ~/infrascale-lab/module01
+cd ~/infrascale-lab/module01
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded border border-stone-200">
+                                <p class="text-xs text-stone-500 font-mono mb-2">Vagrantfile content:</p>
+                                <div class="code-block text-xs">
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/jammy64"
+  config.vm.define "node01" do |node01|
+    node01.vm.hostname = "node01"
+    node01.vm.network "private_network", ip: "192.168.56.101"
+    node01.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 2
+    end
+  end
+  config.vm.define "node02" do |node02|
+    node02.vm.hostname = "node02"
+    node02.vm.network "private_network", ip: "192.168.56.102"
+    node02.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 2
+    end
+  end
+end
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="w-8 h-8 rounded-full bg-stone-800 text-white flex items-center justify-center font-bold mr-3">2</div>
+                                <h3 class="text-lg font-bold text-stone-800">Launch & Verify</h3>
+                            </div>
+                            <p class="text-stone-600 mb-4 text-sm">Start the machines. This may take 10-20 minutes.</p>
+                            <div class="code-block">
+vagrant up
+vagrant status
+vagrant ssh node01
+                            </div>
+                        </div>
+
+                         <!-- Step 3 -->
+                        <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+                            <div class="flex items-center mb-4">
+                                <div class="w-8 h-8 rounded-full bg-stone-800 text-white flex items-center justify-center font-bold mr-3">3</div>
+                                <h3 class="text-lg font-bold text-stone-800">Passwordless SSH Setup</h3>
+                            </div>
+                            <p class="text-stone-600 mb-4 text-sm">
+                                Generate keys on <code>node01</code> and copy to <code>node02</code>. 
+                                <span class="text-amber-600 font-bold">Do NOT use a passphrase.</span>
+                            </p>
+                            <div class="code-block">
+ssh-keygen -t rsa -b 4096 -C "infrascale-node01"
+# Press Enter for defaults/empty passphrase
+
+ssh-copy-id vagrant@192.168.56.102
+# Password is usually 'vagrant'
+                            </div>
+                            <p class="text-xs text-stone-500 mt-2 italic">Repeat this process in reverse (node02 -> node01) for bidirectional access.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderVerification(container) {
+            container.innerHTML = `
+                <div class="p-8 max-w-5xl mx-auto animate-fade">
+                    <header class="mb-8">
+                        <h2 class="text-2xl font-bold text-stone-900">Part Three: Verification & Checklist</h2>
+                        <p class="text-stone-600 mt-2">
+                            Ensure your infrastructure meets all requirements before submission. Run the automated script and verify manually against the checklist below.
+                        </p>
+                    </header>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        
+                        <!-- Automated Script -->
+                        <div>
+                            <div class="bg-stone-800 rounded-xl p-6 shadow-md text-stone-100 mb-6">
+                                <h3 class="text-lg font-bold text-white mb-2">Automated Verification</h3>
+                                <p class="text-sm text-stone-400 mb-4">Save as <code>~/infrascale/scripts/verify_module01.sh</code></p>
+                                <div class="code-block text-xs h-64 overflow-y-auto border border-stone-700">
+#!/bin/bash
+# InfraScale Module 1 Verification Script
+set -e
+echo "Module 1 Infrastructure Verification"
+echo "------------------------------------"
+
+# Check 1: Hostname
+echo "CHECK 1: Hostname: $(hostname)"
+
+# Check 2: Key
+if [ -f ~/.ssh/id_rsa ]; then
+   echo "CHECK 2: SSH Key: EXISTS"
+else
+   echo "CHECK 2: SSH Key: MISSING" && exit 1
+fi
+
+# Check 3: Peer Connectivity
+PEER_IP="192.168.56.102"
+if [ "$(hostname)" == "node02" ]; then PEER_IP="192.168.56.101"; fi
+
+PEER_HOSTNAME=$(ssh -o BatchMode=yes -o ConnectTimeout=5 vagrant@$PEER_IP 'hostname' 2>/dev/null)
+if [ -n "$PEER_HOSTNAME" ]; then
+   echo "CHECK 3: SSH to $PEER_IP: SUCCESS ($PEER_HOSTNAME)"
+else
+   echo "CHECK 3: SSH to $PEER_IP: FAILED" && exit 1
+fi
+
+echo "ALL CHECKS PASSED"
+                                </div>
+                                <p class="text-xs text-stone-500 mt-2">Don't forget: <code>chmod +x verify_module01.sh</code></p>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                                <h3 class="text-lg font-bold text-stone-800 mb-2">Troubleshooting Tips</h3>
+                                <ul class="text-sm text-stone-600 list-disc list-inside space-y-1">
+                                    <li><strong>Connection Refused:</strong> Check if SSH service is running on target (<code>sudo systemctl status ssh</code>).</li>
+                                    <li><strong>Permission Denied:</strong> Verify file permissions on <code>~/.ssh</code> (700) and <code>authorized_keys</code> (600).</li>
+                                    <li><strong>No Route to Host:</strong> Check VirtualBox network settings and IP configuration.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Manual Checklist -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 h-fit">
+                            <h3 class="text-lg font-bold text-stone-800 mb-4">Submission Checklist</h3>
+                            <div class="space-y-3">
+                                ${moduleData.checklist.map(item => `
+                                    <label class="flex items-start cursor-pointer hover:bg-stone-50 p-2 rounded transition-colors">
+                                        <input type="checkbox" class="mt-1 mr-3 h-5 w-5 text-sky-600 rounded border-stone-300 focus:ring-sky-500">
+                                        <span class="text-sm text-stone-700">${item.text}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                            <div class="mt-8 p-4 bg-sky-50 rounded-lg border border-sky-100">
+                                <h4 class="text-sm font-bold text-sky-800 mb-2">Ready to submit?</h4>
+                                <div class="code-block text-xs">
+git add .
+git commit -m "Module 1 complete"
+git push origin main
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCommands(container) {
+            container.innerHTML = `
+                <div class="p-8 max-w-5xl mx-auto animate-fade">
+                    <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-stone-900">Command Reference</h2>
+                            <p class="text-stone-600 mt-2">Quick lookup for Appendix A commands.</p>
+                        </div>
+                        <div class="mt-4 md:mt-0">
+                            <input type="text" id="cmdSearch" onkeyup="filterCommands()" placeholder="Search commands..." class="border border-stone-300 rounded-md px-4 py-2 text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                        </div>
+                    </header>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                        <table class="min-w-full divide-y divide-stone-200">
+                            <thead class="bg-stone-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Command</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Description</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">Common Flags</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cmdTableBody" class="bg-white divide-y divide-stone-200 text-sm text-stone-600">
+                                ${moduleData.commands.map(c => `
+                                    <tr class="hover:bg-stone-50 cmd-row">
+                                        <td class="px-6 py-4 font-mono text-sky-700 font-bold">${c.cmd}</td>
+                                        <td class="px-6 py-4">${c.desc}</td>
+                                        <td class="px-6 py-4 font-mono text-stone-400 text-xs">${c.flags}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- INTERACTION HANDLERS ---
+
+        window.toggleCard = function(id) {
+            const el = document.getElementById(id);
+            if(el) el.classList.toggle('hidden');
+        };
+
+        window.filterCommands = function() {
+            const input = document.getElementById('cmdSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('.cmd-row');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? '' : 'none';
+            });
+        };
+
+        function initCharts() {
+            // Weight Chart
+            const ctxW = document.getElementById('weightChart').getContext('2d');
+            new Chart(ctxW, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Part 1: Concepts', 'Part 2: Implementation', 'Part 3: Consolidation'],
+                    datasets: [{
+                        data: [1, 2, 1],
+                        backgroundColor: ['#e7e5e4', '#0284c7', '#d6d3d1'], // stone-200, sky-600, stone-300
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Time Chart
+            const ctxT = document.getElementById('timeChart').getContext('2d');
+            new Chart(ctxT, {
+                type: 'bar',
+                data: {
+                    labels: ['Part 1', 'Part 2', 'Part 3'],
+                    datasets: [{
+                        label: 'Estimated Minutes',
+                        data: [60, 150, 60],
+                        backgroundColor: '#fbbf24', // amber-400
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Minutes' } }
+                    }
+                }
+            });
+        }
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSection('dashboard');
+        });
+
+    </script>
+</body>
+</html>
+
