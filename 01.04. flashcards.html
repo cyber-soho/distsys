@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems Flashcards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .flashcard-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        .flashcard-front, .flashcard-back {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900">
+
+    <div id="app" class="max-w-xl mx-auto px-4 py-12 flex flex-col min-h-screen">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl font-bold text-indigo-700">Study Session: Module 1</h1>
+            <p class="text-slate-500">Distributed Systems & Linux Basics</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mb-6">
+            <div class="flex justify-between text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
+                <span id="card-index">Card 1 of 25</span>
+                <span id="progress-percent">0%</span>
+            </div>
+            <div class="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div id="progress-fill" class="h-full bg-indigo-500 transition-all duration-300" style="width: 4%"></div>
+            </div>
+        </div>
+
+        <!-- Flashcard Area -->
+        <div class="flex-grow flex items-center justify-center perspective-1000">
+            <div id="flashcard" class="w-full h-80 cursor-pointer group" onclick="toggleFlip()">
+                <div class="flashcard-inner relative w-full h-full shadow-2xl rounded-3xl">
+                    
+                    <!-- Front -->
+                    <div class="flashcard-front absolute inset-0 bg-white border-2 border-slate-100 rounded-3xl flex flex-col items-center justify-center p-8 text-center">
+                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4">Front</span>
+                        <h2 id="front-text" class="text-2xl font-semibold text-slate-800 leading-tight"></h2>
+                        <p class="absolute bottom-6 text-slate-300 text-sm italic">Click to flip</p>
+                    </div>
+
+                    <!-- Back -->
+                    <div class="flashcard-back absolute inset-0 bg-indigo-600 rounded-3xl flex flex-col items-center justify-center p-8 text-center">
+                        <span class="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-4">Back</span>
+                        <div id="back-text" class="text-xl font-medium text-white leading-relaxed"></div>
+                        <p class="absolute bottom-6 text-indigo-300 text-sm italic">Click to see front</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="mt-12 flex items-center justify-between gap-4">
+            <button onclick="prevCard()" class="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-4 rounded-2xl transition-all flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                Prev
+            </button>
+            
+            <button onclick="shuffleCards()" class="p-4 bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-colors" title="Shuffle Deck">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+
+            <button onclick="nextCard()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all flex justify-center items-center gap-2">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
+        <p class="text-center mt-8 text-slate-400 text-xs">Keyboard shortcut: SPACE to flip, ARROWS to navigate</p>
+    </div>
+
+    <script>
+        const cardData = [
+            { front: "Definition of a Distributed System", back: "A collection of independent computers that appears to its users as a single coherent system." },
+            { front: "Three Core Characteristics of Distributed Systems", back: "Concurrency, No Global Clock, and Independent Failures." },
+            { front: "Concurrency in Distributed Systems", back: "Multiple components execute simultaneously and handle tasks in parallel." },
+            { front: "Implication of No Global Clock", back: "Each computer maintains its own clock which drifts apart, creating difficulty in ordering events." },
+            { front: "Independent Failures", back: "The ability of the system to continue operating even when individual components fail." },
+            { front: "Architectural Model", back: "A model describing HOW components are organized (e.g., Client-Server, P2P)." },
+            { front: "Fundamental Model", back: "A model defining WHAT assumptions can be made about system behavior (Interaction, Failure, Security)." },
+            { front: "Physical Model", back: "A model describing WHERE the hardware is located and the network topology." },
+            { front: "Peer-to-Peer (P2P) Architecture", back: "A decentralized model with no central authority where each node acts as both client and server." },
+            { front: "Asynchronous Interaction Model", back: "A communication model where message delivery timing is unknown and variable (no upper bound)." },
+            { front: "Byzantine Failure", back: "A severe failure type where a process behaves arbitrarily or maliciously, potentially sending conflicting messages." },
+            { front: "Transparency in Distributed Systems", back: "The concept of hiding the distributed nature of the system so it appears as a single entity to users." },
+            { front: "Location Transparency", back: "Hides where resources are physically located; users access them by logical names." },
+            { front: "Replication Transparency", back: "Hides that multiple copies of data exist for reliability and performance." },
+            { front: "Failure Transparency", back: "Conceals faults and automatic recovery processes from the user." },
+            { front: "Linux Kernel", back: "The core of the Linux operating system that manages hardware and resources." },
+            { front: "Debian Family Package Manager", back: "APT (Advanced Package Tool)." },
+            { front: "Red Hat Family Package Manager", back: "DNF or YUM." },
+            { front: "Command: pwd", back: "Print working directory (displays the current absolute path)." },
+            { front: "Command: ls -la", back: "List all directory contents, including hidden files, with detailed information." },
+            { front: "Command: mv", back: "Move or rename a file." },
+            { front: "Command: df -h", back: "Display disk space usage in a human-readable format." },
+            { front: "Directory: /etc", back: "Contains system-wide configuration files." },
+            { front: "Directory: /var/log", back: "Contains system and application log files." },
+            { front: "Directory: /tmp", back: "Contains temporary files, usually deleted upon reboot." }
+        ];
+
+        let currentIndex = 0;
+        let deck = [...cardData];
+
+        function updateUI() {
+            const card = deck[currentIndex];
+            const frontEl = document.getElementById('front-text');
+            const backEl = document.getElementById('back-text');
+            const flashcard = document.getElementById('flashcard');
+            
+            // Reset flip before changing text
+            flashcard.classList.remove('flipped');
+            
+            setTimeout(() => {
+                frontEl.innerText = card.front;
+                backEl.innerText = card.back;
+            }, 150);
+
+            // Progress
+            const displayIdx = currentIndex + 1;
+            const percent = Math.round((displayIdx / deck.length) * 100);
+            document.getElementById('card-index').innerText = `Card ${displayIdx} of ${deck.length}`;
+            document.getElementById('progress-percent').innerText = `${percent}%`;
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+        }
+
+        function toggleFlip() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (currentIndex < deck.length - 1) {
+                currentIndex++;
+                updateUI();
+            }
+        }
+
+        function prevCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateUI();
+            }
+        }
+
+        function shuffleCards() {
+            deck = deck.sort(() => Math.random() - 0.5);
+            currentIndex = 0;
+            updateUI();
+        }
+
+        // Keyboard Controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleFlip();
+            } else if (e.code === 'ArrowRight') {
+                nextCard();
+            } else if (e.code === 'ArrowLeft') {
+                prevCard();
+            }
+        });
+
+        // Init
+        updateUI();
+    </script>
+</body>
+</html>
+
+
+

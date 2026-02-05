@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems: Module 1 Interactive</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Noto Sans for main text, JetBrains Mono for code -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Earthy Tech
+         Background: Stone-50 (Warm Neutral)
+         Primary Text: Stone-800
+         Accent 1 (DS): Indigo-600
+         Accent 2 (Linux): Emerald-600
+         UI Elements: White cards with subtle shadows
+    -->
+
+    <!-- Application Structure Plan:
+         1. Layout: Dashboard style with a left sidebar (collapsible on mobile) and main content area.
+         2. Landing View (The "Why"): Hooks the user with the scale of DS (Netflix, Google stats).
+         3. Module A (Dist. Systems): 
+            - Definition & Properties (Interactive Cards).
+            - Architecture (CSS-based structural diagrams).
+            - Transparencies (Interactive Grid).
+         4. Module B (Linux Setup):
+            - Market Share (Chart.js Bar Chart).
+            - Terminal Simulator (Interactive JS console).
+            - FHS Explorer (Clickable directory tree).
+         5. Review: Quick Reference cards summary.
+         
+         Rational: This structure breaks the linear slide deck into topic-based clusters, allowing the user to jump between concepts (Theory vs. Practical) while maintaining the lecture's logical flow.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Linux Stats -> Goal: Inform -> Bar Chart (Chart.js) -> Visualizes the 96% vs 100% dominance clearly.
+         2. Architectures -> Goal: Organize -> CSS Flex/Grid Diagrams -> Uses styled divs to show [Client]->[Server] relationships without SVG.
+         3. Terminal -> Goal: Change -> JS Text Injection -> Simulates 'active' learning of commands like 'ls' and 'pwd'.
+         4. Transparencies -> Goal: Inform -> Flip/Expand Cards -> Hides complexity until requested, mirroring the concept of transparency itself.
+         
+         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+            background-color: #fafaf9; /* tailwind stone-50 */
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Chart Container Styles - Strictly Enforced */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            margin: 0 auto;
+        }
+        
+        /* Custom scrollbar for terminal */
+        .terminal-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 4px;
+        }
+
+        /* Hide sections by default, managed by JS */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interactive Architecture Box Styles */
+        .arch-node {
+            transition: all 0.2s;
+        }
+        .arch-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="text-stone-800 h-screen flex overflow-hidden">
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 w-full bg-white border-b border-stone-200 z-50 flex justify-between items-center p-4">
+        <div class="font-bold text-lg text-indigo-700">DS Module 1</div>
+        <button id="mobile-menu-btn" class="text-stone-600 focus:outline-none text-2xl">☰</button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 w-64 bg-white border-r border-stone-200 z-40 transition-transform duration-300 flex flex-col h-full shadow-lg md:shadow-none">
+        <div class="p-6 border-b border-stone-100 hidden md:block">
+            <h1 class="text-xl font-bold text-indigo-700 tracking-tight">Distributed Systems</h1>
+            <p class="text-xs text-stone-500 mt-1">Fundamentals & Linux</p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1 px-3">
+                <li>
+                    <button onclick="navTo('home')" class="nav-item w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-stone-100 text-indigo-600 bg-stone-50" data-target="home">
+                        Home: The Invisible Infrastructure
+                    </button>
+                </li>
+                
+                <li class="pt-4 pb-1 px-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Lesson 1: Concepts</li>
+                <li>
+                    <button onclick="navTo('ds-definition')" class="nav-item w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-indigo-600" data-target="ds-definition">
+                        What is a DS?
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navTo('ds-models')" class="nav-item w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-indigo-600" data-target="ds-models">
+                        System Models
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navTo('ds-transparency')" class="nav-item w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-indigo-600" data-target="ds-transparency">
+                        The 8 Transparencies
+                    </button>
+                </li>
+
+                <li class="pt-4 pb-1 px-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Lesson 2: Linux Lab</li>
+                <li>
+                    <button onclick="navTo('linux-intro')" class="nav-item w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-emerald-600" data-target="linux-intro">
+                        Why Linux?
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navTo('linux-terminal')" class="nav-item w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-emerald-600" data-target="linux-terminal">
+                        Terminal Simulator
+                    </button>
+                </li>
+                <li>
+                    <button onclick="navTo('linux-fhs')" class="nav-item w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-emerald-600" data-target="linux-fhs">
+                        Filesystem Hierarchy
+                    </button>
+                </li>
+
+                <li class="pt-4 pb-1 px-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Summary</li>
+                <li>
+                    <button onclick="navTo('review')" class="nav-item w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-orange-600" data-target="review">
+                        Quick Reference
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="p-4 border-t border-stone-100 text-xs text-stone-400 text-center">
+             Module 1: Fundamentals & Lab Environment
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto pt-16 md:pt-0 p-6 md:p-10 relative">
+        
+        <!-- SECTION: HOME -->
+        <section id="home" class="view-section active max-w-4xl mx-auto">
+            <header class="mb-10 text-center">
+                <h2 class="text-4xl font-bold text-stone-800 mb-4">Distributed Systems</h2>
+                <p class="text-xl text-stone-500">Module 1: Fundamentals & Linux Environment</p>
+            </header>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-8 mb-8">
+                <h3 class="text-2xl font-semibold mb-6 text-indigo-700">Why This Matters</h3>
+                <p class="mb-6 text-stone-600 leading-relaxed">
+                    You are entering the world of the <strong>Invisible Infrastructure</strong>. Every time you send a message, stream a movie, or search the web, you are interacting with a massive, complex distributed system.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="p-6 bg-stone-50 rounded-xl hover:bg-indigo-50 transition-colors">
+                        <div class="text-3xl font-bold text-indigo-600 mb-2">200M+</div>
+                        <div class="text-sm font-semibold text-stone-600">Netflix Users</div>
+                        <p class="text-xs text-stone-500 mt-2">Served via distributed CDNs</p>
+                    </div>
+                    <div class="p-6 bg-stone-50 rounded-xl hover:bg-indigo-50 transition-colors">
+                        <div class="text-3xl font-bold text-indigo-600 mb-2">8.5B</div>
+                        <div class="text-sm font-semibold text-stone-600">Daily Searches</div>
+                        <p class="text-xs text-stone-500 mt-2">Processed by Google</p>
+                    </div>
+                    <div class="p-6 bg-stone-50 rounded-xl hover:bg-indigo-50 transition-colors">
+                        <div class="text-3xl font-bold text-indigo-600 mb-2">100s</div>
+                        <div class="text-sm font-semibold text-stone-600">Computers</div>
+                        <p class="text-xs text-stone-500 mt-2">Per single WhatsApp msg</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-stone-200 cursor-pointer hover:shadow-md transition-all group" onclick="navTo('ds-definition')">
+                    <h4 class="font-bold text-lg text-stone-800 mb-2 group-hover:text-indigo-600">Start Lesson 1 &rarr;</h4>
+                    <p class="text-sm text-stone-500">Distributed Systems Theory: Concurrency, Clocks, and Failure.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-stone-200 cursor-pointer hover:shadow-md transition-all group" onclick="navTo('linux-intro')">
+                    <h4 class="font-bold text-lg text-stone-800 mb-2 group-hover:text-emerald-600">Start Lesson 2 &rarr;</h4>
+                    <p class="text-sm text-stone-500">Linux Environment: The OS powering 96% of the web.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: DS DEFINITION -->
+        <section id="ds-definition" class="view-section max-w-5xl mx-auto">
+            <div class="mb-8">
+                <span class="text-xs font-bold text-indigo-600 uppercase tracking-wide">Lesson 1</span>
+                <h2 class="text-3xl font-bold text-stone-800">What is a Distributed System?</h2>
+                <p class="mt-4 text-lg text-stone-600">A collection of <strong>independent computers</strong> that appears to its users as a <strong>single coherent system</strong>.</p>
+            </div>
+
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-6 rounded-r-lg mb-10">
+                <p class="italic text-stone-700 font-medium">"A distributed system is one where the failure of a computer you didn't even know existed can render your own computer unusable."</p>
+                <div class="mt-2 text-sm text-stone-500">— Leslie Lamport, Turing Award Winner</div>
+            </div>
+
+            <h3 class="text-xl font-bold mb-6">The Three Core Characteristics</h3>
+            <p class="mb-6 text-stone-600">Unlike a single computer, every distributed system must deal with these three realities. Click each card to explore.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="characteristics-grid">
+                <!-- Cards injected via JS -->
+            </div>
+
+            <div id="char-detail" class="mt-8 bg-white p-8 rounded-xl shadow-sm border border-stone-200 hidden">
+                <h4 id="char-title" class="text-2xl font-bold text-indigo-700 mb-4"></h4>
+                <p id="char-desc" class="text-stone-700 leading-relaxed"></p>
+                <div id="char-example" class="mt-4 p-4 bg-stone-50 rounded-lg text-sm text-stone-600 border border-stone-200 font-mono"></div>
+            </div>
+        </section>
+
+        <!-- SECTION: SYSTEM MODELS -->
+        <section id="ds-models" class="view-section max-w-5xl mx-auto">
+            <div class="mb-8">
+                <span class="text-xs font-bold text-indigo-600 uppercase tracking-wide">Lesson 1</span>
+                <h2 class="text-3xl font-bold text-stone-800">System Models</h2>
+                <p class="mt-4 text-stone-600">To reason about complex systems, we use three types of models: Architectural (Structure), Fundamental (Assumptions), and Physical (Hardware).</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex space-x-2 border-b border-stone-200 mb-8">
+                <button onclick="switchModelTab('arch')" id="tab-arch" class="model-tab px-4 py-2 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600">Architectural</button>
+                <button onclick="switchModelTab('fund')" id="tab-fund" class="model-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-700">Fundamental</button>
+                <button onclick="switchModelTab('phys')" id="tab-phys" class="model-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-700">Physical</button>
+            </div>
+
+            <!-- Architectural Content -->
+            <div id="content-arch" class="model-content space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <!-- Client Server Vis -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h4 class="font-bold text-lg mb-4 text-center">Client-Server</h4>
+                        <div class="flex justify-between items-center bg-stone-50 p-6 rounded-lg h-40">
+                            <div class="bg-blue-100 text-blue-800 p-4 rounded-lg text-center font-bold text-sm w-24 border border-blue-200 shadow-sm arch-node">
+                                CLIENT<br><span class="text-xs font-normal">(Request)</span>
+                            </div>
+                            <div class="flex flex-col items-center flex-1 px-4">
+                                <span class="text-xs text-stone-400 mb-1">Request &rarr;</span>
+                                <div class="h-0.5 w-full bg-stone-300"></div>
+                                <span class="text-xs text-stone-400 mt-1">&larr; Response</span>
+                            </div>
+                            <div class="bg-indigo-100 text-indigo-800 p-4 rounded-lg text-center font-bold text-sm w-24 border border-indigo-200 shadow-sm arch-node">
+                                SERVER<br><span class="text-xs font-normal">(Service)</span>
+                            </div>
+                        </div>
+                        <ul class="mt-4 text-sm text-stone-600 list-disc list-inside space-y-1">
+                            <li>Clear role separation</li>
+                            <li>Server provides, Client consumes</li>
+                            <li>Examples: Web browsers, Email</li>
+                        </ul>
+                    </div>
+
+                    <!-- P2P Vis -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h4 class="font-bold text-lg mb-4 text-center">Peer-to-Peer (P2P)</h4>
+                        <div class="relative bg-stone-50 p-6 rounded-lg h-40 flex justify-center items-center">
+                            <!-- Triangle Layout using absolute positioning within the container for the diagram feel -->
+                            <div class="absolute top-4 bg-emerald-100 text-emerald-800 p-2 rounded text-center text-xs font-bold w-16 border border-emerald-200 shadow-sm arch-node">Node A</div>
+                            <div class="absolute bottom-4 left-8 bg-emerald-100 text-emerald-800 p-2 rounded text-center text-xs font-bold w-16 border border-emerald-200 shadow-sm arch-node">Node B</div>
+                            <div class="absolute bottom-4 right-8 bg-emerald-100 text-emerald-800 p-2 rounded text-center text-xs font-bold w-16 border border-emerald-200 shadow-sm arch-node">Node C</div>
+                            
+                            <!-- Connectors -->
+                            <div class="absolute w-24 h-0.5 bg-stone-300 transform rotate-60 top-16 left-14"></div>
+                            <div class="absolute w-24 h-0.5 bg-stone-300 transform -rotate-60 top-16 right-14"></div>
+                            <div class="absolute w-24 h-0.5 bg-stone-300 bottom-8"></div>
+                        </div>
+                        <ul class="mt-4 text-sm text-stone-600 list-disc list-inside space-y-1">
+                            <li>Decentralized, no authority</li>
+                            <li>Each node is Client AND Server</li>
+                            <li>Examples: BitTorrent, Blockchain</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fundamental Content -->
+            <div id="content-fund" class="model-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl border-t-4 border-indigo-500 shadow-sm">
+                        <h4 class="font-bold text-lg mb-2">Interaction</h4>
+                        <p class="text-sm text-stone-600 mb-4">How do processes communicate?</p>
+                        <div class="bg-stone-100 p-3 rounded text-sm mb-2"><strong>Synchronous:</strong> Predictable timing (Rare).</div>
+                        <div class="bg-stone-100 p-3 rounded text-sm"><strong>Asynchronous:</strong> Variable timing (Common). Messages can arrive in any order.</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border-t-4 border-indigo-500 shadow-sm">
+                        <h4 class="font-bold text-lg mb-2">Failure</h4>
+                        <p class="text-sm text-stone-600 mb-4">What can go wrong?</p>
+                        <ul class="text-sm space-y-2">
+                            <li class="flex items-center"><span class="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span>Crash (Stops)</li>
+                            <li class="flex items-center"><span class="w-2 h-2 bg-orange-400 rounded-full mr-2"></span>Omission (Lost msg)</li>
+                            <li class="flex items-center"><span class="w-2 h-2 bg-red-600 rounded-full mr-2"></span>Byzantine (Malicious/Arbitrary)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border-t-4 border-indigo-500 shadow-sm">
+                        <h4 class="font-bold text-lg mb-2">Security</h4>
+                        <p class="text-sm text-stone-600 mb-4">The three pillars:</p>
+                        <ul class="text-sm font-semibold text-stone-700 space-y-2">
+                            <li>1. Authentication (Who?)</li>
+                            <li>2. Encryption (Privacy)</li>
+                            <li>3. Access Control (Permission)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Physical Content -->
+            <div id="content-phys" class="model-content hidden">
+                <div class="bg-stone-800 text-white p-8 rounded-xl shadow-lg">
+                    <h4 class="text-2xl font-mono mb-6 border-b border-stone-600 pb-2">The Hardware Reality</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <div>
+                            <h5 class="text-indigo-400 font-bold mb-2">Latency Matters</h5>
+                            <p class="text-stone-300 text-sm mb-4">The speed of light is a hard limit. Geographically distributed systems must account for physical distance.</p>
+                            <h5 class="text-indigo-400 font-bold mb-2">Network Topology</h5>
+                            <p class="text-stone-300 text-sm">Are machines in the same rack? Same data center? Or across the ocean? This dictates reliability and speed.</p>
+                        </div>
+                        <div class="bg-stone-900 p-4 rounded font-mono text-sm text-green-400">
+                            $ ping us-east-1<br>
+                            > time=24ms<br>
+                            $ ping eu-central-1<br>
+                            > time=140ms<br>
+                            <br>
+                            <span class="text-stone-500"># Geographic distribution increases latency.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: TRANSPARENCIES -->
+        <section id="ds-transparency" class="view-section max-w-5xl mx-auto">
+            <div class="mb-8">
+                <span class="text-xs font-bold text-indigo-600 uppercase tracking-wide">Lesson 1</span>
+                <h2 class="text-3xl font-bold text-stone-800">Transparency</h2>
+                <p class="mt-4 text-stone-600">The ultimate goal: <strong>Hiding</strong> the distributed nature from users. The system should feel like a single entity.</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="transparency-grid">
+                <!-- Grid items generated by JS -->
+            </div>
+            
+            <div class="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-100 text-center text-sm text-indigo-800">
+                <span class="font-bold">Key Takeaway:</span> The best distributed systems are invisible. Users shouldn't care if a server crashes or if data is in Virginia or Germany.
+            </div>
+        </section>
+
+        <!-- SECTION: LINUX INTRO & CHARTS -->
+        <section id="linux-intro" class="view-section max-w-5xl mx-auto">
+            <div class="mb-8">
+                <span class="text-xs font-bold text-emerald-600 uppercase tracking-wide">Lesson 2</span>
+                <h2 class="text-3xl font-bold text-stone-800">Why Linux?</h2>
+                <p class="mt-4 text-stone-600">Linux is the foundation of distributed systems infrastructure. While Windows/macOS dominate desktops, Linux runs the internet.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="font-bold text-lg mb-4 text-center">Linux Market Share Dominance</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="linuxChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-stone-400 mt-4">Source: Slide 31</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-emerald-500 shadow-sm">
+                        <h4 class="font-bold text-lg">What is Linux?</h4>
+                        <ul class="mt-2 text-sm text-stone-600 space-y-2">
+                            <li><strong>Kernel:</strong> The core (Linus Torvalds, 1991).</li>
+                            <li><strong>Open Source:</strong> Free to use and modify.</li>
+                            <li><strong>Multi-user:</strong> Many people can log in simultaneously.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-emerald-500 shadow-sm">
+                        <h4 class="font-bold text-lg">Distribution Families</h4>
+                        <table class="w-full mt-3 text-sm text-left">
+                            <thead class="text-xs text-stone-500 uppercase bg-stone-50">
+                                <tr>
+                                    <th class="p-2">Family</th>
+                                    <th class="p-2">Manager</th>
+                                    <th class="p-2">Examples</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-stone-100">
+                                    <td class="p-2 font-bold text-stone-700">Debian</td>
+                                    <td class="p-2 font-mono text-emerald-600">apt</td>
+                                    <td class="p-2">Ubuntu, Mint</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-bold text-stone-700">Red Hat</td>
+                                    <td class="p-2 font-mono text-emerald-600">dnf</td>
+                                    <td class="p-2">RHEL, Fedora</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: TERMINAL SIMULATOR -->
+        <section id="linux-terminal" class="view-section max-w-4xl mx-auto">
+            <div class="mb-6">
+                <span class="text-xs font-bold text-emerald-600 uppercase tracking-wide">Lesson 2</span>
+                <h2 class="text-3xl font-bold text-stone-800">The Shell (Bash)</h2>
+                <p class="mt-2 text-stone-600">The text interface between you and the kernel. Try the commands below to see how to navigate.</p>
+            </div>
+
+            <div class="bg-stone-900 rounded-lg overflow-hidden shadow-2xl border border-stone-700 flex flex-col h-96">
+                <!-- Terminal Header -->
+                <div class="bg-stone-800 px-4 py-2 flex items-center space-x-2 border-b border-stone-700">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span class="ml-4 text-xs text-stone-400 font-mono">student@ubuntu-server:~</span>
+                </div>
+                
+                <!-- Terminal Output -->
+                <div id="terminal-output" class="flex-1 p-4 font-mono text-sm text-stone-300 overflow-y-auto terminal-scroll code-font">
+                    <div class="mb-2">Welcome to Ubuntu 22.04 LTS (GNU/Linux 5.15.0-generic x86_64)</div>
+                    <div class="mb-4 text-stone-500">Type 'help' or click buttons below to run commands.</div>
+                    <div><span class="text-green-400">student@server</span>:<span class="text-blue-400">~</span>$ <span class="blink">_</span></div>
+                </div>
+            </div>
+
+            <!-- Command Controls -->
+            <div class="mt-6">
+                <h4 class="text-sm font-bold text-stone-500 uppercase mb-3">Click to Run:</h4>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="runCmd('pwd')" class="px-4 py-2 bg-white border border-stone-300 rounded shadow-sm hover:bg-stone-50 font-mono text-sm text-emerald-700 font-bold transition-colors">pwd</button>
+                    <button onclick="runCmd('ls')" class="px-4 py-2 bg-white border border-stone-300 rounded shadow-sm hover:bg-stone-50 font-mono text-sm text-emerald-700 font-bold transition-colors">ls</button>
+                    <button onclick="runCmd('ls -la')" class="px-4 py-2 bg-white border border-stone-300 rounded shadow-sm hover:bg-stone-50 font-mono text-sm text-emerald-700 font-bold transition-colors">ls -la</button>
+                    <button onclick="runCmd('whoami')" class="px-4 py-2 bg-white border border-stone-300 rounded shadow-sm hover:bg-stone-50 font-mono text-sm text-emerald-700 font-bold transition-colors">whoami</button>
+                    <button onclick="runCmd('top')" class="px-4 py-2 bg-white border border-stone-300 rounded shadow-sm hover:bg-stone-50 font-mono text-sm text-emerald-700 font-bold transition-colors">top</button>
+                    <button onclick="runCmd('df -h')" class="px-4 py-2 bg-white border border-stone-300 rounded shadow-sm hover:bg-stone-50 font-mono text-sm text-emerald-700 font-bold transition-colors">df -h</button>
+                    <button onclick="runCmd('clear')" class="px-4 py-2 bg-stone-200 border border-stone-300 rounded shadow-sm hover:bg-stone-300 font-mono text-sm text-stone-700 font-bold transition-colors">clear</button>
+                </div>
+                <div class="mt-4 text-sm text-stone-500 bg-white p-3 rounded border border-stone-200">
+                    <span class="font-bold">Tip:</span> <code class="bg-stone-100 px-1 rounded text-red-500">rm</code> deletes files forever. There is no recycling bin in the shell!
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: FHS -->
+        <section id="linux-fhs" class="view-section max-w-4xl mx-auto">
+            <div class="mb-8">
+                <span class="text-xs font-bold text-emerald-600 uppercase tracking-wide">Lesson 2</span>
+                <h2 class="text-3xl font-bold text-stone-800">Filesystem Hierarchy Standard (FHS)</h2>
+                <p class="mt-4 text-stone-600">Linux organizes files in a tree structure starting at Root (<code>/</code>). Click the folders to see what's inside.</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-stone-200">
+                <div class="space-y-3 font-mono text-sm text-stone-700" id="fhs-tree">
+                    <!-- Tree items injected via JS for cleaner HTML -->
+                </div>
+            </div>
+
+            <div id="fhs-detail" class="mt-6 p-4 bg-emerald-50 border border-emerald-100 rounded-lg hidden">
+                <h4 id="fhs-title" class="font-bold text-emerald-800 text-lg mb-1"></h4>
+                <p id="fhs-desc" class="text-emerald-700 text-sm"></p>
+                <p class="mt-2 text-xs text-stone-500 uppercase tracking-wider">Troubleshooting:</p>
+                <p id="fhs-tip" class="text-stone-600 italic text-sm"></p>
+            </div>
+        </section>
+
+        <!-- SECTION: REVIEW -->
+        <section id="review" class="view-section max-w-5xl mx-auto">
+             <div class="mb-8 text-center">
+                <span class="text-xs font-bold text-orange-600 uppercase tracking-wide">Summary</span>
+                <h2 class="text-3xl font-bold text-stone-800">Quick Reference</h2>
+                <p class="mt-4 text-stone-600">Key takeaways for your exams and future career.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- DS Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border-t-4 border-indigo-600">
+                    <div class="p-6 bg-indigo-50 border-b border-indigo-100">
+                        <h3 class="font-bold text-xl text-indigo-900">Distributed Systems</h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 uppercase">3 Characteristics</span>
+                            <ul class="list-disc list-inside text-sm text-stone-700 mt-1">
+                                <li>Concurrency</li>
+                                <li>No Global Clock</li>
+                                <li>Independent Failures</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 uppercase">3 Models</span>
+                            <ul class="list-disc list-inside text-sm text-stone-700 mt-1">
+                                <li>Architectural (Structure)</li>
+                                <li>Fundamental (Assumptions)</li>
+                                <li>Physical (Hardware)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 uppercase">Goal</span>
+                            <p class="text-sm text-stone-700 mt-1 font-medium">Transparency (Hiding complexity)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linux Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border-t-4 border-emerald-600">
+                    <div class="p-6 bg-emerald-50 border-b border-emerald-100">
+                        <h3 class="font-bold text-xl text-emerald-900">Linux Essentials</h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 uppercase">Navigation</span>
+                            <div class="flex gap-2 mt-1">
+                                <code class="bg-stone-100 px-2 py-1 rounded text-xs">pwd</code>
+                                <code class="bg-stone-100 px-2 py-1 rounded text-xs">ls -la</code>
+                                <code class="bg-stone-100 px-2 py-1 rounded text-xs">cd</code>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 uppercase">File Ops</span>
+                            <div class="flex gap-2 mt-1 flex-wrap">
+                                <code class="bg-stone-100 px-2 py-1 rounded text-xs">cp</code>
+                                <code class="bg-stone-100 px-2 py-1 rounded text-xs">mv</code>
+                                <code class="bg-stone-100 px-2 py-1 rounded text-xs">rm</code>
+                                <code class="bg-stone-100 px-2 py-1 rounded text-xs">mkdir</code>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 uppercase">Key Paths</span>
+                            <ul class="list-none text-sm text-stone-700 mt-1 space-y-1">
+                                <li><code class="text-emerald-700">/etc</code> : Configuration files</li>
+                                <li><code class="text-emerald-700">/var/log</code> : System logs</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 text-center text-stone-400 text-sm">
+                <p>&copy; 2025 Cyber.SoHo Educational |</p>
+                <p>Module 1</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Data & State ---
+        const dsCharacteristics = [
+            {
+                id: 'concurrency',
+                title: '1. Concurrency',
+                desc: 'Multiple components execute simultaneously. Server A processes Task 1 while Server B processes Task 2. This increases efficiency but requires coordination.',
+                example: 'Request -> [Server A] | [Server B] -> Combined Response'
+            },
+            {
+                id: 'clock',
+                title: '2. No Global Clock',
+                desc: 'Each computer has its own clock, and they drift apart. There is no single "correct" time, creating problems for ordering events.',
+                example: 'Does Event X on Machine 1 happen before Event Y on Machine 2? Hard to say.'
+            },
+            {
+                id: 'failure',
+                title: '3. Independent Failures',
+                desc: 'Components fail independently without crashing the whole system. This is a partial failure model.',
+                example: 'A database node crashes, but the web server keeps running. The system must degrade gracefully.'
+            }
+        ];
+
+        const transparencies = [
+            { name: "Access", hide: "How resources are accessed (local vs remote)" },
+            { name: "Location", hide: "Where resources are physically located" },
+            { name: "Concurrency", hide: "Simultaneous access by multiple users" },
+            { name: "Replication", hide: "Multiple copies of data exist" },
+            { name: "Failure", hide: "Component failures and recovery actions" },
+            { name: "Mobility", hide: "Resources moving between nodes" },
+            { name: "Performance", hide: "System load balancing & optimization" },
+            { name: "Scaling", hide: "Adding or removing resources dynamically" }
+        ];
+
+        const fhsData = [
+            { path: "/", name: "Root", desc: "The start of the filesystem.", tip: "Only root user can write here usually." },
+            { path: "/etc", name: "Etc", desc: "Configuration files live here.", tip: "App won't start? Check /etc/<appname>/" },
+            { path: "/var", name: "Var", desc: "Variable data (logs, databases).", tip: "" },
+            { path: "/var/log", name: "Logs", desc: "System and application logs.", tip: "Something broken? Check /var/log/syslog" },
+            { path: "/home", name: "Home", desc: "User personal directories.", tip: "~ takes you here." },
+            { path: "/bin", name: "Binaries", desc: "Essential user programs (ls, cp).", tip: "" },
+            { path: "/tmp", name: "Temp", desc: "Temporary files.", tip: "Deleted on reboot." }
+        ];
+
+        const termResponses = {
+            'pwd': '/home/student',
+            'ls': '<span class="text-blue-400">Documents</span>&nbsp;&nbsp;<span class="text-blue-400">Downloads</span>&nbsp;&nbsp;notes.txt&nbsp;&nbsp;script.sh',
+            'ls -la': 'drwxr-xr-x 2 student student 4096 Feb 4 10:00 <span class="text-blue-400">.</span><br>drwxr-xr-x 3 root    root    4096 Jan 1 00:00 <span class="text-blue-400">..</span><br>-rw-r--r-- 1 student student  120 Feb 4 09:30 notes.txt',
+            'whoami': 'student',
+            'top': 'PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND<br>   1 root      20   0  168432  12436   8320 S   0.0   0.1   0:04.23 systemd<br> 843 student   20   0    8432   4321   2100 R   0.3   0.2   0:00.05 top',
+            'df -h': 'Filesystem      Size  Used Avail Use% Mounted on<br>/dev/sda1        50G   12G   38G  24% /',
+            'clear': 'CLEAR'
+        };
+
+        // --- Navigation Logic ---
+        function navTo(targetId) {
+            // Update UI sections
+            document.querySelectorAll('.view-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById(targetId).classList.add('active');
+
+            // Update Sidebar State
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                if(btn.dataset.target === targetId) {
+                    btn.classList.add('bg-stone-100', 'text-indigo-600');
+                    btn.classList.remove('text-stone-600');
+                } else {
+                    btn.classList.remove('bg-stone-100', 'text-indigo-600');
+                    btn.classList.add('text-stone-600');
+                }
+            });
+
+            // Close mobile menu if open
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar.classList.contains('-translate-x-full') && window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        }
+
+        // --- Component Renderers ---
+
+        // 1. Characteristics Cards
+        function renderCharacteristics() {
+            const grid = document.getElementById('characteristics-grid');
+            grid.innerHTML = dsCharacteristics.map(char => `
+                <div onclick="showCharDetail('${char.id}')" 
+                     class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 cursor-pointer hover:border-indigo-400 hover:shadow-md transition-all">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mb-4">
+                        ${char.id === 'concurrency' ? '||' : char.id === 'clock' ? '🕒' : '⚠️'}
+                    </div>
+                    <h4 class="font-bold text-lg text-stone-800">${char.title}</h4>
+                </div>
+            `).join('');
+        }
+
+        function showCharDetail(id) {
+            const data = dsCharacteristics.find(c => c.id === id);
+            const detailBox = document.getElementById('char-detail');
+            document.getElementById('char-title').textContent = data.title;
+            document.getElementById('char-desc').textContent = data.desc;
+            document.getElementById('char-example').textContent = "Example: " + data.example;
+            detailBox.classList.remove('hidden');
+            detailBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 2. Model Tabs
+        function switchModelTab(tab) {
+            // content
+            ['arch', 'fund', 'phys'].forEach(t => {
+                const el = document.getElementById(`content-${t}`);
+                if (t === tab) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+            // buttons
+            ['arch', 'fund', 'phys'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    btn.classList.add('border-indigo-600', 'text-indigo-600');
+                    btn.classList.remove('border-transparent', 'text-stone-500');
+                } else {
+                    btn.classList.remove('border-indigo-600', 'text-indigo-600');
+                    btn.classList.add('border-transparent', 'text-stone-500');
+                }
+            });
+        }
+
+        // 3. Transparency Grid
+        function renderTransparencies() {
+            const grid = document.getElementById('transparency-grid');
+            grid.innerHTML = transparencies.map((t, idx) => `
+                <div class="group relative h-32 bg-white rounded-lg border border-stone-200 shadow-sm perspective cursor-default overflow-hidden">
+                    <div class="absolute inset-0 flex items-center justify-center bg-white transition-opacity duration-300 group-hover:opacity-0 p-4">
+                        <div class="text-center">
+                            <span class="block text-xs text-stone-400 uppercase font-bold mb-1">Type ${idx+1}</span>
+                            <span class="font-bold text-indigo-700">${t.name}</span>
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center bg-indigo-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100 p-4">
+                         <div class="text-center text-white">
+                            <span class="block text-xs uppercase font-bold mb-1 opacity-75">Hides</span>
+                            <span class="text-sm font-medium leading-tight">${t.hide}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 4. Linux Stats Chart
+        function initCharts() {
+            const ctx = document.getElementById('linuxChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Web Servers', 'Supercomputers', 'Cloud VMs', 'Android'],
+                    datasets: [{
+                        label: 'Linux Market Share (%)',
+                        data: [96, 100, 90, 85],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)', // emerald-500
+                            'rgba(16, 185, 129, 0.9)',
+                            'rgba(16, 185, 129, 0.6)',
+                            'rgba(16, 185, 129, 0.5)'
+                        ],
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: (val) => val + '%' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 5. Terminal Simulator
+        function runCmd(cmd) {
+            const output = document.getElementById('terminal-output');
+            
+            // Add user command line
+            const cmdLine = document.createElement('div');
+            cmdLine.innerHTML = `<span class="text-green-400">student@server</span>:<span class="text-blue-400">~</span>$ ${cmd}`;
+            output.appendChild(cmdLine);
+
+            if (cmd === 'clear') {
+                output.innerHTML = '<div><span class="text-green-400">student@server</span>:<span class="text-blue-400">~</span>$ <span class="blink">_</span></div>';
+                return;
+            }
+
+            // Simulated processing delay
+            setTimeout(() => {
+                const response = document.createElement('div');
+                response.className = "mb-2 text-stone-300";
+                response.innerHTML = termResponses[cmd] || "Command not found. Try buttons below.";
+                output.appendChild(response);
+                
+                // New Prompt
+                const newPrompt = document.createElement('div');
+                newPrompt.innerHTML = `<span class="text-green-400">student@server</span>:<span class="text-blue-400">~</span>$ <span class="blink">_</span>`;
+                output.appendChild(newPrompt);
+                
+                output.scrollTop = output.scrollHeight;
+            }, 300);
+        }
+
+        // 6. FHS Explorer
+        function renderFHS() {
+            const container = document.getElementById('fhs-tree');
+            container.innerHTML = fhsData.map(item => `
+                <div onclick="showFHSDetail('${item.path}')" class="cursor-pointer hover:bg-stone-50 p-2 rounded flex items-center group">
+                    <span class="mr-2 text-yellow-500">📁</span>
+                    <span class="font-bold text-stone-600 group-hover:text-emerald-600">${item.path}</span>
+                    <span class="ml-2 text-stone-400 text-xs hidden sm:inline">- ${item.name}</span>
+                </div>
+            `).join('');
+        }
+
+        function showFHSDetail(path) {
+            const item = fhsData.find(i => i.path === path);
+            const box = document.getElementById('fhs-detail');
+            document.getElementById('fhs-title').innerText = item.path;
+            document.getElementById('fhs-desc').innerText = item.desc;
+            document.getElementById('fhs-tip').innerText = item.tip || "No specific troubleshooting tip.";
+            box.classList.remove('hidden');
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCharacteristics();
+            renderTransparencies();
+            renderFHS();
+            initCharts();
+
+            // Mobile menu toggle
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems & Linux Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .option-transition {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans">
+    <div id="app" class="max-w-2xl mx-auto px-4 py-12">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-indigo-700">Module 1 Assessment</h1>
+            <p class="text-slate-500 mt-2">Distributed Systems & Linux Basics</p>
+        </header>
+
+        <!-- Quiz Container -->
+        <div id="quiz-card" class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 p-6 md:p-8 border border-slate-100 relative overflow-hidden">
+            <!-- Progress Bar -->
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
+                <div id="progress-bar" class="h-full bg-indigo-500 transition-all duration-500" style="width: 0%"></div>
+            </div>
+
+            <div id="question-view">
+                <div class="flex justify-between items-center mb-6">
+                    <span id="question-number" class="text-sm font-semibold text-indigo-600 uppercase tracking-wider">Question 1 of 10</span>
+                    <span id="score-display" class="text-sm font-medium text-slate-400">Score: 0</span>
+                </div>
+
+                <h2 id="question-text" class="text-xl font-semibold leading-snug mb-8">Loading question...</h2>
+
+                <div id="options-container" class="space-y-3">
+                    <!-- Options injected here -->
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="feedback" class="mt-8 hidden p-4 rounded-xl border">
+                    <p id="rationale-text" class="text-sm leading-relaxed"></p>
+                    <button id="next-btn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-colors">
+                        Next Question
+                    </button>
+                </div>
+
+                <!-- Hint Area -->
+                <div id="hint-container" class="mt-6">
+                    <button id="hint-toggle" class="text-sm text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1 focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Need a hint?
+                    </button>
+                    <p id="hint-text" class="hidden mt-2 text-sm text-slate-500 italic bg-slate-50 p-3 rounded-lg border border-dashed border-slate-200"></p>
+                </div>
+            </div>
+
+            <!-- Results View -->
+            <div id="results-view" class="hidden text-center py-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold mb-2">Quiz Complete!</h2>
+                <p class="text-slate-500 mb-8">You've mastered the basics of Module 1.</p>
+                <div class="bg-slate-50 rounded-2xl p-6 mb-8">
+                    <p class="text-sm text-slate-500 uppercase font-bold tracking-widest mb-1">Your Final Score</p>
+                    <p id="final-score" class="text-5xl font-black text-indigo-600">0/10</p>
+                </div>
+                <button onclick="location.reload()" class="bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-bold py-3 px-8 rounded-xl transition-colors">
+                    Restart Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = {
+            "questions": [
+                {
+                    "question": "A massive e-commerce platform continues to process user orders even though one of its three database servers has crashed due to a hardware malfunction. Which fundamental characteristic of distributed systems does this scenario demonstrate?",
+                    "answerOptions": [
+                        { "text": "Independent Failures", "rationale": "This concept refers to the ability of a distributed system to continue operating, perhaps at reduced capacity, even when individual components fail, preventing a total system collapse.", "isCorrect": true },
+                        { "text": "Concurrency", "rationale": "Concurrency involves multiple tasks executing at the same time, but it does not inherently describe the system's resilience to the crash of a specific component.", "isCorrect": false },
+                        { "text": "No Global Clock", "rationale": "The lack of a global clock relates to time synchronization and ordering of events, not the system's ability to survive hardware crashes.", "isCorrect": false },
+                        { "text": "Location Transparency", "rationale": "Location transparency hides where resources are located, but it does not specifically describe the system's ability to keep working when a part of it breaks.", "isCorrect": false }
+                    ],
+                    "hint": "Focus on the fact that the system as a whole survives despite a specific part stopping."
+                },
+                {
+                    "question": "You are designing a chat application where every user's computer connects directly to other users' computers to send messages, without routing them through a central server. Which architectural model describes this organization?",
+                    "answerOptions": [
+                        { "text": "Peer-to-Peer (P2P)", "rationale": "In a Peer-to-Peer model, there is no central authority or server; every node acts as both a client and a server, communicating directly with others.", "isCorrect": true },
+                        { "text": "Client-Server", "rationale": "Client-Server architecture relies on a clear distinction where clients request services and a central server provides them, which contradicts the direct user-to-user design.", "isCorrect": false },
+                        { "text": "Three-Tier Architecture", "rationale": "Three-tier architecture organizes the system into presentation, logic, and data layers, but typically still relies on central servers rather than direct user connections.", "isCorrect": false },
+                        { "text": "Microservices", "rationale": "Microservices is a way of structuring an application as a collection of services, but it doesn't strictly imply the decentralized, direct connection model of P2P.", "isCorrect": false }
+                    ],
+                    "hint": "Think of a model where all participants have equal status and share resources directly."
+                },
+                {
+                    "question": "A user uploads a photo to a cloud service. The user does not know, and does not need to know, that the photo is physically stored on a server in a data center in Oregon. Which type of transparency is primarily being provided?",
+                    "answerOptions": [
+                        { "text": "Location Transparency", "rationale": "Location transparency ensures that users can access resources without needing to know their physical geographic position.", "isCorrect": true },
+                        { "text": "Access Transparency", "rationale": "Access transparency deals with hiding the differences in data representation and invocation mechanisms (how you access it), not specifically where it is stored.", "isCorrect": false },
+                        { "text": "Replication Transparency", "rationale": "Replication transparency hides the fact that multiple copies of a resource exist, but the prompt focuses on the user not knowing the specific physical place of storage.", "isCorrect": false },
+                        { "text": "Failure Transparency", "rationale": "Failure transparency conceals faults and recovery processes, which is different from concealing the geographical location of a functioning resource.", "isCorrect": false }
+                    ],
+                    "hint": "The key here is that the user is unaware of the 'where' regarding the resource."
+                },
+                {
+                    "question": "In a distributed system, a client sends a request to a server and waits. After 5 seconds, no response arrives. The client cannot determine if the server crashed or if the network is simply congested. This uncertainty is characteristic of which interaction model?",
+                    "answerOptions": [
+                        { "text": "Asynchronous Model", "rationale": "In an asynchronous system, there are no bounds on message delivery times or processing speeds, making it impossible to distinguish between a slow network and a failed process.", "isCorrect": true },
+                        { "text": "Synchronous Model", "rationale": "A synchronous model assumes known upper bounds on execution and transmission times, which would allow the client to definitely conclude a failure has occurred after a timeout.", "isCorrect": false },
+                        { "text": "Physical Model", "rationale": "The physical model deals with the hardware and network topology, but the specific uncertainty about timing and failure detection is defined by the interaction model.", "isCorrect": false },
+                        { "text": "Architectural Model", "rationale": "Architectural models define the placement of components (like client-server), not the timing assumptions regarding communication and failure detection.", "isCorrect": false }
+                    ],
+                    "hint": "This model assumes there is no global clock and no predictable limit on how long a message takes to travel."
+                },
+                {
+                    "question": "You are administering a remote Linux server and need to install a new security patch. You enter the command `sudo apt update`. Based on this package manager, which Linux distribution family is this server running?",
+                    "answerOptions": [
+                        { "text": "Debian Family", "rationale": "The `apt` (Advanced Package Tool) command is the standard package management interface for Debian and its derivatives, such as Ubuntu.", "isCorrect": true },
+                        { "text": "Red Hat Family", "rationale": "Red Hat-based distributions, such as RHEL, Fedora, and CentOS, typically use `dnf` or the older `yum` for package management, not `apt`.", "isCorrect": false },
+                        { "text": "Arch Linux", "rationale": "Arch Linux uses the `pacman` package manager, which has a different command syntax entirely.", "isCorrect": false },
+                        { "text": "Alpine Linux", "rationale": "Alpine Linux uses `apk` for package management, which is distinct from the Debian `apt` system.", "isCorrect": false }
+                    ],
+                    "hint": "This family includes popular distributions like Ubuntu and Linux Mint."
+                },
+                {
+                    "question": "You have been navigating through deep directory structures in the terminal and have lost track of exactly where you are. Which command should you run to display the full absolute path of your current location?",
+                    "answerOptions": [
+                        { "text": "pwd", "rationale": "`pwd` stands for 'print working directory' and outputs the absolute path of the directory you are currently in.", "isCorrect": true },
+                        { "text": "ls -la", "rationale": "`ls -la` lists the contents of the current directory, including hidden files, but does not explicitly print the full path of the directory itself as its primary output.", "isCorrect": false },
+                        { "text": "whoami", "rationale": "`whoami` displays the username of the current user, not the directory location.", "isCorrect": false },
+                        { "text": "cd ..", "rationale": "`cd ..` is a command to move up one level in the directory tree, it changes your location rather than telling you where you currently are.", "isCorrect": false }
+                    ],
+                    "hint": "The command stands for 'Print Working Directory'."
+                },
+                {
+                    "question": "You have a configuration file named `config.old` and you want to rename it to `config.new`. Which command performs this action?",
+                    "answerOptions": [
+                        { "text": "mv config.old config.new", "rationale": "The `mv` (move) command is used both for moving files to different directories and for renaming files within the same directory.", "isCorrect": true },
+                        { "text": "cp config.old config.new", "rationale": "`cp` copies the file, creating a duplicate named `config.new` while leaving `config.old` in place, rather than renaming it.", "isCorrect": false },
+                        { "text": "rm config.old config.new", "rationale": "`rm` removes files; running this would attempt to delete both `config.old` and `config.new` (if it existed), which is destructive.", "isCorrect": false },
+                        { "text": "touch config.old config.new", "rationale": "`touch` updates the timestamps of files or creates empty ones if they don't exist; it does not rename content.", "isCorrect": false }
+                    ],
+                    "hint": "In Linux, renaming a file is technically moving it to a new name."
+                },
+                {
+                    "question": "A system alert warns you that the server is running out of storage space. Which command allows you to view the available disk space on all mounted filesystems?",
+                    "answerOptions": [
+                        { "text": "df -h", "rationale": "`df` stands for 'disk free' and the `-h` flag makes the output human-readable (e.g., in GB/MB), showing usage for all mounted filesystems.", "isCorrect": true },
+                        { "text": "free -h", "rationale": "`free` displays the amount of free and used system memory (RAM), not persistent disk storage.", "isCorrect": false },
+                        { "text": "top", "rationale": "`top` displays real-time process information and CPU usage, not disk storage capacity.", "isCorrect": false },
+                        { "text": "ps aux", "rationale": "`ps aux` lists all currently running processes, which helps identifying CPU/RAM hogs but not disk space usage.", "isCorrect": false }
+                    ],
+                    "hint": "Think of 'Disk Free'."
+                },
+                {
+                    "question": "You are troubleshooting a web server that keeps crashing. According to the Filesystem Hierarchy Standard (FHS), in which directory should you look to find the system and application history files to diagnose the error?",
+                    "answerOptions": [
+                        { "text": "/var/log", "rationale": "The `/var/log` directory is the standard location for log files, which record system events, errors, and application history needed for troubleshooting.", "isCorrect": true },
+                        { "text": "/etc", "rationale": "The `/etc` directory is reserved for system configuration files, not the ongoing records of system activity or errors.", "isCorrect": false },
+                        { "text": "/bin", "rationale": "The `/bin` directory contains essential user binaries (executable programs) required for booting and repairing the system.", "isCorrect": false },
+                        { "text": "/tmp", "rationale": "The `/tmp` directory is for temporary files that are often deleted upon reboot, making it an unreliable place for persistent error logs.", "isCorrect": false }
+                    ],
+                    "hint": "This directory contains files that grow in size over time (variable data) specifically recording events."
+                },
+                {
+                    "question": "You need to permanently change the DNS settings for your server. In which directory would you expect to find the configuration files to edit?",
+                    "answerOptions": [
+                        { "text": "/etc", "rationale": "The `/etc` directory is the standard location for host-specific system-wide configuration files.", "isCorrect": true },
+                        { "text": "/home", "rationale": "The `/home` directory contains personal user files and documents, not system-wide network configurations.", "isCorrect": false },
+                        { "text": "/usr/bin", "rationale": "The `/usr/bin` directory contains executable programs and applications, not text-based configuration files.", "isCorrect": false },
+                        { "text": "/dev", "rationale": "The `/dev` directory contains device files representing hardware components, not configuration settings.", "isCorrect": false }
+                    ],
+                    "hint": "This directory name is short for 'etcetera', implying all the miscellaneous system configs go here."
+                }
+            ]
+        };
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let hasAnswered = false;
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function loadQuestion() {
+            hasAnswered = false;
+            const q = quizData.questions[currentQuestionIndex];
+            
+            // Update Progress
+            const progress = ((currentQuestionIndex) / quizData.questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('question-number').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.questions.length}`;
+            document.getElementById('score-display').innerText = `Score: ${score}`;
+            
+            // Set Text
+            document.getElementById('question-text').innerText = q.question;
+            document.getElementById('hint-text').innerText = q.hint;
+            document.getElementById('hint-text').classList.add('hidden');
+            document.getElementById('feedback').classList.add('hidden');
+            
+            // Build Options
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            // Shuffle a copy of options
+            const shuffledOptions = shuffle([...q.answerOptions]);
+            
+            shuffledOptions.forEach((option, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "option-transition w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 flex items-center justify-between group fade-in";
+                btn.style.animationDelay = `${idx * 0.1}s`;
+                btn.innerHTML = `
+                    <span class="font-medium text-slate-700">${option.text}</span>
+                    <div class="status-icon opacity-0">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"></svg>
+                    </div>
+                `;
+                btn.onclick = () => selectOption(btn, option);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectOption(btn, option) {
+            if (hasAnswered) return;
+            hasAnswered = true;
+
+            const buttons = document.querySelectorAll('#options-container button');
+            const feedbackEl = document.getElementById('feedback');
+            const rationaleEl = document.getElementById('rationale-text');
+            
+            // Reveal correctness
+            if (option.isCorrect) {
+                score++;
+                btn.classList.add('border-emerald-500', 'bg-emerald-50');
+                btn.querySelector('.status-icon').classList.add('opacity-100', 'text-emerald-600');
+                btn.querySelector('.status-icon svg').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />';
+                feedbackEl.classList.add('bg-emerald-50', 'border-emerald-200');
+                rationaleEl.classList.add('text-emerald-800');
+            } else {
+                btn.classList.add('border-rose-500', 'bg-rose-50');
+                btn.querySelector('.status-icon').classList.add('opacity-100', 'text-rose-600');
+                btn.querySelector('.status-icon svg').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+                feedbackEl.classList.add('bg-rose-50', 'border-rose-200');
+                rationaleEl.classList.add('text-rose-800');
+
+                // Find and highlight correct answer
+                buttons.forEach(b => {
+                    const btnText = b.querySelector('span').innerText;
+                    const originalOption = quizData.questions[currentQuestionIndex].answerOptions.find(o => o.text === btnText);
+                    if (originalOption.isCorrect) {
+                        b.classList.add('border-emerald-500', 'bg-emerald-50/50');
+                    }
+                });
+            }
+
+            rationaleEl.innerText = option.rationale;
+            feedbackEl.classList.remove('hidden');
+            document.getElementById('score-display').innerText = `Score: ${score}`;
+        }
+
+        document.getElementById('next-btn').onclick = () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        };
+
+        function showResults() {
+            document.getElementById('progress-bar').style.width = `100%`;
+            document.getElementById('question-view').classList.add('hidden');
+            document.getElementById('results-view').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score}/${quizData.questions.length}`;
+        }
+
+        document.getElementById('hint-toggle').onclick = () => {
+            document.getElementById('hint-text').classList.toggle('hidden');
+        };
+
+        // Initialize
+        loadQuestion();
+    </script>
+</body>
+</html>
+
+
+
