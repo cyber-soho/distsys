@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Tool: Name & Directory Services</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        /* 3D Flip Effect for Flashcards */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Smooth tab transitions */
+        .tab-content {
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        .hidden-tab {
+            display: none;
+            opacity: 0;
+        }
+        
+        .active-tab {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm z-10">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>
+                Distributed Naming Services
+            </h1>
+            <div class="text-sm text-gray-500">Module 02 Study Tool</div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="max-w-4xl mx-auto flex">
+            <button onclick="switchTab('flashcards')" id="tab-flashcards" class="flex-1 py-4 text-center font-medium text-blue-600 border-b-2 border-blue-600 focus:outline-none transition-colors hover:bg-gray-50">
+                <i class="fas fa-layer-group mr-2"></i>Flashcards
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-quiz" class="flex-1 py-4 text-center font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 focus:outline-none transition-colors hover:bg-gray-50">
+                <i class="fas fa-question-circle mr-2"></i>Practice Quiz
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 md:p-8">
+        <div class="max-w-3xl mx-auto">
+            
+            <!-- FLASHCARDS SECTION -->
+            <div id="view-flashcards" class="active-tab tab-content">
+                <!-- Progress & Controls -->
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-gray-500 font-medium" id="fc-progress">Card 1 of 25</span>
+                    <button onclick="shuffleFlashcards()" class="text-sm text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-random mr-1"></i> Shuffle
+                    </button>
+                </div>
+
+                <!-- Card Container -->
+                <div class="relative w-full h-96 perspective-1000 cursor-pointer group mb-8" onclick="flipCard()">
+                    <div id="flashcard-inner" class="relative w-full h-full text-center transition-transform duration-500 transform-style-3d shadow-xl rounded-2xl">
+                        
+                        <!-- Front -->
+                        <div class="absolute w-full h-full bg-white rounded-2xl flex flex-col items-center justify-center p-8 backface-hidden border border-gray-200">
+                            <span class="absolute top-4 left-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Term</span>
+                            <h2 id="fc-front" class="text-3xl font-bold text-gray-800">Name Resolution</h2>
+                            <p class="text-sm text-gray-400 mt-4">(Click to flip)</p>
+                        </div>
+
+                        <!-- Back -->
+                        <div class="absolute w-full h-full bg-blue-50 rounded-2xl flex flex-col items-center justify-center p-8 backface-hidden rotate-y-180 border border-blue-200">
+                            <span class="absolute top-4 left-4 text-xs font-bold text-blue-400 uppercase tracking-widest">Definition</span>
+                            <p id="fc-back" class="text-xl text-blue-900 leading-relaxed">The process of converting a human-friendly name into a machine-friendly identifier (like an IP address) to locate a resource.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex justify-center space-x-4">
+                    <button onclick="prevCard()" class="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-full hover:bg-gray-50 shadow-sm transition-all active:scale-95">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+                    <button onclick="nextCard()" class="bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700 shadow-md transition-all active:scale-95 font-semibold">
+                        Next Card <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- QUIZ SECTION -->
+            <div id="view-quiz" class="hidden-tab tab-content">
+                <!-- Quiz Header -->
+                <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
+                    <div>
+                        <span class="text-sm text-gray-500 block">Question</span>
+                        <span class="text-xl font-bold text-gray-800" id="quiz-progress">1 / 10</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm text-gray-500 block">Score</span>
+                        <span class="text-xl font-bold text-blue-600" id="quiz-score">0</span>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div id="quiz-card" class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-6 md:p-8">
+                        <h3 id="quiz-question" class="text-xl font-bold text-gray-900 mb-2">Question Text Here</h3>
+                        <p id="quiz-hint" class="text-sm text-yellow-600 bg-yellow-50 p-2 rounded inline-block mt-2 hidden">
+                            <i class="fas fa-lightbulb mr-1"></i> <span id="quiz-hint-text"></span>
+                        </p>
+                    </div>
+
+                    <!-- Options -->
+                    <div id="quiz-options" class="bg-gray-50 p-6 md:p-8 space-y-3 border-t border-gray-200">
+                        <!-- Options injected by JS -->
+                    </div>
+
+                    <!-- Feedback Area (Hidden initially) -->
+                    <div id="quiz-feedback" class="hidden p-6 border-t border-gray-200 bg-blue-50 animate-fade-in">
+                        <div class="flex items-start">
+                            <div id="feedback-icon" class="flex-shrink-0 mt-1 mr-3"></div>
+                            <div>
+                                <h4 id="feedback-title" class="font-bold text-lg"></h4>
+                                <p id="feedback-rationale" class="text-gray-700 mt-1"></p>
+                                <button onclick="nextQuestion()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                    Next Question <i class="fas fa-arrow-right ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz Completion View -->
+                <div id="quiz-results" class="hidden text-center bg-white rounded-xl shadow-lg p-12">
+                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-trophy text-4xl text-blue-600"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Quiz Complete!</h2>
+                    <p class="text-gray-600 mb-8">You scored <span id="final-score" class="font-bold text-blue-600 text-xl"></span> out of <span id="total-questions"></span></p>
+                    <button onclick="resetQuiz()" class="bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700 shadow-md transition-all">
+                        <i class="fas fa-redo mr-2"></i> Retake Quiz
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- DATA ---
+        
+        const flashcards = [
+            { front: "Name Resolution", back: "The process of converting a human-friendly name into a machine-friendly identifier (like an IP address) to locate a resource." },
+            { front: "Human-Friendly Names", back: "Names designed for easy human memory and use, such as 'www.google.com' or 'john.doe@university.edu'." },
+            { front: "Machine-Friendly Identifiers", back: "Identifiers optimized for fast processing and routing, such as IP addresses (192.168.1.1) or MAC addresses." },
+            { front: "Pure Identifiers", back: "Unique references that remain constant even if the resource moves or changes location, such as a UUID or ISBN." },
+            { front: "Five Properties of Good Naming Systems", back: "Uniqueness, Scalability, Persistence, Efficiency, and Human Readability." },
+            { front: "DNS (Domain Name System)", back: "A hierarchical, distributed database that translates domain names into IP addresses, acting as the 'phonebook' of the internet." },
+            { front: "DNS Root Level", back: "The top of the DNS hierarchy, represented by a dot (.), and served by 13 sets of root servers worldwide." },
+            { front: "Top-Level Domains (TLDs)", back: "The highest level of domain names below the root, including generic types (.com, .org) and country codes (.uk, .jp)." },
+            { front: "DNS Zone", back: "A portion of the DNS namespace managed by a specific organization or administrator, which allows for delegation of authority." },
+            { front: "DNS A Record", back: "A DNS record that maps a domain name to an IPv4 address." },
+            { front: "DNS AAAA Record", back: "A DNS record that maps a domain name to an IPv6 address." },
+            { front: "DNS CNAME Record", back: "Canonical Name record; creates an alias that maps one domain name to another (e.g., blog.example.com to example.com)." },
+            { front: "DNS MX Record", back: "Mail Exchange record; specifies the mail servers responsible for accepting email on behalf of a domain." },
+            { front: "Recursive Resolver", back: "A server (usually provided by an ISP) that performs the full sequence of queries to Root, TLD, and Authoritative servers to resolve a name for a client." },
+            { front: "TTL (Time To Live)", back: "A value in seconds assigned to a DNS record that determines how long it can be cached before it must be refreshed." },
+            { front: "Directory Service", back: "A centralized database system that stores and organizes information about network resources (users, computers, policies) for management and authentication." },
+            { front: "LDAP (Lightweight Directory Access Protocol)", back: "The industry-standard protocol used to access and manage directory services over IP networks." },
+            { front: "Directory Information Tree (DIT)", back: "The hierarchical tree structure used by LDAP to organize entries, similar to a file system hierarchy." },
+            { front: "Distinguished Name (DN)", back: "The unique identifier for an entry in an LDAP directory, identifying its exact position in the tree (e.g., cn=John,ou=People,dc=edu)." },
+            { front: "LDAP Bind Operation", back: "The operation used to authenticate a client to the LDAP directory server." },
+            { front: "Single Sign-On (SSO)", back: "A capability enabled by directory services where one set of credentials works across multiple systems." },
+            { front: "/etc/hosts", back: "A local Linux configuration file containing static mappings of hostnames to IP addresses; it is usually checked before DNS." },
+            { front: "/etc/resolv.conf", back: "A Linux configuration file that specifies which DNS servers the system should contact for name resolution." },
+            { front: "/etc/nsswitch.conf", back: "The 'Name Service Switch' file that determines the order and sources (e.g., files, dns) used for name resolution." },
+            { front: "127.0.0.1", back: "The IPv4 loopback address, referring to the local computer itself (localhost)." }
+        ];
+
+        const quizQuestions = [
+            {
+                question: "A student ID number that remains assigned to a specific student regardless of their dorm room, major, or year of study best represents which type of naming?",
+                hint: "Think about the type of name that serves as a unique reference that never changes, even if the resource moves.",
+                options: [
+                    { text: "Pure Identifier", rationale: "Pure identifiers are designed to be persistent references that do not change even if the resource's location or other attributes change.", isCorrect: true },
+                    { text: "Human-Friendly Name", rationale: "Human-friendly names are designed for readability, not necessarily strict persistence.", isCorrect: false },
+                    { text: "Machine-Friendly Identifier", rationale: "Machine-friendly identifiers (like IP) are optimized for routing, not permanent identity.", isCorrect: false },
+                    { text: "Resolvable Alias", rationale: "An alias is a secondary name pointing to a canonical name, not a distinct identifier category.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You are configuring a new email server for your organization. Which DNS record type is specifically required to ensure external mail servers know where to deliver emails addressed to your domain?",
+                hint: "This record type acts as a signpost specifically for incoming electronic mail.",
+                options: [
+                    { text: "MX", rationale: "MX (Mail Exchange) records specify the mail servers responsible for accepting email on behalf of a domain.", isCorrect: true },
+                    { text: "A", rationale: "A records map hostnames to IPs but don't designate mail handling roles.", isCorrect: false },
+                    { text: "NS", rationale: "NS records delegate authority but don't handle email routing.", isCorrect: false },
+                    { text: "CNAME", rationale: "CNAME records create aliases, not mail destinations.", isCorrect: false }
+                ]
+            },
+            {
+                question: "In the context of DNS architecture, what constitutes a 'Zone'?",
+                hint: "Consider how administrative control is divided up in the DNS hierarchy.",
+                options: [
+                    { text: "A portion of the DNS namespace managed by a specific organization or administrator.", rationale: "A zone allows for delegation of administrative responsibility (like google.com).", isCorrect: true },
+                    { text: "The physical server hardware that stores the root directory.", rationale: "A zone is a logical administrative boundary, not hardware.", isCorrect: false },
+                    { text: "The cache of recently resolved domain names.", rationale: "That is a cache, not a zone.", isCorrect: false },
+                    { text: "The encrypted channel established between a resolver and a root server.", rationale: "That relates to transport security, not namespace structure.", isCorrect: false }
+                ]
+            },
+            {
+                question: "If a Linux system's `/etc/nsswitch.conf` file contains the line `hosts: files dns`, what happens when a user attempts to ping a hostname that exists in both `/etc/hosts` and the public DNS?",
+                hint: "The configuration defines a specific order of operations; once a match is found, the search concludes.",
+                options: [
+                    { text: "The system uses the IP address from /etc/hosts and stops there.", rationale: "The order is strict; 'files' is listed first, so it checks /etc/hosts and returns the result immediately.", isCorrect: true },
+                    { text: "The system queries DNS to verify the accuracy of the local file.", rationale: "It does not cross-reference; it stops at the first match.", isCorrect: false },
+                    { text: "The system ignores the local file and prefers the authoritative DNS record.", rationale: "This would only happen if the order was 'dns files'.", isCorrect: false },
+                    { text: "The system returns a conflict error.", rationale: "It simply returns the first match found.", isCorrect: false }
+                ]
+            },
+            {
+                question: "To minimize the time users spend directed to an old IP after a server move, what change should be made to the DNS record beforehand?",
+                hint: "This setting controls how long a piece of information is 'remembered' by other computers.",
+                options: [
+                    { text: "Lower the TTL (Time To Live) value.", rationale: "Lowering TTL forces resolvers to discard cached records more frequently, catching the update sooner.", isCorrect: true },
+                    { text: "Increase the TTL value.", rationale: "Increasing TTL would make the old IP persist longer in caches.", isCorrect: false },
+                    { text: "Change the record type from A to CNAME.", rationale: "Record type doesn't affect cache duration.", isCorrect: false },
+                    { text: "Update the NS record.", rationale: "Changing nameservers is slow and complex; TTL is the direct control for caching.", isCorrect: false }
+                ]
+            },
+            {
+                question: "In the LDAP DN `cn=Jane Doe,ou=People,dc=university,dc=edu`, which segment represents the most specific object (the leaf node)?",
+                hint: "LDAP addresses are often written in reverse order of hierarchy.",
+                options: [
+                    { text: "cn=Jane Doe", rationale: "The hierarchy is read left-to-right, starting with the specific object (Common Name).", isCorrect: true },
+                    { text: "ou=People", rationale: "This is the container (Organizational Unit).", isCorrect: false },
+                    { text: "dc=university", rationale: "This is the organization domain.", isCorrect: false },
+                    { text: "dc=edu", rationale: "This is the top-level domain component.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Which configuration file is responsible for telling a Linux system which external server IP addresses to contact for DNS queries?",
+                hint: "The name of this file is short for 'resolver configuration'.",
+                options: [
+                    { text: "/etc/resolv.conf", rationale: "This file specifically configures the DNS resolver IPs.", isCorrect: true },
+                    { text: "/etc/hosts", rationale: "This handles local static mappings, not external DNS server config.", isCorrect: false },
+                    { text: "/etc/nsswitch.conf", rationale: "This determines lookup order, not server addresses.", isCorrect: false },
+                    { text: "/etc/hostname", rationale: "This sets the local machine name.", isCorrect: false }
+                ]
+            },
+            {
+                question: "What is the primary function of a Directory Service like LDAP compared to DNS?",
+                hint: "Think 'Yellow Pages' (detailed info) vs 'White Pages' (just numbers).",
+                options: [
+                    { text: "To store and organize comprehensive information about network resources for management.", rationale: "Directory services act as a centralized database for users, groups, and policies.", isCorrect: true },
+                    { text: "To route data packets based on MAC addresses.", rationale: "That is a switch/router function.", isCorrect: false },
+                    { text: "To provide a temporary web cache.", rationale: "That is a proxy function.", isCorrect: false },
+                    { text: "To assign IP addresses via DHCP.", rationale: "That is a DHCP function.", isCorrect: false }
+                ]
+            },
+            {
+                question: "When a browser resolves a URL, which cache is checked *first*?",
+                hint: "The search starts as close to the application as possible.",
+                options: [
+                    { text: "Browser Cache", rationale: "The application checks its own memory first to avoid OS or network calls.", isCorrect: true },
+                    { text: "OS Cache", rationale: "Checked only if browser cache misses.", isCorrect: false },
+                    { text: "ISP Resolver Cache", rationale: "Checked only if local caches miss.", isCorrect: false },
+                    { text: "Root Server", rationale: "Checked near the end of the process.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Which property of a naming system ensures it can handle billions of names without slowing down?",
+                hint: "This concept is about growing without breaking.",
+                options: [
+                    { text: "Scalability", rationale: "Scalability is the capability to handle growth in workload without performance degradation.", isCorrect: true },
+                    { text: "Persistence", rationale: "Persistence relates to stability over time, not volume.", isCorrect: false },
+                    { text: "Uniqueness", rationale: "Uniqueness prevents duplicates but doesn't guarantee efficiency at scale.", isCorrect: false },
+                    { text: "Readability", rationale: "Readability is for humans, not system performance.", isCorrect: false }
+                ]
+            }
+        ];
+
+        // --- FLASHCARD LOGIC ---
+        let currentCardIndex = 0;
+        let isFlipped = false;
+
+        function renderCard() {
+            const card = flashcards[currentCardIndex];
+            document.getElementById('fc-front').innerText = card.front;
+            document.getElementById('fc-back').innerText = card.back;
+            document.getElementById('fc-progress').innerText = `Card ${currentCardIndex + 1} of ${flashcards.length}`;
+            
+            // Reset flip state
+            isFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('rotate-y-180');
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            const inner = document.getElementById('flashcard-inner');
+            if (isFlipped) {
+                inner.classList.add('rotate-y-180');
+            } else {
+                inner.classList.remove('rotate-y-180');
+            }
+        }
+
+        function nextCard() {
+            if (currentCardIndex < flashcards.length - 1) {
+                currentCardIndex++;
+                renderCard();
+            } else {
+                currentCardIndex = 0; // Loop back
+                renderCard();
+            }
+        }
+
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                renderCard();
+            } else {
+                currentCardIndex = flashcards.length - 1; // Loop to end
+                renderCard();
+            }
+        }
+
+        function shuffleFlashcards() {
+            for (let i = flashcards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [flashcards[i], flashcards[j]] = [flashcards[j], flashcards[i]];
+            }
+            currentCardIndex = 0;
+            renderCard();
+        }
+
+        // --- QUIZ LOGIC ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questionAnswered = false;
+
+        function renderQuestion() {
+            const q = quizQuestions[currentQuestionIndex];
+            questionAnswered = false;
+            
+            document.getElementById('quiz-question').innerText = q.question;
+            document.getElementById('quiz-progress').innerText = `${currentQuestionIndex + 1} / ${quizQuestions.length}`;
+            
+            // Hint
+            const hintEl = document.getElementById('quiz-hint');
+            if (q.hint) {
+                document.getElementById('quiz-hint-text').innerText = q.hint;
+                hintEl.classList.remove('hidden');
+            } else {
+                hintEl.classList.add('hidden');
+            }
+
+            // Options
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            // Shuffle options for display
+            const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-lg border border-gray-200 bg-white hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm flex items-center group";
+                btn.onclick = () => handleAnswer(opt, btn, shuffledOptions);
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center mr-4 font-bold text-sm group-hover:bg-blue-200 group-hover:text-blue-700">${String.fromCharCode(65 + index)}</span>
+                    <span class="text-gray-700 font-medium">${opt.text}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            // Hide Feedback
+            document.getElementById('quiz-feedback').classList.add('hidden');
+        }
+
+        function handleAnswer(selectedOpt, btnElement, allOptions) {
+            if (questionAnswered) return;
+            questionAnswered = true;
+
+            const feedbackEl = document.getElementById('quiz-feedback');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackRationale = document.getElementById('feedback-rationale');
+            const feedbackIcon = document.getElementById('feedback-icon');
+
+            // Disable all buttons
+            const buttons = document.getElementById('quiz-options').querySelectorAll('button');
+            buttons.forEach(b => {
+                b.disabled = true;
+                b.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+
+            feedbackEl.classList.remove('hidden');
+            
+            if (selectedOpt.isCorrect) {
+                score++;
+                document.getElementById('quiz-score').innerText = score;
+                
+                // Style selection
+                btnElement.classList.remove('bg-white', 'border-gray-200', 'opacity-50');
+                btnElement.classList.add('bg-green-100', 'border-green-500', 'text-green-900');
+                
+                // Feedback Content
+                feedbackEl.className = "p-6 border-t border-gray-200 bg-green-50 animate-fade-in";
+                feedbackIcon.innerHTML = '<i class="fas fa-check-circle text-2xl text-green-600"></i>';
+                feedbackTitle.innerText = "Correct!";
+                feedbackTitle.className = "font-bold text-lg text-green-800";
+            } else {
+                // Style selection (Incorrect)
+                btnElement.classList.remove('bg-white', 'border-gray-200', 'opacity-50');
+                btnElement.classList.add('bg-red-100', 'border-red-500', 'text-red-900');
+
+                // Highlight correct one
+                /* Optional: Find correct button and make it green
+                const correctText = allOptions.find(o => o.isCorrect).text;
+                // implementation skipped for cleaner UI, focusing on rationale
+                */
+
+                // Feedback Content
+                feedbackEl.className = "p-6 border-t border-gray-200 bg-red-50 animate-fade-in";
+                feedbackIcon.innerHTML = '<i class="fas fa-times-circle text-2xl text-red-600"></i>';
+                feedbackTitle.innerText = "Incorrect";
+                feedbackTitle.className = "font-bold text-lg text-red-800";
+            }
+
+            feedbackRationale.innerText = selectedOpt.rationale;
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < quizQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-card').classList.add('hidden');
+            document.getElementById('quiz-results').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('total-questions').innerText = quizQuestions.length;
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('quiz-score').innerText = "0";
+            document.getElementById('quiz-results').classList.add('hidden');
+            document.getElementById('quiz-card').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        // --- TAB LOGIC ---
+        function switchTab(tabId) {
+            // Update Tab Buttons
+            const tabs = ['flashcards', 'quiz'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tabId) {
+                    btn.classList.add('text-blue-600', 'border-blue-600');
+                    btn.classList.remove('text-gray-500', 'border-transparent');
+                } else {
+                    btn.classList.remove('text-blue-600', 'border-blue-600');
+                    btn.classList.add('text-gray-500', 'border-transparent');
+                }
+            });
+
+            // Update Content
+            const views = ['view-flashcards', 'view-quiz'];
+            views.forEach(v => {
+                const el = document.getElementById(v);
+                if (v === `view-${tabId}`) {
+                    el.classList.remove('hidden-tab');
+                    setTimeout(() => el.classList.add('active-tab'), 10); // Small delay for fade
+                } else {
+                    el.classList.remove('active-tab');
+                    el.classList.add('hidden-tab');
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCard();
+            renderQuestion();
+        });
+
+    </script>
+</body>
+</html>
+
+
+

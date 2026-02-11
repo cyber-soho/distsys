@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 02: The Invisible Infrastructure</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Font Awesome (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chosen Palette: Warm Neutrals & Tech Accents -->
+    <!-- Background: #fdfbf7 (Warm Off-White) -->
+    <!-- Primary Text: #1f2937 (Slate 800) -->
+    <!-- Accent Blue: #3b82f6 (Blue 500) -->
+    <!-- Accent Sage: #10b981 (Emerald 500) -->
+    
+    <style>
+        body {
+            background-color: #fdfbf7;
+            color: #1f2937;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        /* Custom Utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        /* Tree Diagram CSS (No SVG) */
+        .tree ul {
+            padding-top: 20px; position: relative;
+            transition: all 0.5s;
+            display: flex;
+            justify-content: center;
+        }
+        .tree li {
+            float: left; text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 20px 5px 0 5px;
+            transition: all 0.5s;
+        }
+        /* Connectors */
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute; top: 0; right: 50%;
+            border-top: 2px solid #cbd5e1;
+            width: 50%; height: 20px;
+        }
+        .tree li::after {
+            right: auto; left: 50%;
+            border-left: 2px solid #cbd5e1;
+        }
+        .tree li:only-child::after, .tree li:only-child::before {
+            display: none;
+        }
+        .tree li:only-child { padding-top: 0; }
+        .tree li:first-child::before, .tree li:last-child::after {
+            border: 0 none;
+        }
+        .tree li:last-child::before{
+            border-right: 2px solid #cbd5e1;
+            border-radius: 0 5px 0 0;
+        }
+        .tree li:first-child::after{
+            border-radius: 5px 0 0 0;
+        }
+        .tree ul ul::before{
+            content: '';
+            position: absolute; top: 0; left: 50%;
+            border-left: 2px solid #cbd5e1;
+            width: 0; height: 20px;
+        }
+        /* Node Styling */
+        .tree-node {
+            border: 2px solid #e2e8f0;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #475569;
+            font-family: monospace;
+            font-size: 14px;
+            display: inline-block;
+            border-radius: 5px;
+            transition: all 0.3s;
+            background: white;
+            cursor: pointer;
+        }
+        .tree-node:hover, .tree-node.active {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e40af;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Linux Terminal Simulation */
+        .terminal {
+            background-color: #1e293b;
+            color: #d1d5db;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .terminal-header {
+            background-color: #0f172a;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+        }
+        .dot { height: 12px; width: 12px; border-radius: 50%; margin-right: 6px; }
+        .dot-red { background-color: #ef4444; }
+        .dot-yellow { background-color: #f59e0b; }
+        .dot-green { background-color: #10b981; }
+
+        .nav-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .pulse {
+            animation: pulse-ring 2s infinite;
+        }
+        
+        .hidden { display: none; }
+    </style>
+    <!-- Application Structure Plan:
+        The app is structured into 5 logical modules matching the "Lessons" in the report, but presented as a dashboard.
+        1. "The Concept": Introduction & Types of Names. Uses Card sorting interactions.
+        2. "DNS Architecture": Visualizing the hierarchy and properties. Uses Chart.js Radar & Bar charts.
+        3. "Resolution Journey": An interactive stepper to simulate the 8-step DNS lookup.
+        4. "Directory Services": An interactive LDAP Tree explorer to visualize DIT and DNs.
+        5. "Linux Lab": A simulated terminal environment to explore config files.
+        WHY: This structure moves from abstract (concepts) to concrete (files), allowing users to build a mental model before seeing the implementation details.
+    -->
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-network-wired text-blue-600 text-xl mr-3"></i>
+                    <span class="font-bold text-gray-900 text-lg">CS Module 02: Naming Services</span>
+                </div>
+                <div class="hidden md:flex space-x-4 items-center" id="nav-menu">
+                    <button onclick="switchSection('intro')" class="nav-btn active px-3 py-2 rounded-md text-sm font-medium transition-colors">Fundamentals</button>
+                    <button onclick="switchSection('dns')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">DNS System</button>
+                    <button onclick="switchSection('ldap')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">Directory (LDAP)</button>
+                    <button onclick="switchSection('linux')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors">Linux Lab</button>
+                </div>
+                <!-- Mobile menu button placeholder -->
+                <div class="md:hidden flex items-center">
+                   <button onclick="toggleMobileMenu()" class="text-gray-600"><i class="fas fa-bars"></i></button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200 px-4 pt-2 pb-4 space-y-2">
+            <button onclick="switchSection('intro')" class="block w-full text-left px-3 py-2 rounded-md font-medium text-gray-900 bg-gray-50">Fundamentals</button>
+            <button onclick="switchSection('dns')" class="block w-full text-left px-3 py-2 rounded-md font-medium text-gray-600">DNS System</button>
+            <button onclick="switchSection('ldap')" class="block w-full text-left px-3 py-2 rounded-md font-medium text-gray-600">Directory (LDAP)</button>
+            <button onclick="switchSection('linux')" class="block w-full text-left px-3 py-2 rounded-md font-medium text-gray-600">Linux Lab</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- SECTION 1: INTRODUCTION & FUNDAMENTALS -->
+        <section id="intro" class="section-view space-y-12">
+            <!-- Hero -->
+            <div class="text-center max-w-3xl mx-auto mb-12">
+                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl mb-4">The Invisible Magic</h1>
+                <p class="text-xl text-gray-600">
+                    How do computers find each other in a network of billions? Explore the "Phonebook of the Internet" and the systems that manage digital identity.
+                </p>
+                <div class="mt-8 flex justify-center space-x-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-xs text-left">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-search text-blue-500 mr-2"></i>
+                            <span class="font-bold text-blue-900">The Problem</span>
+                        </div>
+                        <p class="text-sm text-blue-800">Without naming, you'd have to ask 10,000 people "Are you Sarah?" to find one person.</p>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 max-w-xs text-left">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <span class="font-bold text-green-900">The Solution</span>
+                        </div>
+                        <p class="text-sm text-green-800">Directory Services say "Sarah is in Room 3, Table 7". Fast, efficient, organized.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The 3 Types of Names Interaction -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 md:p-8">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">The Three Types of Names</h2>
+                        <p class="text-gray-600 mb-6">
+                            Naming identifies resources for both humans and machines. Click the types below to see examples and properties.
+                        </p>
+                        <div class="space-y-3">
+                            <button onclick="showNameType('human')" class="name-type-btn w-full text-left p-4 rounded-xl border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-50 transition-all group active-name-type" data-type="human">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-lg text-gray-800">1. Human-Friendly</span>
+                                    <i class="fas fa-user text-blue-400 group-hover:text-blue-600"></i>
+                                </div>
+                            </button>
+                            <button onclick="showNameType('machine')" class="name-type-btn w-full text-left p-4 rounded-xl border-2 border-transparent bg-gray-50 hover:bg-gray-100 hover:border-gray-300 transition-all group" data-type="machine">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-lg text-gray-800">2. Machine-Friendly</span>
+                                    <i class="fas fa-robot text-gray-400 group-hover:text-gray-600"></i>
+                                </div>
+                            </button>
+                            <button onclick="showNameType('pure')" class="name-type-btn w-full text-left p-4 rounded-xl border-2 border-transparent bg-gray-50 hover:bg-gray-100 hover:border-gray-300 transition-all group" data-type="pure">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-lg text-gray-800">3. Pure Identifiers</span>
+                                    <i class="fas fa-fingerprint text-purple-400 group-hover:text-purple-600"></i>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Content Panel -->
+                    <div class="bg-slate-50 rounded-xl p-6 border border-slate-200 flex flex-col justify-center min-h-[300px]" id="name-details-panel">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart: Properties of Good Naming -->
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="md:col-span-1">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">What makes a "Good" Name?</h3>
+                    <p class="text-sm text-gray-600 mb-4">A robust naming system must balance five conflicting properties. DNS excels at scalability but relies on strict hierarchy for uniqueness.</p>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-center"><span class="w-3 h-3 bg-red-400 rounded-full mr-2"></span>Uniqueness (No duplicates)</li>
+                        <li class="flex items-center"><span class="w-3 h-3 bg-blue-400 rounded-full mr-2"></span>Scalability (Billions of records)</li>
+                        <li class="flex items-center"><span class="w-3 h-3 bg-green-400 rounded-full mr-2"></span>Persistence (Lasts over time)</li>
+                        <li class="flex items-center"><span class="w-3 h-3 bg-yellow-400 rounded-full mr-2"></span>Efficiency (Fast lookup)</li>
+                        <li class="flex items-center"><span class="w-3 h-3 bg-purple-400 rounded-full mr-2"></span>Readability (Easy to remember)</li>
+                    </ul>
+                </div>
+                <div class="md:col-span-2">
+                    <div class="chart-container">
+                        <canvas id="namingPropertiesChart"></canvas>
+                    </div>
+                    <!-- Visualization Choice: Radar Chart 
+                         Goal: Compare abstract properties of a system.
+                         Justification: Radar charts are excellent for visualizing multivariate data like the 5 properties of naming, showing the "shape" of an ideal system.
+                    -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: DNS SYSTEM -->
+        <section id="dns" class="section-view hidden space-y-12">
+            <div class="border-b border-gray-200 pb-4">
+                <h2 class="text-3xl font-bold text-gray-900">Domain Name System (DNS)</h2>
+                <p class="mt-2 text-gray-600">The hierarchical distributed database that turns <code class="bg-gray-100 px-1 rounded">google.com</code> into <code class="bg-gray-100 px-1 rounded">172.217.164.206</code>.</p>
+            </div>
+
+            <!-- DNS Hierarchy Interactive Tree -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-xl font-bold mb-6 text-center">The DNS Hierarchy</h3>
+                <p class="text-center text-gray-500 text-sm mb-8">Click nodes to explore the levels of the hierarchy.</p>
+                
+                <div class="tree overflow-x-auto pb-4">
+                    <ul>
+                        <li>
+                            <a class="tree-node bg-gray-800 text-white border-gray-900" onclick="showNodeInfo('root')">. (Root)</a>
+                            <ul>
+                                <li>
+                                    <a class="tree-node" onclick="showNodeInfo('com')">.com</a>
+                                    <ul>
+                                        <li>
+                                            <a class="tree-node" onclick="showNodeInfo('google')">google</a>
+                                            <ul>
+                                                <li><a class="tree-node" onclick="showNodeInfo('www')">www</a></li>
+                                                <li><a class="tree-node" onclick="showNodeInfo('mail')">mail</a></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <a class="tree-node" onclick="showNodeInfo('org')">.org</a>
+                                    <ul>
+                                        <li>
+                                            <a class="tree-node" onclick="showNodeInfo('wikipedia')">wikipedia</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <a class="tree-node" onclick="showNodeInfo('edu')">.edu</a>
+                                    <ul>
+                                        <li>
+                                            <a class="tree-node" onclick="showNodeInfo('stanford')">stanford</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div id="node-info-display" class="mt-6 bg-blue-50 p-4 rounded-lg text-center text-blue-800 transition-opacity duration-300">
+                    Select a node above to see its role in the hierarchy.
+                </div>
+            </div>
+
+            <!-- Interactive Resolution Journey -->
+            <div class="bg-slate-900 rounded-xl text-white overflow-hidden shadow-2xl">
+                <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white"><i class="fas fa-route mr-2"></i>DNS Resolution Simulator</h3>
+                    <button onclick="startResolution()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow transition-colors">
+                        Query: www.stanford.edu
+                    </button>
+                </div>
+                
+                <div class="grid md:grid-cols-4 gap-4 p-6">
+                    <!-- Steps Visual -->
+                    <div class="md:col-span-1 space-y-2" id="resolution-steps">
+                        <!-- Steps injected by JS -->
+                    </div>
+                    
+                    <!-- Visualization Area -->
+                    <div class="md:col-span-3 bg-slate-800 rounded-lg p-6 relative min-h-[300px] flex items-center justify-center">
+                        <div id="resolution-diagram" class="text-center w-full">
+                            <div class="text-slate-400 text-lg">Click "Query" to start the 8-step journey</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DNS Records & TTL -->
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Records Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold mb-4">Essential DNS Records</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Type</th>
+                                    <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Purpose</th>
+                                    <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Example</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr><td class="px-4 py-2 font-bold text-blue-600">A</td><td>IPv4 Address</td><td class="font-mono text-xs">192.0.2.1</td></tr>
+                                <tr><td class="px-4 py-2 font-bold text-blue-600">AAAA</td><td>IPv6 Address</td><td class="font-mono text-xs">2001:db8::1</td></tr>
+                                <tr><td class="px-4 py-2 font-bold text-purple-600">CNAME</td><td>Alias</td><td class="font-mono text-xs">blog -> domain</td></tr>
+                                <tr><td class="px-4 py-2 font-bold text-green-600">MX</td><td>Mail Server</td><td class="font-mono text-xs">mail.google.com</td></tr>
+                                <tr><td class="px-4 py-2 font-bold text-orange-600">NS</td><td>Name Server</td><td class="font-mono text-xs">ns1.aws.com</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- TTL Chart -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold mb-2">TTL (Time To Live) Strategy</h3>
+                    <p class="text-xs text-gray-500 mb-4">Balancing freshness (Low TTL) vs. performance (High TTL).</p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="ttlChart"></canvas>
+                    </div>
+                    <!-- Visualization Choice: Bar Chart
+                         Goal: Compare duration magnitudes.
+                         Justification: Simple bar chart effectively shows the vast difference between 300s (dynamic) and 86400s (stable) records.
+                    -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: LDAP (Directory Services) -->
+        <section id="ldap" class="section-view hidden space-y-12">
+            <div class="border-b border-gray-200 pb-4">
+                <h2 class="text-3xl font-bold text-gray-900">Directory Services (LDAP)</h2>
+                <p class="mt-2 text-gray-600">Beyond just IP addresses: A centralized database for users, permissions, and organizational structure.</p>
+            </div>
+
+            <!-- Content Split -->
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Info Column -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                        <h3 class="font-bold text-blue-900 text-lg mb-2">What is LDAP?</h3>
+                        <p class="text-blue-800 text-sm mb-4">Lightweight Directory Access Protocol. It's how systems talk to directories like Active Directory or OpenLDAP.</p>
+                        <div class="flex flex-col space-y-2">
+                            <span class="text-xs font-bold uppercase text-blue-400">Key Benefits</span>
+                            <span class="bg-white px-3 py-1 rounded text-sm shadow-sm text-blue-900">1. Single Sign-On (SSO)</span>
+                            <span class="bg-white px-3 py-1 rounded text-sm shadow-sm text-blue-900">2. Central Management</span>
+                            <span class="bg-white px-3 py-1 rounded text-sm shadow-sm text-blue-900">3. Granular Permissions</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="font-bold text-gray-900 mb-4">CRUD Operations</h3>
+                        <ul class="space-y-3 text-sm">
+                            <li class="flex justify-between"><span class="font-medium">Bind</span> <span class="text-gray-500">Login/Auth</span></li>
+                            <li class="flex justify-between"><span class="font-medium">Search</span> <span class="text-gray-500">Query Data</span></li>
+                            <li class="flex justify-between"><span class="font-medium">Add/Mod/Del</span> <span class="text-gray-500">Manage Entries</span></li>
+                            <li class="flex justify-between"><span class="font-medium">Compare</span> <span class="text-gray-500">Check Values</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Interactive DIT Explorer -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl flex justify-between items-center">
+                        <h3 class="font-bold text-gray-800">Directory Information Tree (DIT) Explorer</h3>
+                        <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">Click folders to expand</span>
+                    </div>
+                    <div class="p-6 flex-grow flex gap-6">
+                        <!-- Tree Column -->
+                        <div class="w-1/2 border-r border-gray-100 pr-4 overflow-y-auto max-h-[400px]">
+                            <ul class="space-y-2 text-sm font-mono">
+                                <li>
+                                    <div class="flex items-center cursor-pointer hover:bg-gray-100 p-1 rounded" onclick="selectLDAPNode('root')">
+                                        <i class="fas fa-globe text-blue-400 mr-2"></i> dc=university,dc=edu
+                                    </div>
+                                    <ul class="pl-6 space-y-2 mt-2 border-l-2 border-gray-200 ml-2">
+                                        <li>
+                                            <div class="flex items-center cursor-pointer hover:bg-gray-100 p-1 rounded" onclick="selectLDAPNode('people')">
+                                                <i class="fas fa-folder text-yellow-400 mr-2"></i> ou=People
+                                            </div>
+                                            <ul class="pl-6 mt-2 hidden" id="ldap-people-group">
+                                                <li class="flex items-center cursor-pointer hover:bg-blue-50 p-1 rounded text-blue-600" onclick="selectLDAPNode('john')">
+                                                    <i class="fas fa-user mr-2"></i> cn=John Smith
+                                                </li>
+                                                <li class="flex items-center cursor-pointer hover:bg-blue-50 p-1 rounded text-blue-600" onclick="selectLDAPNode('jane')">
+                                                    <i class="fas fa-user mr-2"></i> cn=Jane Doe
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <div class="flex items-center cursor-pointer hover:bg-gray-100 p-1 rounded" onclick="selectLDAPNode('groups')">
+                                                <i class="fas fa-folder text-yellow-400 mr-2"></i> ou=Groups
+                                            </div>
+                                            <ul class="pl-6 mt-2 hidden" id="ldap-groups-group">
+                                                <li class="flex items-center cursor-pointer hover:bg-blue-50 p-1 rounded text-blue-600" onclick="selectLDAPNode('faculty')">
+                                                    <i class="fas fa-users mr-2"></i> cn=Faculty
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Details Column -->
+                        <div class="w-1/2 pl-2">
+                            <div id="ldap-details" class="bg-gray-800 text-green-400 p-4 rounded-lg font-mono text-sm h-full shadow-inner">
+                                <p class="text-gray-500">// Select an object to view attributes</p>
+                                <p class="text-gray-500 mt-2">Ready...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- DN Explanation Footer -->
+                    <div class="bg-gray-100 p-4 rounded-b-xl border-t border-gray-200">
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-1">Current Distinguished Name (DN)</p>
+                        <div id="current-dn" class="font-mono text-sm text-purple-700 bg-white p-2 rounded border border-gray-300">
+                            Select a node...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: LINUX LAB -->
+        <section id="linux" class="section-view hidden space-y-12">
+            <div class="border-b border-gray-200 pb-4">
+                <h2 class="text-3xl font-bold text-gray-900">Linux Configuration Lab</h2>
+                <p class="mt-2 text-gray-600">Explore the three critical files that control how a Linux system resolves names.</p>
+            </div>
+
+            <div class="grid md:grid-cols-12 gap-6">
+                <!-- File Selector Sidebar -->
+                <div class="md:col-span-3 space-y-2">
+                    <button onclick="openLinuxFile('hosts')" id="btn-hosts" class="linux-file-btn w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors bg-blue-50 border-blue-300 font-semibold text-blue-700">
+                        /etc/hosts
+                    </button>
+                    <button onclick="openLinuxFile('resolv')" id="btn-resolv" class="linux-file-btn w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        /etc/resolv.conf
+                    </button>
+                    <button onclick="openLinuxFile('nsswitch')" id="btn-nsswitch" class="linux-file-btn w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        /etc/nsswitch.conf
+                    </button>
+                    
+                    <div class="mt-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <h4 class="font-bold text-yellow-800 text-sm mb-2"><i class="fas fa-lightbulb mr-2"></i>Tip</h4>
+                        <p id="linux-tip" class="text-xs text-yellow-700">
+                            /etc/hosts is checked first! It's great for overriding DNS for testing locally.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Terminal Viewer -->
+                <div class="md:col-span-9">
+                    <div class="terminal h-[400px] flex flex-col">
+                        <div class="terminal-header justify-between">
+                            <div class="flex">
+                                <div class="dot dot-red"></div>
+                                <div class="dot dot-yellow"></div>
+                                <div class="dot dot-green"></div>
+                            </div>
+                            <div class="text-xs text-gray-400 font-mono" id="terminal-filename">vim /etc/hosts</div>
+                            <div class="w-8"></div>
+                        </div>
+                        <div class="p-6 overflow-y-auto font-mono text-sm leading-relaxed" id="terminal-content">
+                            <!-- Content injected via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Flow Diagram using Tailwind Grid/Flex -->
+            <div class="bg-white p-6 rounded-xl shadow border border-gray-200">
+                <h3 class="font-bold text-gray-900 mb-6 text-center">The Lookup Cascade</h3>
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="bg-gray-100 p-4 rounded-lg text-center w-40">
+                        <div class="text-xs text-gray-500 uppercase font-bold">Step 1</div>
+                        <div class="font-bold text-gray-800">App Request</div>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-400 transform rotate-90 md:rotate-0"></i>
+                    
+                    <div class="bg-purple-50 p-4 rounded-lg text-center w-40 border border-purple-200">
+                        <div class="text-xs text-purple-500 uppercase font-bold">Step 2</div>
+                        <div class="font-bold text-purple-900">nsswitch.conf</div>
+                        <div class="text-xs text-purple-700 mt-1">Check Order</div>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-400 transform rotate-90 md:rotate-0"></i>
+
+                    <div class="bg-blue-50 p-4 rounded-lg text-center w-40 border border-blue-200">
+                        <div class="text-xs text-blue-500 uppercase font-bold">Step 3</div>
+                        <div class="font-bold text-blue-900">/etc/hosts</div>
+                        <div class="text-xs text-blue-700 mt-1">Local Check</div>
+                    </div>
+                    <i class="fas fa-arrow-right text-gray-400 transform rotate-90 md:rotate-0"></i>
+
+                    <div class="bg-green-50 p-4 rounded-lg text-center w-40 border border-green-200">
+                        <div class="text-xs text-green-500 uppercase font-bold">Step 4</div>
+                        <div class="font-bold text-green-900">resolv.conf</div>
+                        <div class="text-xs text-green-700 mt-1">Query DNS</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-50 border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex justify-center md:justify-start">
+                    <p class="text-center text-sm text-gray-500">
+                        &copy; 2026 Distributed Systems Course
+                    </p>
+                </div>
+                <div class="mt-4 md:mt-0 flex justify-center space-x-6">
+                    <span class="text-gray-400 hover:text-gray-500 text-sm">Interactive SPA</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA & STATE ---
+        const appState = {
+            currentSection: 'intro',
+            dnsStep: 0,
+            ldapSelection: null
+        };
+
+        const nameData = {
+            human: {
+                title: "Human-Friendly Names",
+                desc: "Designed for memory and ease of use. Can be ambiguous.",
+                examples: ["www.amazon.com", "john.doe@university.edu", "MyLaptop"],
+                icon: "fa-user",
+                color: "text-blue-600",
+                bg: "bg-blue-50"
+            },
+            machine: {
+                title: "Machine-Friendly Identifiers",
+                desc: "Optimized for processing speed and routing. Hard for humans to remember.",
+                examples: ["192.168.1.1 (IP)", "00:1A:2B:3C:4D:5E (MAC)", "550e8400... (UUID)"],
+                icon: "fa-robot",
+                color: "text-gray-600",
+                bg: "bg-gray-100"
+            },
+            pure: {
+                title: "Pure Identifiers",
+                desc: "Permanent references that do not change, even if the resource moves.",
+                examples: ["ISBN (Books)", "Social Security Number", "Student ID"],
+                icon: "fa-fingerprint",
+                color: "text-purple-600",
+                bg: "bg-purple-50"
+            }
+        };
+
+        const dnsSteps = [
+            { text: "1. Browser checks its own cache.", actor: "Browser", time: "1ms" },
+            { text: "2. OS checks /etc/hosts & cache.", actor: "OS", time: "2ms" },
+            { text: "3. Query sent to Recursive Resolver (ISP).", actor: "Resolver", time: "15ms" },
+            { text: "4. Resolver asks Root Server (.)", actor: "Root Server", time: "40ms" },
+            { text: "5. Root refers to TLD Server (.edu)", actor: "Resolver", time: "45ms" },
+            { text: "6. Resolver asks TLD Server.", actor: "TLD Server", time: "60ms" },
+            { text: "7. TLD refers to Auth Server (stanford)", actor: "Auth Server", time: "80ms" },
+            { text: "8. Stanford returns IP: 171.67.215.200", actor: "Browser", time: "100ms" }
+        ];
+
+        const linuxFiles = {
+            hosts: {
+                name: "/etc/hosts",
+                content: `# Static table lookup for hostnames
+127.0.0.1       localhost
+127.0.1.1       my-laptop
+192.168.1.100   homeserver.local  homeserver
+10.0.0.5        devserver
+
+# Ad blocking example
+127.0.0.1       ads.annoying-site.com`,
+                tip: "/etc/hosts is checked first! It's great for overriding DNS for testing locally or blocking ads."
+            },
+            resolv: {
+                name: "/etc/resolv.conf",
+                content: `# DNS server configuration
+nameserver 8.8.8.8    # Google Primary
+nameserver 1.1.1.1    # Cloudflare
+domain university.edu
+search university.edu cs.university.edu
+options timeout:2 attempts:3`,
+                tip: "This tells your computer WHO to ask when it doesn't know a name."
+            },
+            nsswitch: {
+                name: "/etc/nsswitch.conf",
+                content: `# Name Service Switch configuration
+passwd:         files systemd
+group:          files systemd
+shadow:         files
+
+# The critical line for name resolution:
+hosts:          files dns myhostname`,
+                tip: "The 'hosts: files dns' line is the master switch. It says 'Check files (/etc/hosts) first, then ask DNS'."
+            }
+        };
+
+        // --- NAVIGATION ---
+        function switchSection(sectionId) {
+            // Update State
+            appState.currentSection = sectionId;
+
+            // Hide all sections
+            document.querySelectorAll('.section-view').forEach(el => el.classList.add('hidden'));
+            
+            // Show target section
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update Nav Buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-white', 'bg-blue-600'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.getAttribute('onclick').includes(sectionId)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Mobile menu logic
+            document.getElementById('mobile-menu').classList.add('hidden');
+
+            // Render Charts if needed
+            if (sectionId === 'intro') renderRadarChart();
+            if (sectionId === 'dns') renderTTLChart();
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        // --- SECTION 1: NAMES ---
+        function showNameType(type) {
+            const data = nameData[type];
+            const panel = document.getElementById('name-details-panel');
+            
+            // Highlight button
+            document.querySelectorAll('.name-type-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'border-blue-500');
+                if (btn.dataset.type !== type) btn.classList.add('border-transparent', 'bg-gray-50');
+            });
+            document.querySelector(`.name-type-btn[data-type="${type}"]`).classList.add('bg-blue-50', 'border-blue-500');
+            document.querySelector(`.name-type-btn[data-type="${type}"]`).classList.remove('border-transparent');
+
+            // Inject Content
+            panel.innerHTML = `
+                <div class="text-center animate-fade-in">
+                    <div class="w-16 h-16 ${data.bg} rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas ${data.icon} ${data.color} text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold ${data.color} mb-2">${data.title}</h3>
+                    <p class="text-gray-600 mb-6">${data.desc}</p>
+                    <div class="text-left bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">Examples</span>
+                        <ul class="space-y-2">
+                            ${data.examples.map(ex => `<li class="font-mono text-sm text-gray-700 border-b border-gray-100 pb-1 last:border-0">${ex}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- SECTION 2: DNS ---
+        function showNodeInfo(node) {
+            const display = document.getElementById('node-info-display');
+            const nodes = {
+                'root': "<b>Root (.):</b> The top of the hierarchy. Managed by ICANN. Knows where TLDs (.com, .org) live.",
+                'com': "<b>TLD (.com):</b> Top-Level Domain. Commercial organizations. Managed by Verisign.",
+                'org': "<b>TLD (.org):</b> Top-Level Domain. Non-profits. Managed by PIR.",
+                'edu': "<b>TLD (.edu):</b> Top-Level Domain. Educational institutions. Strict requirements.",
+                'google': "<b>Second-Level Domain:</b> The specific organization. Google manages this zone.",
+                'www': "<b>Subdomain:</b> A specific server or service within Google's zone.",
+                'mail': "<b>Subdomain:</b> Mail server within Google's zone.",
+                'wikipedia': "<b>Second-Level Domain:</b> Wikipedia Organization.",
+                'stanford': "<b>Second-Level Domain:</b> Stanford University."
+            };
+            display.innerHTML = nodes[node] || "Select a node";
+        }
+
+        async function startResolution() {
+            const container = document.getElementById('resolution-steps');
+            const diagram = document.getElementById('resolution-diagram');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < dnsSteps.length; i++) {
+                const step = dnsSteps[i];
+                
+                // Add step to list
+                const stepEl = document.createElement('div');
+                stepEl.className = "p-2 rounded bg-slate-700 text-xs text-gray-300 border-l-4 border-blue-500 mb-1 opacity-0 transition-opacity duration-300";
+                stepEl.innerHTML = `<span class="font-bold text-white">${step.time}</span> ${step.text}`;
+                container.appendChild(stepEl);
+                
+                // Animate appearance
+                setTimeout(() => stepEl.classList.remove('opacity-0'), 50);
+
+                // Update Diagram
+                diagram.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full">
+                        <div class="text-6xl text-blue-400 mb-4 animate-bounce"><i class="fas ${getIconForActor(step.actor)}"></i></div>
+                        <h4 class="text-2xl font-bold text-white mb-2">${step.actor}</h4>
+                        <p class="text-slate-400">${step.text}</p>
+                    </div>
+                `;
+
+                // Delay loop
+                await new Promise(r => setTimeout(r, 1200));
+            }
+            
+            diagram.innerHTML += `<div class="mt-4 text-green-400 font-bold text-lg"><i class="fas fa-check-circle"></i> Connected!</div>`;
+        }
+
+        function getIconForActor(actor) {
+            if (actor === 'Browser') return 'fa-laptop';
+            if (actor === 'OS') return 'fa-microchip';
+            if (actor.includes('Resolver')) return 'fa-server';
+            if (actor.includes('Root')) return 'fa-globe';
+            return 'fa-database';
+        }
+
+        // --- SECTION 3: LDAP ---
+        function selectLDAPNode(id) {
+            const details = document.getElementById('ldap-details');
+            const dnDisplay = document.getElementById('current-dn');
+            const peopleGroup = document.getElementById('ldap-people-group');
+            const groupsGroup = document.getElementById('ldap-groups-group');
+
+            // Logic for expanding folders
+            if(id === 'people') peopleGroup.classList.toggle('hidden');
+            if(id === 'groups') groupsGroup.classList.toggle('hidden');
+
+            let content = "";
+            let dn = "";
+
+            switch(id) {
+                case 'root':
+                    dn = "dc=university,dc=edu";
+                    content = `
+<span class="text-purple-400">objectClass:</span> domain
+<span class="text-purple-400">dc:</span> university
+<span class="text-purple-400">description:</span> Main Campus Root`;
+                    break;
+                case 'people':
+                    dn = "ou=People,dc=university,dc=edu";
+                    content = `
+<span class="text-purple-400">objectClass:</span> organizationalUnit
+<span class="text-purple-400">ou:</span> People
+<span class="text-purple-400">description:</span> Container for user accounts`;
+                    break;
+                case 'john':
+                    dn = "cn=John Smith,ou=People,dc=university,dc=edu";
+                    content = `
+<span class="text-purple-400">objectClass:</span> inetOrgPerson
+<span class="text-purple-400">cn:</span> John Smith
+<span class="text-purple-400">sn:</span> Smith
+<span class="text-purple-400">uid:</span> jsmith
+<span class="text-purple-400">mail:</span> john.smith@university.edu
+<span class="text-purple-400">telephoneNumber:</span> +1-555-0123`;
+                    break;
+                case 'jane':
+                    dn = "cn=Jane Doe,ou=People,dc=university,dc=edu";
+                    content = `
+<span class="text-purple-400">objectClass:</span> inetOrgPerson
+<span class="text-purple-400">cn:</span> Jane Doe
+<span class="text-purple-400">sn:</span> Doe
+<span class="text-purple-400">uid:</span> jdoe
+<span class="text-purple-400">mail:</span> jane.doe@university.edu`;
+                    break;
+                case 'faculty':
+                    dn = "cn=Faculty,ou=Groups,dc=university,dc=edu";
+                    content = `
+<span class="text-purple-400">objectClass:</span> groupOfNames
+<span class="text-purple-400">cn:</span> Faculty
+<span class="text-purple-400">member:</span> cn=John Smith,ou=People...`;
+                    break;
+                default:
+                    dn = "...";
+                    content = "// Select an object";
+            }
+
+            details.innerHTML = content;
+            dnDisplay.innerText = dn;
+        }
+
+        // --- SECTION 4: LINUX ---
+        function openLinuxFile(fileId) {
+            const data = linuxFiles[fileId];
+            
+            // Update buttons
+            document.querySelectorAll('.linux-file-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700', 'font-semibold');
+                btn.classList.add('border-gray-200');
+            });
+            const activeBtn = document.getElementById('btn-' + fileId);
+            activeBtn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700', 'font-semibold');
+            activeBtn.classList.remove('border-gray-200');
+
+            // Update content
+            document.getElementById('terminal-filename').innerText = `vim ${data.name}`;
+            document.getElementById('terminal-content').innerHTML = `<pre>${data.content}</pre>`;
+            document.getElementById('linux-tip').innerText = data.tip;
+        }
+
+
+        // --- CHARTS INITIALIZATION ---
+        let radarChartInstance = null;
+        let ttlChartInstance = null;
+
+        function renderRadarChart() {
+            if (radarChartInstance) return; // Prevent re-render
+            const ctx = document.getElementById('namingPropertiesChart').getContext('2d');
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Uniqueness', 'Scalability', 'Persistence', 'Efficiency', 'Readability'],
+                    datasets: [{
+                        label: 'Ideal Distributed Naming System (DNS)',
+                        data: [5, 5, 4, 4, 3],
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)'
+                    },
+                    {
+                        label: 'Simple "Flat" Naming (e.g. /etc/hosts)',
+                        data: [3, 1, 2, 5, 4],
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(16, 185, 129, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: false },
+                            suggestedMin: 0,
+                            suggestedMax: 5
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function renderTTLChart() {
+            if (ttlChartInstance) return;
+            const ctx = document.getElementById('ttlChart').getContext('2d');
+            ttlChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dynamic (300s)', 'Standard (3600s)', 'Stable (86400s)'],
+                    datasets: [{
+                        label: 'Cache Duration (Seconds)',
+                        data: [300, 3600, 86400],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.6)',  // Red for short
+                            'rgba(245, 158, 11, 0.6)', // Yellow for medium
+                            'rgba(16, 185, 129, 0.6)'  // Green for long
+                        ],
+                        borderColor: [
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(16, 185, 129, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'logarithmic', // Using Log scale because 86400 is way bigger than 300
+                            title: { display: true, text: 'Seconds (Log Scale)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' seconds';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial load
+            showNameType('human');
+            openLinuxFile('hosts');
+            renderRadarChart();
+        });
+
+    </script>
+    
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</body>
+</html>
+
+
+

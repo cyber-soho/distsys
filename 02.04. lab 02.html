@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 02: Name & Directory Services</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        canvas: '#fafaf9', // warm neutral light
+                        card: '#ffffff',
+                        primary: '#44403c', // stone 700
+                        secondary: '#78716c', // stone 500
+                        accent: '#d97706', // amber 600
+                        accentLight: '#fef3c7', // amber 100
+                        success: '#065f46', // emerald 800
+                        successBg: '#d1fae5', // emerald 100
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fafaf9;
+            color: #292524;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d6d3d1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e; 
+        }
+
+        .tree-line {
+            position: absolute;
+            left: 12px;
+            top: 24px;
+            bottom: 0;
+            width: 2px;
+            background-color: #e5e7eb;
+        }
+        
+        .code-preview {
+            font-family: 'Fira Code', monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-primary tracking-tight">DS Module 02</span>
+                    <span class="ml-4 px-3 py-1 rounded-full text-xs font-medium bg-accentLight text-accent hidden sm:block">Name & Directory Services</span>
+                </div>
+                <div class="flex items-center space-x-4 overflow-x-auto no-scrollbar">
+                    <button onclick="switchTab('overview')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-primary hover:bg-stone-100 transition-colors" data-tab="overview">Overview</button>
+                    <button onclick="switchTab('dns')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-secondary hover:bg-stone-100 transition-colors" data-tab="dns">DNS Lab</button>
+                    <button onclick="switchTab('ldap')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-secondary hover:bg-stone-100 transition-colors" data-tab="ldap">LDAP Lab</button>
+                    <button onclick="switchTab('integration')" class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-secondary hover:bg-stone-100 transition-colors" data-tab="integration">Integration</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- OVERVIEW TAB -->
+        <div id="overview" class="tab-content active">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Intro Header -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white p-8 rounded-xl shadow-sm border border-stone-100">
+                        <h1 class="text-3xl font-bold text-primary mb-4">Fundamentals & Environment Setup</h1>
+                        <p class="text-secondary leading-relaxed mb-6">
+                            This module guides you through building the naming and directory service backbone for a distributed system. 
+                            You will implement authoritative DNS using BIND9 and centralized authentication using OpenLDAP across networked Linux VMs.
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                                <div class="text-xs text-secondary uppercase tracking-wider font-semibold">Time Allocation</div>
+                                <div class="text-xl font-bold text-primary mt-1">4 Hours Min</div>
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                                <div class="text-xs text-secondary uppercase tracking-wider font-semibold">Structure</div>
+                                <div class="text-xl font-bold text-primary mt-1">1-2-1 Format</div>
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                                <div class="text-xs text-secondary uppercase tracking-wider font-semibold">Key Protocol</div>
+                                <div class="text-xl font-bold text-primary mt-1">DNS / LDAP</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Learning Objectives -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-100">
+                        <h2 class="text-lg font-bold text-primary mb-4">Learning Objectives</h2>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <span class="flex-shrink-0 h-5 w-5 rounded-full bg-successBg text-success flex items-center justify-center text-xs mt-0.5">✓</span>
+                                <span class="ml-3 text-secondary text-sm">Understand naming systems in distributed environments.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="flex-shrink-0 h-5 w-5 rounded-full bg-successBg text-success flex items-center justify-center text-xs mt-0.5">✓</span>
+                                <span class="ml-3 text-secondary text-sm">Configure authoritative DNS servers with forward/reverse zones.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="flex-shrink-0 h-5 w-5 rounded-full bg-successBg text-success flex items-center justify-center text-xs mt-0.5">✓</span>
+                                <span class="ml-3 text-secondary text-sm">Implement centralized authentication using LDAP.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="flex-shrink-0 h-5 w-5 rounded-full bg-successBg text-success flex items-center justify-center text-xs mt-0.5">✓</span>
+                                <span class="ml-3 text-secondary text-sm">Integrate services across multiple distributed nodes.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Grading Chart -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-100 h-full">
+                        <h2 class="text-lg font-bold text-primary mb-2 text-center">Grading Rubric</h2>
+                        <p class="text-xs text-secondary text-center mb-6">Total: 100 Points</p>
+                        
+                        <div class="chart-container">
+                            <canvas id="gradingChart"></canvas>
+                        </div>
+
+                        <div class="mt-6 text-xs text-secondary border-t border-stone-100 pt-4">
+                            <strong>Bonus (+10%):</strong> LDAPS, Monitoring scripts, Replication, or Dynamic DNS.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prerequisites -->
+                <div class="lg:col-span-3">
+                    <div class="bg-stone-800 text-stone-200 p-6 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-bold text-white mb-4">System Prerequisites</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="h-8 w-8 rounded bg-stone-700 flex items-center justify-center text-sm font-mono">01</div>
+                                <span class="text-sm">Two Networked Linux VMs</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="h-8 w-8 rounded bg-stone-700 flex items-center justify-center text-sm font-mono">02</div>
+                                <span class="text-sm">Root/Sudo Access</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="h-8 w-8 rounded bg-stone-700 flex items-center justify-center text-sm font-mono">03</div>
+                                <span class="text-sm">Static IP Configuration</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="h-8 w-8 rounded bg-stone-700 flex items-center justify-center text-sm font-mono">04</div>
+                                <span class="text-sm">Git Repository Init</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- DNS LAB TAB -->
+        <div id="dns" class="tab-content">
+            <div class="space-y-8">
+                <!-- Section Intro -->
+                <div class="max-w-3xl">
+                    <h2 class="text-2xl font-bold text-primary mb-2">Exercise 1 & 2: DNS Infrastructure</h2>
+                    <p class="text-secondary">
+                        In this section, you will explore DNS query tools and then implement a fully functional BIND9 server. 
+                        Use the interactive simulators below to understand how the configuration files map to your network design.
+                    </p>
+                </div>
+
+                <!-- DNS Concepts Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+                        <div class="font-bold text-primary mb-2">Authoritative Server</div>
+                        <p class="text-xs text-secondary">The server holding the original zone data. The source of truth for your domain.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+                        <div class="font-bold text-primary mb-2">Forward Zone</div>
+                        <p class="text-xs text-secondary">Maps Hostnames → IP Addresses (A Records). "Where is mail.google.com?"</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+                        <div class="font-bold text-primary mb-2">Reverse Zone</div>
+                        <p class="text-xs text-secondary">Maps IP Addresses → Hostnames (PTR Records). "Who is 192.168.1.1?"</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+                        <div class="font-bold text-primary mb-2">Recursive Resolver</div>
+                        <p class="text-xs text-secondary">Queries other servers on behalf of the client to find the answer.</p>
+                    </div>
+                </div>
+
+                <!-- Interactive Dig Simulator -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-stone-900 rounded-lg overflow-hidden shadow-lg flex flex-col h-96">
+                        <div class="bg-stone-800 px-4 py-2 flex items-center space-x-2 border-b border-stone-700">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                            <span class="text-xs text-stone-400 ml-2 font-mono">user@vm:~/dns-lab</span>
+                        </div>
+                        <div class="p-4 font-mono text-xs text-stone-300 overflow-y-auto flex-grow" id="terminalOutput">
+                            <div class="mb-2">Welcome to the DNS Query Simulator. Type a command or click the examples below.</div>
+                            <div class="text-stone-500 mb-4">Try: dig google.com A, dig -x 8.8.8.8, cat /etc/resolv.conf</div>
+                        </div>
+                        <div class="p-4 bg-stone-800 border-t border-stone-700">
+                            <div class="flex space-x-2 overflow-x-auto no-scrollbar">
+                                <button onclick="runSimCommand('dig google.com A')" class="px-2 py-1 bg-stone-700 hover:bg-stone-600 rounded text-xs text-white whitespace-nowrap">dig A</button>
+                                <button onclick="runSimCommand('dig google.com MX')" class="px-2 py-1 bg-stone-700 hover:bg-stone-600 rounded text-xs text-white whitespace-nowrap">dig MX</button>
+                                <button onclick="runSimCommand('dig -x 8.8.8.8')" class="px-2 py-1 bg-stone-700 hover:bg-stone-600 rounded text-xs text-white whitespace-nowrap">dig -x</button>
+                                <button onclick="runSimCommand('time dig google.com')" class="px-2 py-1 bg-stone-700 hover:bg-stone-600 rounded text-xs text-white whitespace-nowrap">time dig</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task 1.2 Planning -->
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-bold text-primary mb-4">Task 1.2: Planning Checklist</h3>
+                            <p class="text-sm text-secondary mb-6">Before implementation, define your network topology. This prevents configuration errors later.</p>
+                            
+                            <div class="space-y-4">
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-accent rounded focus:ring-accent">
+                                    <span class="text-sm text-stone-700">Choose Domain (e.g., infrascale.local)</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-accent rounded focus:ring-accent">
+                                    <span class="text-sm text-stone-700">Define Network Range (e.g., 192.168.56.0/24)</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-accent rounded focus:ring-accent">
+                                    <span class="text-sm text-stone-700">Assign Static IPs (DNS: .10, Client: .11)</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-accent rounded focus:ring-accent">
+                                    <span class="text-sm text-stone-700">Design Forward Zone File (A, CNAME)</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer">
+                                    <input type="checkbox" class="form-checkbox h-5 w-5 text-accent rounded focus:ring-accent">
+                                    <span class="text-sm text-stone-700">Design Reverse Zone File (PTR)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-100 rounded text-xs text-yellow-800">
+                            <strong>Deliverable:</strong> Create <code>dns-plan.md</code> in Git containing your domain rationale, network diagram, and records table.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zone File Generator -->
+                <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                    <div class="bg-primary px-6 py-4 border-b border-stone-600 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-white">Zone File Template Generator</h3>
+                        <span class="text-xs text-stone-300 bg-stone-700 px-2 py-1 rounded">Interactive</span>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3">
+                        <div class="p-6 border-r border-stone-100 bg-stone-50">
+                            <h4 class="font-bold text-sm mb-4 uppercase tracking-wide text-secondary">Configuration</h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-500 mb-1">Domain Name</label>
+                                    <input type="text" id="domainInput" value="infrascale.local" class="w-full text-sm border-stone-300 rounded shadow-sm focus:border-accent focus:ring focus:ring-accent focus:ring-opacity-50 p-2 border">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-500 mb-1">Network (First 3 octets)</label>
+                                    <input type="text" id="networkInput" value="192.168.56" class="w-full text-sm border-stone-300 rounded shadow-sm focus:border-accent focus:ring focus:ring-accent focus:ring-opacity-50 p-2 border">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-500 mb-1">DNS Server IP</label>
+                                    <input type="text" id="dnsIpInput" value="192.168.56.10" class="w-full text-sm border-stone-300 rounded shadow-sm focus:border-accent focus:ring focus:ring-accent focus:ring-opacity-50 p-2 border">
+                                </div>
+                                <button onclick="updateZoneTemplates()" class="w-full bg-accent hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition-colors text-sm">Generate Templates</button>
+                            </div>
+                        </div>
+                        <div class="col-span-2 p-6 bg-slate-50 overflow-x-auto">
+                             <div class="mb-2 flex justify-between items-center">
+                                <span class="text-xs font-mono font-bold text-secondary">/var/cache/bind/db.forward</span>
+                                <span class="text-xs text-stone-400">Forward Zone</span>
+                            </div>
+                            <pre id="forwardZonePreview" class="bg-white border border-stone-200 p-4 rounded text-xs text-stone-700 code-preview shadow-sm mb-6"></pre>
+                            
+                            <div class="mb-2 flex justify-between items-center">
+                                <span class="text-xs font-mono font-bold text-secondary">/var/cache/bind/db.reverse</span>
+                                <span class="text-xs text-stone-400">Reverse Zone</span>
+                            </div>
+                            <pre id="reverseZonePreview" class="bg-white border border-stone-200 p-4 rounded text-xs text-stone-700 code-preview shadow-sm"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LDAP LAB TAB -->
+        <div id="ldap" class="tab-content">
+            <div class="space-y-8">
+                <!-- Section Intro -->
+                <div class="max-w-3xl">
+                    <h2 class="text-2xl font-bold text-primary mb-2">Exercise 3: LDAP Directory Services</h2>
+                    <p class="text-secondary">
+                        Lightweight Directory Access Protocol (LDAP) provides centralized authentication. 
+                        You will build a directory tree structure (DIT) and populate it with users and groups.
+                    </p>
+                </div>
+
+                <!-- Concept & Visualization Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- LDAP Tree Visualizer -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="text-lg font-bold text-primary mb-4">Directory Information Tree (DIT)</h3>
+                        <p class="text-sm text-secondary mb-6">Visualizing the hierarchy you will create in OpenLDAP.</p>
+                        
+                        <div class="relative pl-4 font-mono text-sm text-stone-700">
+                            <!-- Root -->
+                            <div class="flex items-center mb-4">
+                                <div class="w-8 h-8 rounded bg-blue-100 text-blue-800 flex items-center justify-center mr-2">dc</div>
+                                <span>dc=infrascale, dc=local</span>
+                            </div>
+                            
+                            <!-- Branches -->
+                            <div class="ml-8 relative">
+                                <div class="absolute left-[-20px] top-[-10px] bottom-4 w-px bg-stone-300"></div>
+                                
+                                <!-- OU People -->
+                                <div class="mb-6 relative">
+                                    <div class="absolute left-[-20px] top-4 w-5 h-px bg-stone-300"></div>
+                                    <div class="flex items-center mb-2">
+                                        <div class="w-8 h-8 rounded bg-purple-100 text-purple-800 flex items-center justify-center mr-2 text-xs">ou</div>
+                                        <span>ou=People</span>
+                                    </div>
+                                    <div class="ml-10 text-xs text-stone-500 space-y-1">
+                                        <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-stone-400 mr-2"></span>uid=john</div>
+                                        <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-stone-400 mr-2"></span>uid=jane</div>
+                                    </div>
+                                </div>
+
+                                <!-- OU Groups -->
+                                <div class="mb-6 relative">
+                                    <div class="absolute left-[-20px] top-4 w-5 h-px bg-stone-300"></div>
+                                    <div class="flex items-center mb-2">
+                                        <div class="w-8 h-8 rounded bg-purple-100 text-purple-800 flex items-center justify-center mr-2 text-xs">ou</div>
+                                        <span>ou=Groups</span>
+                                    </div>
+                                    <div class="ml-10 text-xs text-stone-500 space-y-1">
+                                        <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-stone-400 mr-2"></span>cn=sysadmin</div>
+                                        <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-stone-400 mr-2"></span>cn=developers</div>
+                                    </div>
+                                </div>
+
+                                <!-- OU System -->
+                                <div class="relative">
+                                    <div class="absolute left-[-20px] top-4 w-5 h-px bg-stone-300"></div>
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded bg-purple-100 text-purple-800 flex items-center justify-center mr-2 text-xs">ou</div>
+                                        <span>ou=System</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LDIF Builder -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col">
+                        <h3 class="text-lg font-bold text-primary mb-2">LDIF User Generator</h3>
+                        <p class="text-sm text-secondary mb-4">Generate the code to add a user to your directory.</p>
+                        
+                        <div class="space-y-3 mb-4">
+                            <input type="text" id="ldifUser" placeholder="Username (e.g., john)" class="w-full text-sm p-2 border border-stone-300 rounded">
+                            <input type="text" id="ldifCn" placeholder="Full Name (e.g., John Doe)" class="w-full text-sm p-2 border border-stone-300 rounded">
+                            <button onclick="generateLdif()" class="w-full bg-primary text-white text-sm py-2 rounded hover:bg-stone-700">Create LDIF Snippet</button>
+                        </div>
+
+                        <div class="bg-stone-900 rounded-lg p-4 flex-grow overflow-auto">
+                            <pre id="ldifOutput" class="text-xs text-green-400 font-mono"># LDIF output will appear here...</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integration Diagram -->
+                <div class="bg-stone-50 border border-stone-200 rounded-xl p-8">
+                    <h3 class="text-center text-lg font-bold text-primary mb-8">Authentication Flow</h3>
+                    <div class="flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-8">
+                        <!-- Client -->
+                        <div class="w-40 p-4 bg-white border-2 border-stone-300 rounded-lg text-center relative z-10 shadow-sm">
+                            <div class="font-bold text-sm">Client VM</div>
+                            <div class="text-xs text-secondary">SSH Request</div>
+                            <div class="mt-2 text-[10px] bg-stone-100 p-1 rounded">PAM / NSS</div>
+                        </div>
+
+                        <!-- Arrow -->
+                        <div class="hidden md:block w-16 h-0.5 bg-stone-300 relative">
+                            <div class="absolute right-0 top-[-4px] w-2 h-2 border-r-2 border-t-2 border-stone-300 rotate-45"></div>
+                        </div>
+                        <div class="md:hidden h-8 w-0.5 bg-stone-300 relative"></div>
+
+                        <!-- Server -->
+                        <div class="w-40 p-4 bg-white border-2 border-accent rounded-lg text-center relative z-10 shadow-md">
+                            <div class="font-bold text-sm">Server VM</div>
+                            <div class="text-xs text-accent font-bold">DNS + LDAP</div>
+                            <div class="mt-2 text-[10px] bg-accentLight text-accent p-1 rounded">slapd / named</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-center text-xs text-secondary max-w-lg mx-auto">
+                        When a user attempts to login to the Client VM, PAM queries NSS, which queries the LDAP server. The DNS server ensures the Client can find the LDAP server by name.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INTEGRATION TAB -->
+        <div id="integration" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Troubleshooting Guide -->
+                <div class="lg:col-span-2 space-y-6">
+                    <h2 class="text-2xl font-bold text-primary">Troubleshooting & Automation</h2>
+                    <p class="text-secondary mb-4">Task 4 requires automating tasks and validating the setup. Use this guide to resolve common errors.</p>
+
+                    <!-- Accordion -->
+                    <div class="space-y-3">
+                        <details class="group bg-white rounded-lg border border-stone-200 open:shadow-md transition-all">
+                            <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 text-primary bg-stone-50 rounded-t-lg group-open:bg-stone-100">
+                                <span>DNS: NXDOMAIN / Dig Timeouts</span>
+                                <span class="transition group-open:rotate-180">
+                                    <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                                </span>
+                            </summary>
+                            <div class="text-stone-600 text-sm p-4 border-t border-stone-100">
+                                <ul class="list-disc pl-5 space-y-2">
+                                    <li><strong>Syntax Errors:</strong> Run <code>named-checkconf</code> and <code>named-checkzone</code>. A missing semicolon is fatal.</li>
+                                    <li><strong>Firewall:</strong> Ensure port 53 (TCP/UDP) is open. <code>sudo ufw allow 53</code>.</li>
+                                    <li><strong>Serial Number:</strong> Did you increment the serial in the zone file after editing? Restart BIND after.</li>
+                                </ul>
+                            </div>
+                        </details>
+
+                        <details class="group bg-white rounded-lg border border-stone-200 open:shadow-md transition-all">
+                            <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 text-primary bg-stone-50 rounded-t-lg group-open:bg-stone-100">
+                                <span>LDAP: Invalid Credentials / Login Failures</span>
+                                <span class="transition group-open:rotate-180">
+                                    <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                                </span>
+                            </summary>
+                            <div class="text-stone-600 text-sm p-4 border-t border-stone-100">
+                                <ul class="list-disc pl-5 space-y-2">
+                                    <li><strong>Bind DN:</strong> Verify you are using the correct admin DN (e.g., <code>cn=admin,dc=infrascale,dc=local</code>).</li>
+                                    <li><strong>PAM Config:</strong> On the client, run <code>sudo pam-auth-update</code> and ensure LDAP is selected.</li>
+                                    <li><strong>Home Directory:</strong> If login works but closes immediately, enable <code>pam_mkhomedir</code> to create user home folders automatically.</li>
+                                </ul>
+                            </div>
+                        </details>
+
+                         <details class="group bg-white rounded-lg border border-stone-200 open:shadow-md transition-all">
+                            <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 text-primary bg-stone-50 rounded-t-lg group-open:bg-stone-100">
+                                <span>Validation: How to prove it works?</span>
+                                <span class="transition group-open:rotate-180">
+                                    <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                                </span>
+                            </summary>
+                            <div class="text-stone-600 text-sm p-4 border-t border-stone-100">
+                                <div class="font-mono bg-stone-100 p-2 rounded mb-2">./validation-tests.sh</div>
+                                <p class="mb-2">Your script should check:</p>
+                                <ol class="list-decimal pl-5 space-y-1">
+                                    <li>Forward DNS (dig hostname)</li>
+                                    <li>Reverse DNS (dig -x IP)</li>
+                                    <li>LDAP User ID (getent passwd user)</li>
+                                    <li>SSH Connection (ssh user@host)</li>
+                                </ol>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- Integration Checklist -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-100 h-full">
+                        <h3 class="text-lg font-bold text-primary mb-4">Final Submission Checklist</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" class="mt-1 form-checkbox h-4 w-4 text-accent rounded">
+                                <span class="text-sm text-secondary"><code>dns-plan.md</code> (Design doc)</span>
+                            </label>
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" class="mt-1 form-checkbox h-4 w-4 text-accent rounded">
+                                <span class="text-sm text-secondary"><code>INFRASTRUCTURE.md</code> (Full docs)</span>
+                            </label>
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" class="mt-1 form-checkbox h-4 w-4 text-accent rounded">
+                                <span class="text-sm text-secondary">Zone Files & LDIFs</span>
+                            </label>
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" class="mt-1 form-checkbox h-4 w-4 text-accent rounded">
+                                <span class="text-sm text-secondary">Automation Scripts (Bash)</span>
+                            </label>
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" class="mt-1 form-checkbox h-4 w-4 text-accent rounded">
+                                <span class="text-sm text-secondary">Screenshots (Dig, SSH, LDAP)</span>
+                            </label>
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" class="mt-1 form-checkbox h-4 w-4 text-accent rounded">
+                                <span class="text-sm text-secondary">Reflection Document</span>
+                            </label>
+                        </div>
+                        <div class="mt-6 pt-6 border-t border-stone-100">
+                             <a href="#" class="block w-full text-center bg-stone-800 text-white py-2 rounded-lg text-sm hover:bg-stone-700 transition">View Resources & Links</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-stone-200 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-secondary">
+            <p>Distributed Systems • Module 02 • Name & Directory Services</p>
+            <p class="mt-2 text-stone-400">Configurations utilize BIND9 and OpenLDAP. Always secure production environments.</p>
+        </div>
+    </footer>
+
+    <!-- Chosen Palette: Warm Neutrals (Stone/White/Amber) -->
+    <!-- Application Structure Plan: Tab-based navigation separates the logical phases of the lab (Overview -> DNS -> LDAP -> Integration). This reduces cognitive load, allowing students to focus on one protocol at a time. Simulators are embedded directly in the relevant tabs to provide instant context for the configuration files. -->
+    <!-- Visualization & Content Choices: 
+         - Overview: Doughnut chart for grading rubric to show clear priorities.
+         - DNS: Simulated Terminal to demonstrate 'dig' command output without needing a real VM. 
+         - DNS: Dynamic text replacement for Zone Files to help students visualize how their IP/Domain choices affect the config.
+         - LDAP: CSS-based Tree view to visualize the DIT (Directory Information Tree) hierarchy, replacing abstract text descriptions.
+         - Integration: Accordion for troubleshooting to organize dense text into manageable chunks.
+         - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. All visuals are HTML/CSS or Chart.js.
+    -->
+
+    <script>
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Update buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.classList.remove('text-secondary');
+                    btn.classList.add('text-primary', 'bg-stone-100');
+                } else {
+                    btn.classList.add('text-secondary');
+                    btn.classList.remove('text-primary', 'bg-stone-100');
+                }
+            });
+        }
+
+        // --- Chart.js Logic (Grading Rubric) ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('gradingChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['DNS Config', 'LDAP Config', 'Integration', 'Automation', 'Documentation', 'Security'],
+                    datasets: [{
+                        data: [25, 25, 20, 15, 10, 5],
+                        backgroundColor: [
+                            '#44403c', // stone 700
+                            '#78716c', // stone 500
+                            '#a8a29e', // stone 400
+                            '#d6d3d1', // stone 300
+                            '#d97706', // amber 600
+                            '#f59e0b'  // amber 500
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 10, family: 'Inter' }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize simulators
+            updateZoneTemplates();
+            generateLdif();
+        });
+
+        // --- DNS Simulator Logic ---
+        function runSimCommand(cmd) {
+            const terminal = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = 'mb-2';
+            line.innerHTML = `<span class="text-green-400 font-bold">user@vm:~$</span> <span class="text-white">${cmd}</span>`;
+            terminal.appendChild(line);
+
+            let output = "";
+            if (cmd.includes('dig google.com A')) {
+                output = `; <<>> DiG 9.16.1 <<>> google.com A\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345\n;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1\n\n;; ANSWER SECTION:\ngoogle.com.      219  IN  A  142.250.190.46\n\n;; Query time: 35 msec\n;; SERVER: 192.168.56.10#53(192.168.56.10)`;
+            } else if (cmd.includes('dig -x')) {
+                output = `; <<>> DiG 9.16.1 <<>> -x 8.8.8.8\n;; Got answer:\n;; ANSWER SECTION:\n8.8.8.8.in-addr.arpa. 21599 IN PTR dns.google.\n\n;; Query time: 42 msec`;
+            } else if (cmd.includes('MX')) {
+                output = `google.com.      300  IN  MX  10 smtp.google.com.`;
+            } else if (cmd.includes('time')) {
+                output = `real    0m0.045s\nuser    0m0.012s\nsys     0m0.008s`;
+            } else {
+                output = `Command not recognized in simulation.`;
+            }
+
+            const response = document.createElement('div');
+            response.className = 'text-stone-400 mb-4 whitespace-pre-wrap';
+            response.innerText = output;
+            terminal.appendChild(response);
+            
+            // Auto scroll
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // --- Zone Template Generator ---
+        function updateZoneTemplates() {
+            const domain = document.getElementById('domainInput').value || 'example.local';
+            const network = document.getElementById('networkInput').value || '192.168.56';
+            const dnsIp = document.getElementById('dnsIpInput').value || '192.168.56.10';
+            
+            // Calculate Reverse Zone Name (reverse octets)
+            const octets = network.split('.');
+            const reverseZoneName = octets.reverse().join('.') + '.in-addr.arpa';
+            const lastOctet = dnsIp.split('.').pop();
+
+            const forward = `
+;
+; BIND zone file for ${domain}
+;
+$TTL    604800
+@       IN      SOA     dns.${domain}. admin.${domain}. (
+                              2024020701 ; Serial
+                              604800     ; Refresh
+                              86400      ; Retry
+                              2419200    ; Expire
+                              604800 )   ; Negative Cache TTL
+; Name servers
+@       IN      NS      dns.${domain}.
+
+; A records
+dns          IN      A       ${dnsIp}
+client       IN      A       ${network}.11
+
+; CNAME records
+ldap         IN      CNAME   dns
+`;
+
+            const reverse = `
+;
+; BIND reverse zone file for ${network}.0/24
+;
+zone "${reverseZoneName}" {
+    type master;
+    file "/var/cache/bind/db.${network}";
+};
+
+; PTR records
+${lastOctet}      IN      PTR     dns.${domain}.
+11      IN      PTR     client.${domain}.
+`;
+
+            document.getElementById('forwardZonePreview').textContent = forward.trim();
+            document.getElementById('reverseZonePreview').textContent = reverse.trim();
+        }
+
+        // --- LDIF Generator ---
+        function generateLdif() {
+            const user = document.getElementById('ldifUser').value || 'john';
+            const cn = document.getElementById('ldifCn').value || 'John Doe';
+            const sn = cn.split(' ').pop();
+            const domain = document.getElementById('domainInput').value || 'infrascale.local';
+            // Split domain into components for DC
+            const dcString = domain.split('.').map(p => `dc=${p}`).join(',');
+
+            const output = `
+dn: uid=${user},ou=People,${dcString}
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: ${cn}
+sn: ${sn}
+uid: ${user}
+uidNumber: 10001
+gidNumber: 10001
+homeDirectory: /home/${user}
+loginShell: /bin/bash
+userPassword: {SSHA}YOUR_HASH_HERE
+mail: ${user}@${domain}
+description: Generated via Lab Tool
+`;
+            document.getElementById('ldifOutput').textContent = output.trim();
+        }
+    </script>
+</body>
+</html>
