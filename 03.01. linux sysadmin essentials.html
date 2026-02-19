@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux SysAdmin Essentials | Interactive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* Custom styles for specific component behaviors */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            color: #1f2937; /* Dark gray text */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Tailwind max-w-xl equivalent approx */
+            height: 300px;
+            max-height: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .code-block {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+        }
+        .nav-item.active {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+            font-weight: bold;
+        }
+        .hidden-section {
+            display: none;
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* LVM Visualizer Styles */
+        .lvm-box {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .lvm-box:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .perm-bit.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+    </style>
+    <!-- Chosen Palette: Corporate Clean - Slate/Blue/White with terminal accents. 
+         Background is light (#f3f4f6) to maintain readability and professional tone. -->
+
+    <!-- Application Structure Plan:
+         1. Layout: Sidebar navigation (collapsible on mobile) + Main Content Area.
+         2. Home/Dashboard: Overview of the 5 Pillars, visualization of Linux market share (Context), and global navigation.
+         3. Interactive Sections (mapped to report modules):
+            - Identity: Interactive table for commands, Scenario Explorer for "Shared Dev Server".
+            - Access: A custom "Permission Calculator" interactive tool.
+            - Software: Tabbed comparison interface for APT vs DNF.
+            - Storage: Interactive LVM Diagram (Physical -> Volume Group -> Logical) revealing commands on click.
+            - Networking: A "Troubleshooting Flowchart" that guides users through layers 1-3.
+            - Production Checklist: Interactive checklist with local state persistence.
+         4. Why this structure? The linear slide deck is transformed into a non-linear resource. 
+            Users can jump to the specific tool (calculator, checklist) they need or learn conceptually via the dashboard.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Doughnut Chart (Chart.js): Visualizes the "90% Public Cloud" statistic to emphasize relevance immediately.
+         2. Bar Chart (Chart.js): Comparative stack of the 5 layers complexity/importance.
+         3. Permission Calculator (JS/HTML): Interactive grid replacing static permission tables. Allows experimentation.
+         4. LVM Diagram (HTML/CSS Flexbox): Replaces abstract text with clickable block diagram to show relationships (PV -> VG -> LV).
+         5. Troubleshooting Flow (JS-controlled Divs): Interactive step-by-step guide replacing static bullet points.
+         6. Confirmation: NO SVG or Mermaid used. All diagrams are CSS/HTML or Chart.js canvas.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-64 bg-slate-800 text-slate-100 flex-shrink-0 flex flex-col z-20 shadow-lg">
+        <div class="p-4 border-b border-slate-700 font-bold text-xl tracking-wider flex justify-between items-center">
+            <span>SYSADMIN<span class="text-blue-400">.OPS</span></span>
+            <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none">
+                ☰
+            </button>
+        </div>
+        <nav id="sidebar-nav" class="flex-1 overflow-y-auto hidden md:block transition-all duration-300">
+            <ul class="p-2 space-y-1">
+                <li><button onclick="router('home')" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-slate-700 transition active" id="nav-home">Home & Context</button></li>
+                <li><button onclick="router('identity')" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-slate-700 transition" id="nav-identity">1. Identity (User/Group)</button></li>
+                <li><button onclick="router('access')" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-slate-700 transition" id="nav-access">2. Access (Permissions)</button></li>
+                <li><button onclick="router('software')" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-slate-700 transition" id="nav-software">3. Software (Packages)</button></li>
+                <li><button onclick="router('storage')" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-slate-700 transition" id="nav-storage">4. Storage (Disks/LVM)</button></li>
+                <li><button onclick="router('networking')" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-slate-700 transition" id="nav-networking">5. Networking</button></li>
+                <li class="border-t border-slate-700 my-2 pt-2"><button onclick="router('checklist')" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-green-700 bg-green-800 transition text-green-100" id="nav-checklist">✅ Production Checklist</button></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-slate-50 relative p-4 md:p-8" id="main-content">
+        
+        <!-- SECTION: HOME -->
+        <section id="home" class="section-view slide-in max-w-5xl mx-auto">
+            <header class="mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Linux System Administration Essentials</h1>
+                <p class="text-slate-600 text-lg">Distributed Systems Architecture for the Real World</p>
+            </header>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8 border-l-4 border-blue-500">
+                <h2 class="text-xl font-bold mb-4">Why This Matters</h2>
+                <p class="mb-4 text-slate-700 leading-relaxed">
+                    This interactive dashboard covers the five fundamental pillars of managing distributed systems. 
+                    Whether you are an aspiring Cloud Architect, DevOps Engineer, or Backend Developer, mastering these layers locally is the prerequisite to scaling them globally.
+                    One wrong command can cost millions; understanding the map prevents being a tourist in your own infrastructure.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Chart: Cloud Dominance -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-slate-700 mb-4 text-center">Infrastructure Market Share</h3>
+                    <div class="chart-container">
+                        <canvas id="cloudChart"></canvas>
+                    </div>
+                    <p class="text-center text-sm text-slate-500 mt-2">Linux powers 90%+ of public cloud infrastructure.</p>
+                </div>
+
+                <!-- Concept: The 5 Pillars -->
+                <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col justify-center">
+                    <h3 class="font-bold text-slate-700 mb-4">The 5-Layer Architecture</h3>
+                    <div class="space-y-3">
+                        <div onclick="router('networking')" class="cursor-pointer bg-purple-100 hover:bg-purple-200 border border-purple-300 p-3 rounded flex justify-between items-center transition">
+                            <span class="font-bold text-purple-800">5. Networking</span>
+                            <span class="text-xs text-purple-600">Firewalls, IP, Routing</span>
+                        </div>
+                        <div onclick="router('storage')" class="cursor-pointer bg-orange-100 hover:bg-orange-200 border border-orange-300 p-3 rounded flex justify-between items-center transition">
+                            <span class="font-bold text-orange-800">4. Storage</span>
+                            <span class="text-xs text-orange-600">LVM, Disks, Persistence</span>
+                        </div>
+                        <div onclick="router('software')" class="cursor-pointer bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 p-3 rounded flex justify-between items-center transition">
+                            <span class="font-bold text-yellow-800">3. Software</span>
+                            <span class="text-xs text-yellow-600">Packages, Repos, Updates</span>
+                        </div>
+                        <div onclick="router('access')" class="cursor-pointer bg-green-100 hover:bg-green-200 border border-green-300 p-3 rounded flex justify-between items-center transition">
+                            <span class="font-bold text-green-800">2. Access</span>
+                            <span class="text-xs text-green-600">Permissions, ACLs</span>
+                        </div>
+                        <div onclick="router('identity')" class="cursor-pointer bg-blue-100 hover:bg-blue-200 border border-blue-300 p-3 rounded flex justify-between items-center transition">
+                            <span class="font-bold text-blue-800">1. Identity</span>
+                            <span class="text-xs text-blue-600">Users, Groups, Sudo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: IDENTITY -->
+        <section id="identity" class="section-view hidden-section max-w-5xl mx-auto">
+            <header class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">1. Identity: User & Group Management</h2>
+                <p class="text-slate-600 mt-2">
+                    The fundamental question of security: "Who are you?" Every process on Linux runs under a user identity that defines its boundaries. 
+                    Understand the difference between humans, service accounts, and root to implement the Principle of Least Privilege.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Interactive Scenario -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Scenario: The Shared Dev Server</h3>
+                    <p class="text-sm text-slate-600 mb-4">Click the users below to see their permissions and group memberships in a secure setup.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <button onclick="updateScenario('alice')" class="p-4 rounded border-2 border-blue-100 hover:border-blue-500 bg-blue-50 text-center transition">
+                            <div class="text-2xl mb-1">👩‍💻</div>
+                            <div class="font-bold">Alice</div>
+                            <div class="text-xs text-slate-500">Team Lead</div>
+                        </button>
+                        <button onclick="updateScenario('bob')" class="p-4 rounded border-2 border-slate-100 hover:border-slate-500 bg-slate-50 text-center transition">
+                            <div class="text-2xl mb-1">👨‍💻</div>
+                            <div class="font-bold">Bob</div>
+                            <div class="text-xs text-slate-500">Developer</div>
+                        </button>
+                        <button onclick="updateScenario('api')" class="p-4 rounded border-2 border-orange-100 hover:border-orange-500 bg-orange-50 text-center transition">
+                            <div class="text-2xl mb-1">🤖</div>
+                            <div class="font-bold">apisvc</div>
+                            <div class="text-xs text-slate-500">Service</div>
+                        </button>
+                    </div>
+
+                    <div id="scenario-details" class="bg-slate-800 text-slate-100 p-4 rounded-lg font-mono text-sm">
+                        <p class="text-slate-400">Select a user above to inspect their identity...</p>
+                    </div>
+                </div>
+
+                <!-- Concept Card -->
+                <div class="bg-indigo-50 rounded-xl shadow-sm p-6 border border-indigo-100">
+                    <h3 class="text-lg font-bold text-indigo-900 mb-3">Identity Storage</h3>
+                    <ul class="space-y-4 text-sm text-indigo-800">
+                        <li class="bg-white p-3 rounded shadow-sm">
+                            <strong class="block text-indigo-600">/etc/passwd</strong>
+                            Usernames, UIDs, Home dirs, Shells. (Readable by all)
+                        </li>
+                        <li class="bg-white p-3 rounded shadow-sm">
+                            <strong class="block text-indigo-600">/etc/shadow</strong>
+                            Hashed passwords. (Root access only)
+                        </li>
+                        <li class="bg-white p-3 rounded shadow-sm">
+                            <strong class="block text-indigo-600">/etc/group</strong>
+                            Group names and memberships.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Command Reference -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 bg-slate-100 border-b border-slate-200">
+                    <h3 class="font-bold text-slate-700">Essential Commands</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-3">Command</th>
+                                <th class="px-6 py-3">Action</th>
+                                <th class="px-6 py-3">Example</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="px-6 py-3 font-mono text-blue-600">useradd</td>
+                                <td class="px-6 py-3">Create new user</td>
+                                <td class="px-6 py-3 font-mono text-slate-500">useradd -m -s /bin/bash alice</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-3 font-mono text-blue-600">usermod</td>
+                                <td class="px-6 py-3">Modify existing user</td>
+                                <td class="px-6 py-3 font-mono text-slate-500">usermod -aG sudo alice</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-3 font-mono text-blue-600">id</td>
+                                <td class="px-6 py-3">Print identity details</td>
+                                <td class="px-6 py-3 font-mono text-slate-500">id apisvc</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-3 font-mono text-blue-600">su / sudo</td>
+                                <td class="px-6 py-3">Switch User / Superuser Do</td>
+                                <td class="px-6 py-3 font-mono text-slate-500">sudo systemctl restart nginx</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: ACCESS -->
+        <section id="access" class="section-view hidden-section max-w-5xl mx-auto">
+            <header class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">2. Access: File Permissions & ACLs</h2>
+                <p class="text-slate-600 mt-2">
+                    "What are you allowed to do?" Linux uses a three-ring permission model (Owner, Group, Others). 
+                    Use the interactive calculator below to master Octal notation and understand how to control access granularly.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Interactive Calculator -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-green-500">
+                    <h3 class="font-bold text-lg mb-4">Permission Calculator</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center mb-6">
+                        <div>
+                            <div class="font-bold text-sm text-slate-500 mb-2">OWNER</div>
+                            <div class="space-y-2">
+                                <button onclick="togglePerm('o', 4)" id="btn-o-4" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Read (4)</button>
+                                <button onclick="togglePerm('o', 2)" id="btn-o-2" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Write (2)</button>
+                                <button onclick="togglePerm('o', 1)" id="btn-o-1" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Exec (1)</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-slate-500 mb-2">GROUP</div>
+                            <div class="space-y-2">
+                                <button onclick="togglePerm('g', 4)" id="btn-g-4" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Read (4)</button>
+                                <button onclick="togglePerm('g', 2)" id="btn-g-2" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Write (2)</button>
+                                <button onclick="togglePerm('g', 1)" id="btn-g-1" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Exec (1)</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-slate-500 mb-2">OTHERS</div>
+                            <div class="space-y-2">
+                                <button onclick="togglePerm('ot', 4)" id="btn-ot-4" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Read (4)</button>
+                                <button onclick="togglePerm('ot', 2)" id="btn-ot-2" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Write (2)</button>
+                                <button onclick="togglePerm('ot', 1)" id="btn-ot-1" class="perm-bit w-full border rounded py-1 hover:bg-slate-50 transition">Exec (1)</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-800 text-white p-4 rounded flex justify-between items-center mb-4">
+                        <div class="text-center">
+                            <div class="text-xs text-slate-400">Octal</div>
+                            <div id="octal-display" class="text-3xl font-mono font-bold">000</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs text-slate-400">Symbolic</div>
+                            <div id="symbolic-display" class="text-3xl font-mono text-green-400">---------</div>
+                        </div>
+                    </div>
+                    
+                    <div id="perm-explanation" class="text-sm text-slate-600 bg-slate-100 p-3 rounded italic">
+                        Select permissions above to see the command.
+                    </div>
+                </div>
+
+                <!-- ACLs Info -->
+                <div class="flex flex-col space-y-4">
+                    <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-100 flex-1">
+                        <h3 class="font-bold text-lg text-blue-900 mb-2">When Standard Isn't Enough: ACLs</h3>
+                        <p class="text-sm text-blue-800 mb-4">
+                            Standard permissions (750) are rigid. What if you need to give Read access to just <em>one</em> specific user who isn't in the group?
+                        </p>
+                        <div class="bg-white p-4 rounded border border-blue-200 font-mono text-xs">
+                            <div class="text-slate-500"># Grant Alice read access specifically</div>
+                            <div class="text-black font-bold">setfacl -m u:alice:r confidential.txt</div>
+                            <br>
+                            <div class="text-slate-500"># View detailed permissions</div>
+                            <div class="text-black font-bold">getfacl confidential.txt</div>
+                        </div>
+                        <p class="text-xs text-blue-600 mt-2">Look for a <code>+</code> at the end of permissions in <code>ls -l</code> to spot ACLs.</p>
+                    </div>
+
+                    <div class="bg-yellow-50 p-6 rounded-xl shadow-sm border border-yellow-100">
+                        <h3 class="font-bold text-lg text-yellow-900 mb-2">Special Bits</h3>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div class="bg-white p-2 rounded shadow-sm">
+                                <strong class="block text-lg">SUID</strong>
+                                Run as Owner
+                            </div>
+                            <div class="bg-white p-2 rounded shadow-sm">
+                                <strong class="block text-lg">SGID</strong>
+                                Inherit Group
+                            </div>
+                            <div class="bg-white p-2 rounded shadow-sm">
+                                <strong class="block text-lg">Sticky</strong>
+                                Owner Delete Only
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: SOFTWARE -->
+        <section id="software" class="section-view hidden-section max-w-5xl mx-auto">
+            <header class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">3. Software: Package Management</h2>
+                <p class="text-slate-600 mt-2">
+                    Stop downloading binaries from websites. Package managers resolve dependencies, verify cryptographic signatures, and manage updates. 
+                    Choose your ecosystem below to see the syntax.
+                </p>
+            </header>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+                <div class="flex border-b">
+                    <button onclick="setPkgTab('debian')" id="tab-debian" class="flex-1 py-4 text-center font-bold bg-slate-50 hover:bg-white text-slate-600 border-b-2 border-transparent hover:text-red-500 active-pkg-tab">Debian / Ubuntu (apt)</button>
+                    <button onclick="setPkgTab('redhat')" id="tab-redhat" class="flex-1 py-4 text-center font-bold bg-slate-50 hover:bg-white text-slate-600 border-b-2 border-transparent hover:text-blue-500">Red Hat / Fedora (dnf)</button>
+                </div>
+                
+                <div class="p-6">
+                    <div id="content-debian" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="code-block">
+                                <span class="text-slate-500"># 1. Update Index (CRITICAL)</span><br>
+                                <span class="text-yellow-400">apt</span> update
+                            </div>
+                            <div class="code-block">
+                                <span class="text-slate-500"># 2. Install Package</span><br>
+                                <span class="text-yellow-400">apt</span> install nginx
+                            </div>
+                            <div class="code-block">
+                                <span class="text-slate-500"># 3. Search</span><br>
+                                <span class="text-yellow-400">apt</span> search python3
+                            </div>
+                            <div class="code-block">
+                                <span class="text-slate-500"># 4. Remove</span><br>
+                                <span class="text-yellow-400">apt</span> remove nginx
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 italic mt-4">Used by: Ubuntu, Debian, Raspberry Pi OS, Linux Mint.</p>
+                    </div>
+
+                    <div id="content-redhat" class="space-y-4 hidden-section">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="code-block">
+                                <span class="text-slate-500"># 1. Check Updates</span><br>
+                                <span class="text-blue-400">dnf</span> check-update
+                            </div>
+                            <div class="code-block">
+                                <span class="text-slate-500"># 2. Install Package</span><br>
+                                <span class="text-blue-400">dnf</span> install nginx
+                            </div>
+                            <div class="code-block">
+                                <span class="text-slate-500"># 3. Search</span><br>
+                                <span class="text-blue-400">dnf</span> search python3
+                            </div>
+                            <div class="code-block">
+                                <span class="text-slate-500"># 4. Remove</span><br>
+                                <span class="text-blue-400">dnf</span> remove nginx
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 italic mt-4">Used by: RHEL, Fedora, Rocky Linux, CentOS, AlmaLinux.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Install Flow -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center text-sm">
+                <div class="bg-slate-200 p-3 rounded">1. Read Index</div>
+                <div class="text-slate-400 pt-2 text-xl">→</div>
+                <div class="bg-slate-200 p-3 rounded">2. Resolve Deps</div>
+                <div class="text-slate-400 pt-2 text-xl">→</div>
+                <div class="bg-slate-200 p-3 rounded">3. Verify Signatures</div>
+                <div class="text-slate-400 pt-2 text-xl">→</div>
+                <div class="bg-slate-200 p-3 rounded">4. Install & Config</div>
+            </div>
+        </section>
+
+        <!-- SECTION: STORAGE -->
+        <section id="storage" class="section-view hidden-section max-w-5xl mx-auto">
+            <header class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">4. Storage: LVM & Disks</h2>
+                <p class="text-slate-600 mt-2">
+                    Avoid downtime. Use Logical Volume Management (LVM) to abstract physical disks into flexible pools. 
+                    Interact with the diagram below to understand the commands for each layer.
+                </p>
+            </header>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm mb-8">
+                <h3 class="font-bold text-lg mb-6 text-center">Interactive LVM Architecture</h3>
+                
+                <!-- LVM Visualizer -->
+                <div class="flex flex-col space-y-4 max-w-2xl mx-auto select-none">
+                    
+                    <!-- Physical Layer -->
+                    <div class="flex space-x-4">
+                        <div onclick="showLvmInfo('pv')" class="lvm-box flex-1 bg-slate-600 text-white p-4 rounded text-center">
+                            <div class="font-mono text-xs opacity-75">/dev/sdb</div>
+                            <div class="font-bold">Physical Volume (PV)</div>
+                        </div>
+                        <div onclick="showLvmInfo('pv')" class="lvm-box flex-1 bg-slate-600 text-white p-4 rounded text-center">
+                            <div class="font-mono text-xs opacity-75">/dev/sdc</div>
+                            <div class="font-bold">Physical Volume (PV)</div>
+                        </div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="text-center text-slate-400">↓↓ Combined into ↓↓</div>
+
+                    <!-- Volume Group -->
+                    <div onclick="showLvmInfo('vg')" class="lvm-box bg-blue-600 text-white p-6 rounded text-center shadow-lg">
+                        <div class="font-bold text-xl">Volume Group (VG)</div>
+                        <div class="text-sm opacity-75">The Storage Pool</div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="text-center text-slate-400">↓↓ Carved into ↓↓</div>
+
+                    <!-- Logical Volumes -->
+                    <div class="flex space-x-4">
+                        <div onclick="showLvmInfo('lv')" class="lvm-box w-2/3 bg-green-600 text-white p-4 rounded text-center">
+                            <div class="font-bold">Logical Volume (Data)</div>
+                            <div class="text-xs opacity-75">ext4 / 35GB</div>
+                        </div>
+                        <div onclick="showLvmInfo('lv')" class="lvm-box w-1/3 bg-green-600 text-white p-4 rounded text-center">
+                            <div class="font-bold">LV (Logs)</div>
+                            <div class="text-xs opacity-75">xfs / 10GB</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LVM Info Panel -->
+                <div id="lvm-info-panel" class="mt-8 bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                    <h4 id="lvm-title" class="font-bold text-blue-800 mb-2">Select a layer above</h4>
+                    <p id="lvm-desc" class="text-sm text-slate-600 mb-3">Click on Physical Volumes, Volume Groups, or Logical Volumes to see the relevant commands.</p>
+                    <div id="lvm-code" class="code-block hidden-section"></div>
+                </div>
+            </div>
+
+            <!-- FSTAB Warning -->
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                <div class="flex">
+                    <div class="flex-shrink-0">⚠️</div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-bold text-red-800">Persistence is Mandatory</h3>
+                        <p class="text-sm text-red-700 mt-1">
+                            Mounts are temporary! Always add entries to <code class="bg-red-100 px-1 rounded">/etc/fstab</code> using UUIDs.
+                            <br>Example: <code class="text-xs">UUID=abc-123 /data ext4 defaults 0 2</code>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: NETWORKING -->
+        <section id="networking" class="section-view hidden-section max-w-5xl mx-auto">
+            <header class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">5. Networking: Layers & Firewalls</h2>
+                <p class="text-slate-600 mt-2">
+                    Distributed systems live or die by connectivity. Use this troubleshooting flow to diagnose issues from the interface level up to the firewall.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Troubleshooting Flow -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg mb-4 text-purple-800">Connectivity Troubleshooting Flow</h3>
+                    <div class="space-y-4">
+                        <div class="border rounded-lg overflow-hidden">
+                            <button onclick="toggleNetStep(1)" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 font-bold flex justify-between">
+                                1. Physical/Interface Layer <span class="text-purple-400">▼</span>
+                            </button>
+                            <div id="net-step-1" class="hidden-section p-4 bg-white text-sm">
+                                <p class="mb-2">Do I have an IP address? Is the link up?</p>
+                                <div class="code-block text-xs">ip addr show</div>
+                                <div class="code-block text-xs mt-1">ip link show</div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg overflow-hidden">
+                            <button onclick="toggleNetStep(2)" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 font-bold flex justify-between">
+                                2. Routing Layer <span class="text-purple-400">▼</span>
+                            </button>
+                            <div id="net-step-2" class="hidden-section p-4 bg-white text-sm">
+                                <p class="mb-2">Does the packet know where to go?</p>
+                                <div class="code-block text-xs">ip route show</div>
+                                <div class="code-block text-xs mt-1">ping 8.8.8.8</div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg overflow-hidden">
+                            <button onclick="toggleNetStep(3)" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 font-bold flex justify-between">
+                                3. Socket Layer <span class="text-purple-400">▼</span>
+                            </button>
+                            <div id="net-step-3" class="hidden-section p-4 bg-white text-sm">
+                                <p class="mb-2">Is the service actually running and listening?</p>
+                                <div class="code-block text-xs text-yellow-300">ss -tulnp</div>
+                                <p class="mt-2 text-xs italic text-slate-500">Memorize this command!</p>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-lg overflow-hidden">
+                            <button onclick="toggleNetStep(4)" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 font-bold flex justify-between">
+                                4. Firewall Layer <span class="text-purple-400">▼</span>
+                            </button>
+                            <div id="net-step-4" class="hidden-section p-4 bg-white text-sm">
+                                <p class="mb-2">Is the packet blocked by policy?</p>
+                                <div class="code-block text-xs">firewall-cmd --list-all</div>
+                                <div class="code-block text-xs mt-1">iptables -L</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Firewall Zones -->
+                <div class="bg-slate-800 text-slate-300 p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-white text-lg mb-4">Firewall Strategy</h3>
+                    <p class="mb-4 text-sm">Use <strong>Zones</strong> (firewalld) to manage trust levels.</p>
+                    
+                    <div class="space-y-3">
+                        <div class="bg-red-900/50 border border-red-700 p-3 rounded">
+                            <strong class="text-red-400">Public (Default)</strong>
+                            <p class="text-xs">Untrusted. Only allow specific ports (80, 443).</p>
+                        </div>
+                        <div class="bg-blue-900/50 border border-blue-700 p-3 rounded">
+                            <strong class="text-blue-400">Internal</strong>
+                            <p class="text-xs">Trusted cluster traffic. Allow DB/API ports.</p>
+                        </div>
+                        <div class="bg-green-900/50 border border-green-700 p-3 rounded">
+                            <strong class="text-green-400">Trusted</strong>
+                            <p class="text-xs">VPN/Admin IPs. Allow SSH (22).</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 border-t border-slate-700 pt-4">
+                        <p class="text-xs font-mono">
+                            <span class="text-yellow-500">firewall-cmd</span> --zone=public --add-service=http --permanent<br>
+                            <span class="text-yellow-500">firewall-cmd</span> --reload
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: CHECKLIST -->
+        <section id="checklist" class="section-view hidden-section max-w-3xl mx-auto">
+            <header class="mb-6">
+                <h2 class="text-3xl font-bold text-slate-800">Production Readiness Checklist</h2>
+                <p class="text-slate-600 mt-2">
+                    Do not deploy until these boxes are ticked. Your progress is saved locally.
+                </p>
+            </header>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="p-6 space-y-6">
+                    
+                    <!-- Group 1 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3">Identity & Access</h3>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-1">
+                            <span class="text-slate-700">Service runs under dedicated, non-root user (nologin shell)</span>
+                        </label>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-2">
+                            <span class="text-slate-700">Admin users in sudo group (audit trail)</span>
+                        </label>
+                    </div>
+
+                    <!-- Group 2 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3">Software & Storage</h3>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-3">
+                            <span class="text-slate-700">Package index refreshed (apt update/dnf check-update)</span>
+                        </label>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-4">
+                            <span class="text-slate-700">Database Data & Logs on separate Logical Volumes</span>
+                        </label>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-5">
+                            <span class="text-slate-700">All mounts added to /etc/fstab with UUIDs</span>
+                        </label>
+                    </div>
+
+                    <!-- Group 3 -->
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 border-b pb-2 mb-3">Networking</h3>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-6">
+                            <span class="text-slate-700">Static IPs configured (not DHCP)</span>
+                        </label>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-7">
+                            <span class="text-slate-700">Firewall enabled; minimum ports allowed</span>
+                        </label>
+                        <label class="flex items-start space-x-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" class="checklist-item mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500" id="cl-8">
+                            <span class="text-slate-700">Verify listening sockets with <code>ss -tulnp</code></span>
+                        </label>
+                    </div>
+
+                    <div class="pt-4 text-center">
+                        <button onclick="resetChecklist()" class="text-sm text-red-500 hover:text-red-700 underline">Reset Checklist</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- State Management & Navigation ---
+        const sections = ['home', 'identity', 'access', 'software', 'storage', 'networking', 'checklist'];
+        
+        function router(sectionId) {
+            // Hide all sections
+            sections.forEach(id => {
+                document.getElementById(id).classList.add('hidden-section');
+                document.getElementById('nav-' + id).classList.remove('active', 'border-l-4', 'border-blue-300');
+                // Keep the checklist green distinct style, remove active class logic just for generic highlighting
+                if(id !== 'checklist') {
+                    document.getElementById('nav-' + id).style.backgroundColor = '';
+                }
+            });
+
+            // Show selected section
+            const target = document.getElementById(sectionId);
+            target.classList.remove('hidden-section');
+            target.classList.add('slide-in');
+
+            // Update Nav
+            const navItem = document.getElementById('nav-' + sectionId);
+            if (sectionId !== 'checklist') {
+                navItem.classList.add('active');
+            }
+            
+            // Scroll to top
+            document.getElementById('main-content').scrollTop = 0;
+            
+            // Close mobile menu if open
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar-nav').classList.add('hidden');
+            }
+        }
+
+        // Mobile Menu Toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const nav = document.getElementById('sidebar-nav');
+            nav.classList.toggle('hidden');
+        });
+
+        // --- Identity Section: Scenario Logic ---
+        const scenarios = {
+            alice: {
+                role: "Team Lead",
+                desc: "Alice is a human user. She has a full shell (/bin/bash) and sudo privileges to manage the server.",
+                groups: ["alice", "devteam", "apirunners", "sudo"],
+                perms: "Full Admin"
+            },
+            bob: {
+                role: "Developer",
+                desc: "Bob is a human user. He can write code and edit files, but cannot restart system services or install software.",
+                groups: ["bob", "devteam"],
+                perms: "Code Contributor"
+            },
+            api: {
+                role: "Service Account",
+                desc: "apisvc is a robot. It runs the application. It has NO home directory and NO shell (/sbin/nologin) to prevent login attacks.",
+                groups: ["apisvc", "apirunners"],
+                perms: "Process Runner"
+            }
+        };
+
+        function updateScenario(user) {
+            const data = scenarios[user];
+            let html = `
+                <div class="border-l-4 border-blue-400 pl-4">
+                    <h4 class="text-xl font-bold mb-2">${user.charAt(0).toUpperCase() + user.slice(1)} <span class="text-sm font-normal bg-slate-700 px-2 py-1 rounded ml-2">${data.role}</span></h4>
+                    <p class="mb-4 text-slate-300">${data.desc}</p>
+                    <div class="flex flex-wrap gap-2">
+                        ${data.groups.map(g => `<span class="bg-slate-600 px-2 py-1 rounded text-xs font-mono">group:${g}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('scenario-details').innerHTML = html;
+        }
+
+        // --- Access Section: Permission Calculator ---
+        let perms = {
+            o: {4: false, 2: false, 1: false},
+            g: {4: false, 2: false, 1: false},
+            ot: {4: false, 2: false, 1: false}
+        };
+
+        function togglePerm(group, val) {
+            perms[group][val] = !perms[group][val];
+            const btn = document.getElementById(`btn-${group}-${val}`);
+            if(perms[group][val]) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            calculatePerms();
+        }
+
+        function calculatePerms() {
+            // Octal Calculation
+            const oVal = (perms.o[4] ? 4 : 0) + (perms.o[2] ? 2 : 0) + (perms.o[1] ? 1 : 0);
+            const gVal = (perms.g[4] ? 4 : 0) + (perms.g[2] ? 2 : 0) + (perms.g[1] ? 1 : 0);
+            const otVal = (perms.ot[4] ? 4 : 0) + (perms.ot[2] ? 2 : 0) + (perms.ot[1] ? 1 : 0);
+            
+            document.getElementById('octal-display').innerText = `${oVal}${gVal}${otVal}`;
+
+            // Symbolic Calculation
+            const sym = [
+                perms.o[4]?'r':'-', perms.o[2]?'w':'-', perms.o[1]?'x':'-',
+                perms.g[4]?'r':'-', perms.g[2]?'w':'-', perms.g[1]?'x':'-',
+                perms.ot[4]?'r':'-', perms.ot[2]?'w':'-', perms.ot[1]?'x':'-'
+            ].join('');
+            document.getElementById('symbolic-display').innerText = sym;
+
+            // Explanation
+            let text = `chmod ${oVal}${gVal}${otVal} filename`;
+            if (oVal === 7 && gVal === 5 && otVal === 5) text += " (Standard for executable scripts)";
+            if (oVal === 6 && gVal === 4 && otVal === 4) text += " (Standard for text files)";
+            if (oVal === 6 && gVal === 0 && otVal === 0) text += " (Private secret file)";
+            document.getElementById('perm-explanation').innerHTML = `<span class="font-mono font-bold text-slate-800">${text}</span>`;
+        }
+
+        // --- Software Section: Tab Logic ---
+        function setPkgTab(sys) {
+            document.getElementById('content-debian').classList.add('hidden-section');
+            document.getElementById('content-redhat').classList.add('hidden-section');
+            document.getElementById('tab-debian').classList.remove('active-pkg-tab', 'border-red-500', 'text-red-500');
+            document.getElementById('tab-redhat').classList.remove('active-pkg-tab', 'border-blue-500', 'text-blue-500');
+
+            document.getElementById('content-' + sys).classList.remove('hidden-section');
+            const activeBtn = document.getElementById('tab-' + sys);
+            if(sys === 'debian') {
+                activeBtn.classList.add('border-red-500', 'text-red-500');
+            } else {
+                activeBtn.classList.add('border-blue-500', 'text-blue-500');
+            }
+        }
+
+        // --- Storage Section: LVM Visualizer ---
+        const lvmData = {
+            pv: {
+                title: "Physical Volume (PV)",
+                desc: "The raw disk initialized for LVM use. First step.",
+                code: "pvcreate /dev/sdb"
+            },
+            vg: {
+                title: "Volume Group (VG)",
+                desc: "The 'pool' of storage created from one or more PVs. You carve generic space from here.",
+                code: "vgcreate dbvg /dev/sdb /dev/sdc"
+            },
+            lv: {
+                title: "Logical Volume (LV)",
+                desc: "The usable partition created from the pool. This is what you format and mount. Can be resized live!",
+                code: "lvcreate -L 35G -n pgdata dbvg\nlvextend -L +10G /dev/dbvg/pgdata"
+            }
+        };
+
+        function showLvmInfo(layer) {
+            const data = lvmData[layer];
+            document.getElementById('lvm-title').innerText = data.title;
+            document.getElementById('lvm-desc').innerText = data.desc;
+            document.getElementById('lvm-code').innerHTML = data.code.replace(/\n/g, '<br>');
+            document.getElementById('lvm-code').classList.remove('hidden-section');
+        }
+
+        // --- Networking Section: Troubleshooting Flow ---
+        function toggleNetStep(step) {
+            const el = document.getElementById('net-step-' + step);
+            if (el.classList.contains('hidden-section')) {
+                el.classList.remove('hidden-section');
+            } else {
+                el.classList.add('hidden-section');
+            }
+        }
+
+        // --- Checklist Logic ---
+        document.querySelectorAll('.checklist-item').forEach(item => {
+            item.addEventListener('change', (e) => {
+                localStorage.setItem(e.target.id, e.target.checked);
+            });
+            // Load state
+            const saved = localStorage.getItem(item.id);
+            if (saved === 'true') item.checked = true;
+        });
+
+        function resetChecklist() {
+            document.querySelectorAll('.checklist-item').forEach(item => {
+                item.checked = false;
+                localStorage.removeItem(item.id);
+            });
+        }
+
+        // --- Chart.js Initialization ---
+        window.addEventListener('load', function() {
+            const ctx = document.getElementById('cloudChart').getContext('2d');
+            const myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Linux', 'Windows/Other'],
+                    datasets: [{
+                        data: [90, 10],
+                        backgroundColor: ['#3b82f6', '#cbd5e1'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+            
+            // Set initial state
+            setPkgTab('debian');
+            
+            // Mobile Nav fix: default to hidden on load for mobile
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar-nav').classList.add('hidden');
+            }
+        });
+
+    </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux SysAdmin Essentials | Study Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Flashcard Flip Animation Styles */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .flip-card-inner {
+            transition: transform 0.6s;
+        }
+        .flip-card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        /* Custom Scrollbar for nicer UI */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white p-6 shadow-md">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-2xl font-bold">Linux SysAdmin Essentials</h1>
+            <p class="text-slate-400 text-sm">Study Center: Review Concepts & Test Knowledge</p>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-4xl mx-auto w-full mt-6 px-4">
+        <div class="flex border-b border-slate-300 gap-4">
+            <button onclick="switchTab('flashcards')" id="tab-flashcards" class="px-6 py-3 font-semibold border-b-4 border-blue-600 text-blue-700 focus:outline-none transition-colors">
+                📚 Flashcards
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-quiz" class="px-6 py-3 font-semibold border-b-4 border-transparent text-slate-500 hover:text-slate-700 focus:outline-none transition-colors">
+                📝 Practice Quiz
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto w-full p-4 flex-grow">
+        
+        <!-- FLASHCARDS SECTION -->
+        <section id="content-flashcards" class="block">
+            <div class="flex flex-col items-center justify-center min-h-[500px]">
+                
+                <!-- Progress -->
+                <div class="mb-4 text-slate-500 font-medium">
+                    Card <span id="card-counter">1</span> of 25
+                </div>
+
+                <!-- Card Container -->
+                <div class="perspective-1000 w-full max-w-xl h-80 cursor-pointer group" onclick="flipCard()">
+                    <!-- FIX APPLIED: Added 'flip-card-inner' class here so the CSS selector .flip-card-inner.flipped works -->
+                    <div id="card-inner" class="relative w-full h-full text-center transition-transform duration-500 transform-style-3d shadow-xl rounded-xl flip-card-inner">
+                        
+                        <!-- Front -->
+                        <div class="absolute w-full h-full bg-white border border-slate-200 rounded-xl backface-hidden flex flex-col items-center justify-center p-8">
+                            <span class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-4">Concept</span>
+                            <h2 id="card-front" class="text-2xl font-bold text-slate-800">
+                                <!-- Content injected via JS -->
+                            </h2>
+                            <p class="mt-8 text-xs text-slate-400">Click to flip</p>
+                        </div>
+
+                        <!-- Back -->
+                        <div class="absolute w-full h-full bg-slate-800 text-white rounded-xl backface-hidden rotate-y-180 flex flex-col items-center justify-center p-8">
+                            <span class="text-xs font-bold text-blue-300 uppercase tracking-widest mb-4">Answer</span>
+                            <p id="card-back" class="text-xl leading-relaxed">
+                                <!-- Content injected via JS -->
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex gap-4 mt-8">
+                    <button onclick="prevCard(event)" class="px-6 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-medium transition">
+                        ← Previous
+                    </button>
+                    <button onclick="randomCard(event)" class="px-6 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-medium transition">
+                        Shuffle 🔀
+                    </button>
+                    <button onclick="nextCard(event)" class="px-6 py-2 bg-slate-800 text-white hover:bg-slate-700 rounded-lg font-medium transition">
+                        Next →
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- QUIZ SECTION -->
+        <section id="content-quiz" class="hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Knowledge Check</h2>
+                    <button onclick="resetQuiz()" class="text-sm text-blue-600 hover:underline">Reset Quiz</button>
+                </div>
+
+                <div id="quiz-container" class="space-y-12">
+                    <!-- Questions injected via JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-100 text-center p-6 text-slate-400 text-sm mt-auto">
+        &copy; 2026 Linux SysAdmin Essentials Study Tool
+    </footer>
+
+    <!-- DATA & LOGIC -->
+    <script>
+        // --- DATA: Flashcards ---
+        const flashcards = [
+            { f: "Percentage of public cloud infrastructure powered by Linux", b: "Over 90%" },
+            { f: "The three tiers of Linux Identity", b: "User, Group, and Root (UID 0)" },
+            { f: "File containing usernames, UIDs, and shells", b: "/etc/passwd" },
+            { f: "Command to create a new user account", b: "useradd" },
+            { f: "Command to modify an existing user (e.g., add to group)", b: "usermod" },
+            { f: "Principle of Least Privilege", b: "Ensuring every process runs with the minimum identity and permissions required to function." },
+            { f: "Permission rings order", b: "Owner → Group → Others" },
+            { f: "Octal value for Read permission", b: "4" },
+            { f: "Octal value for Write permission", b: "2" },
+            { f: "Octal value for Execute permission", b: "1" },
+            { f: "Effect of SGID bit on a directory", b: "New files created inside automatically inherit the directory's group ownership." },
+            { f: "Purpose of Access Control Lists (ACLs)", b: "To grant specific permissions to named users or groups beyond the standard Owner/Group/Other model." },
+            { f: "Command to view standard permissions and ACLs", b: "getfacl" },
+            { f: "Package manager for Debian/Ubuntu systems", b: "apt" },
+            { f: "Package manager for Red Hat/Fedora systems", b: "dnf" },
+            { f: "Critical first step before installing packages", b: "Refresh the local package index (apt update or dnf check-update)." },
+            { f: "Primary benefit of LVM (Logical Volume Manager)", b: "Allows storage volumes to be resized or modified without system downtime." },
+            { f: "Three layers of LVM architecture", b: "Physical Volumes (PV) → Volume Groups (VG) → Logical Volumes (LV)" },
+            { f: "Command to grow a Logical Volume while live", b: "lvextend" },
+            { f: "File used for persistent filesystem mounts", b: "/etc/fstab" },
+            { f: "Why UUIDs are preferred in /etc/fstab", b: "They are stable identifiers that do not change when disks are added or removed, unlike device paths." },
+            { f: "Command to show network interfaces and IP addresses", b: "ip addr show" },
+            { f: "Command to show listening sockets and processes", b: "ss -tulnp" },
+            { f: "Default firewall zone for internet-facing interfaces", b: "public" },
+            { f: "Flag to make firewalld rules survive a reboot", b: "--permanent" }
+        ];
+
+        // --- DATA: Quiz ---
+        const quizData = [
+            {
+                q: "You are securing a service account named 'apisvc' that should never be used by a human to log in interactively. Which specific configuration ensures this restriction?",
+                opts: [
+                    { t: "Setting the user's shell to /usr/sbin/nologin", r: "Assigning /usr/sbin/nologin as the login shell prevents interactive login sessions, which is the standard security practice for service accounts.", c: true },
+                    { t: "Removing the user from the 'sudo' group", r: "While removing sudo privileges limits administrative power, it does not prevent the user from logging in and accessing the shell as a regular user.", c: false },
+                    { t: "Deleting the user's home directory", r: "While service accounts often don't need home directories, simply removing the directory doesn't technically prevent a shell login if the shell is still set to /bin/bash.", c: false },
+                    { t: "Setting the user's password to 'password123'", r: "Setting a weak password—or any password—is the opposite of securing an account; service accounts should generally have no password set.", c: false }
+                ],
+                h: "Think about what program runs immediately after a successful login to give the user a command prompt."
+            },
+            {
+                q: "You need to configure permissions for a script `deploy.sh`. The owner needs full access (read, write, execute), the group needs read and execute access, and others should have no access at all. What is the correct octal code?",
+                opts: [
+                    { t: "750", r: "Owner (rwx = 4+2+1 = 7), Group (r-x = 4+0+1 = 5), Others (--- = 0). This results in 750.", c: true },
+                    { t: "777", r: "777 gives full permissions (rwx) to everyone, including 'Others', which violates the requirement for no access for others.", c: false },
+                    { t: "640", r: "640 (rw- r-- ---) does not provide execute permissions to the owner or the group, which is usually needed for a script.", c: false },
+                    { t: "755", r: "755 gives 'Others' read and execute access (5), whereas the requirement is for others to have no access (0).", c: false }
+                ],
+                h: "Sum the values for the Owner (4+2+1), then the Group (4+0+1), and finally Others (0)."
+            },
+            {
+                q: "A directory `/srv/project` is owned by the group `devteam`. You want any new file created inside this directory to automatically inherit the `devteam` group ownership, rather than the creator's primary group. Which permission bit must be set?",
+                opts: [
+                    { t: "SGID (Set Group ID)", r: "The SGID bit on a directory forces new files created within it to inherit the directory's group ownership, facilitating shared team access.", c: true },
+                    { t: "SUID (Set User ID)", r: "SUID is typically used on executable files to run them with the permissions of the file owner, not for directory group inheritance.", c: false },
+                    { t: "Sticky Bit", r: "The Sticky Bit on a directory restricts file deletion to the file owner only; it does not control group inheritance.", c: false },
+                    { t: "Execute Bit", r: "The standard Execute bit on a directory merely allows users to enter (cd into) the directory.", c: false }
+                ],
+                h: "This special bit is represented by the value 2 in the special permission set (e.g., chmod 2775)."
+            },
+            {
+                q: "You have a file with standard permissions `640` (owner: rw, group: r, other: -). You need to grant a specific user, `intern_bob`, read access to this file without adding him to the owning group. Which command achieves this?",
+                opts: [
+                    { t: "setfacl -m u:intern_bob:r filename", r: "This command sets a File Access Control List (ACL) specifically for the user 'intern_bob', granting read access without altering standard group memberships.", c: true },
+                    { t: "chmod o+r filename", r: "This grants read access to 'Others', which means *everyone* on the system would be able to read the file, not just Bob.", c: false },
+                    { t: "usermod -aG owning_group intern_bob", r: "This adds Bob to the owning group, which might give him access to *other* files owned by that group, violating the principle of least privilege.", c: false },
+                    { t: "chown intern_bob filename", r: "This changes the ownership of the file to Bob, effectively removing the original owner's control, which is not the goal.", c: false }
+                ],
+                h: "Standard permissions are too coarse for this; you need a list that controls access for specific named users."
+            },
+            {
+                q: "You are managing a Red Hat-based system (like CentOS or Fedora). You need to ensure your local package index is up to date before installing `nginx`. Which command sequence is correct?",
+                opts: [
+                    { t: "dnf check-update && dnf install nginx", r: "On Red Hat systems, 'dnf' is the package manager. 'check-update' refreshes the metadata, and 'install' retrieves the package.", c: true },
+                    { t: "apt update && apt install nginx", r: "'apt' is the package manager for Debian/Ubuntu systems, not Red Hat systems.", c: false },
+                    { t: "rpm -i nginx", r: "While 'rpm' handles individual package files, it does not resolve dependencies or download from repositories like 'dnf' does.", c: false },
+                    { t: "yum install nginx", r: "While 'yum' is the predecessor to 'dnf' and often aliased, 'dnf' is the modern standard, and the question specifically asks for the modern command sequence.", c: false }
+                ],
+                h: "Identify the ecosystem (Red Hat vs. Debian) and the modern tool associated with it."
+            },
+            {
+                q: "Your production database partition is running out of space. The system uses LVM. You have added physical storage to the Volume Group. What is the correct order of operations to make this space usable without downtime?",
+                opts: [
+                    { t: "lvextend to grow the Logical Volume, then resize2fs (or xfs_growfs) to grow the filesystem", r: "You must first expand the container (the Logical Volume) using lvextend before you can expand the filesystem inside it to fill the new space.", c: true },
+                    { t: "resize2fs to grow the filesystem, then lvextend to grow the Logical Volume", r: "You cannot resize a filesystem to be larger than the underlying block device (Logical Volume) that contains it.", c: false },
+                    { t: "pvcreate to initialize the disk, then immediately mount it", r: "This skips the Volume Group and Logical Volume steps entirely, defeating the purpose of LVM and failing to expand the existing partition.", c: false },
+                    { t: "Unmount the filesystem, delete the partition, recreate it larger, and remount", r: "This is the 'old way' of managing standard partitions and causes significant downtime, which LVM is designed to avoid.", c: false }
+                ],
+                h: "Think of it like a house: you must expand the walls (Volume) before you can add more furniture (Filesystem)."
+            },
+            {
+                q: "When configuring persistent mounts in `/etc/fstab`, why is using `UUID=...` preferred over using device paths like `/dev/sdb1`?",
+                opts: [
+                    { t: "UUIDs remain constant even if disks are physically rearranged or device letters change", r: "Device names like /dev/sdb can change order if a drive fails or a new one is added, potentially causing the wrong disk to be mounted. UUIDs are unique to the filesystem.", c: true },
+                    { t: "UUIDs are easier to type and remember than device names", r: "UUIDs are long, complex strings (e.g., a1b2c3d4-...) and are much harder to type/remember than /dev/sdb1.", c: false },
+                    { t: "UUIDs provide faster read/write speeds for the mounted disk", r: "The method of identifying the disk in fstab has no impact on the performance of the filesystem once mounted.", c: false },
+                    { t: "Device paths are deprecated and no longer supported by modern Linux kernels", r: "Device paths are still fully supported and work, they are just riskier to use in dynamic environments.", c: false }
+                ],
+                h: "What happens to '/dev/sdc' if you remove '/dev/sdb' and reboot?"
+            },
+            {
+                q: "You are troubleshooting a web server that isn't reachable. You need to verify if the process is actually running and listening on port 80. Which command provides the most detailed view of listening sockets and their associated processes?",
+                opts: [
+                    { t: "ss -tulnp", r: "This command shows TCP (-t) and UDP (-u) sockets that are listening (-l), using numeric ports (-n), and displays the process (-p) owning them.", c: true },
+                    { t: "ping -c 4 localhost", r: "Ping checks for network reachability (ICMP), but it tells you nothing about specific ports or processes.", c: false },
+                    { t: "ip route show", r: "This displays the routing table, which determines where packets go, but not which services are listening on the local machine.", c: false },
+                    { t: "cat /etc/services", r: "This file merely maps port numbers to service names for reference; it does not show what is actually running on the system.", c: false }
+                ],
+                h: "The command stands for 'Socket Statistics' and is the modern replacement for netstat."
+            },
+            {
+                q: "You successfully opened port 80 using `firewall-cmd --zone=public --add-service=http`. However, after rebooting the server, the web site is inaccessible again. What was the mistake?",
+                opts: [
+                    { t: "You omitted the --permanent flag", r: "By default, firewall-cmd changes are runtime only. Adding --permanent writes the rule to disk so it survives a reboot.", c: true },
+                    { t: "You forgot to run --reload immediately after", r: "While --reload is needed to apply permanent rules to the *current* runtime, omitting it wouldn't cause the rule to disappear *after* a reboot.", c: false },
+                    { t: "You used the 'public' zone instead of 'trusted'", r: "The 'public' zone is the correct default for internet-facing interfaces; changing the zone isn't why the rule disappeared.", c: false },
+                    { t: "You should have used iptables instead", r: "firewalld is the standard tool on RHEL/Fedora; using it is correct, the issue was simply the persistence flag.", c: false }
+                ],
+                h: "Runtime configurations in Linux are stored in memory and are lost when power is cut unless written to disk."
+            },
+            {
+                q: "A server cannot connect to a remote database. You have verified that the firewall allows the traffic and the database is listening. What command should you run to check if the server has a valid path to reach the destination network?",
+                opts: [
+                    { t: "ip route show", r: "This displays the kernel routing table, which determines which interface a packet uses to leave the system based on the destination IP.", c: true },
+                    { t: "ip link set eth0 up", r: "This command enables a network interface, but if the interface was already up (implied by checking firewalls), this won't solve a routing issue.", c: false },
+                    { t: "ss -tulnp", r: "This checks for *local* listening ports, not for how the server reaches *remote* destinations.", c: false },
+                    { t: "id database_user", r: "This checks user identity information, which is unrelated to network routing paths.", c: false }
+                ],
+                h: "If a packet doesn't know which 'door' (interface) to leave through, it gets dropped. You need to check the map."
+            }
+        ];
+
+        // --- APP STATE ---
+        let currentCardIndex = 0;
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCard();
+            renderQuiz();
+        });
+
+        // --- TAB LOGIC ---
+        function switchTab(tabName) {
+            // Update Tab Styling
+            document.querySelectorAll('button[id^="tab-"]').forEach(btn => {
+                if (btn.id === `tab-${tabName}`) {
+                    btn.classList.add('border-blue-600', 'text-blue-700');
+                    btn.classList.remove('border-transparent', 'text-slate-500');
+                } else {
+                    btn.classList.remove('border-blue-600', 'text-blue-700');
+                    btn.classList.add('border-transparent', 'text-slate-500');
+                }
+            });
+
+            // Toggle Content
+            if (tabName === 'flashcards') {
+                document.getElementById('content-flashcards').classList.remove('hidden');
+                document.getElementById('content-flashcards').classList.add('block');
+                document.getElementById('content-quiz').classList.add('hidden');
+                document.getElementById('content-quiz').classList.remove('block');
+            } else {
+                document.getElementById('content-quiz').classList.remove('hidden');
+                document.getElementById('content-quiz').classList.add('block');
+                document.getElementById('content-flashcards').classList.add('hidden');
+                document.getElementById('content-flashcards').classList.remove('block');
+            }
+        }
+
+        // --- FLASHCARD LOGIC ---
+        function renderCard() {
+            const card = flashcards[currentCardIndex];
+            const inner = document.getElementById('card-inner');
+            
+            // Reset Flip State
+            inner.classList.remove('flipped');
+            
+            // Update Text (after small delay if needed, but instant is fine here)
+            // Using setTimeOut to allow flip back animation if moving fast? 
+            // Simplified: just update text.
+            document.getElementById('card-front').textContent = card.f;
+            document.getElementById('card-back').textContent = card.b;
+            document.getElementById('card-counter').textContent = currentCardIndex + 1;
+        }
+
+        function flipCard() {
+            document.getElementById('card-inner').classList.toggle('flipped');
+        }
+
+        function nextCard(e) {
+            e.stopPropagation(); // prevent flipping when clicking button
+            if (currentCardIndex < flashcards.length - 1) {
+                currentCardIndex++;
+                renderCard();
+            } else {
+                // Loop to start?
+                currentCardIndex = 0;
+                renderCard();
+            }
+        }
+
+        function prevCard(e) {
+            e.stopPropagation();
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                renderCard();
+            } else {
+                currentCardIndex = flashcards.length - 1;
+                renderCard();
+            }
+        }
+
+        function randomCard(e) {
+            e.stopPropagation();
+            const randomIndex = Math.floor(Math.random() * flashcards.length);
+            currentCardIndex = randomIndex;
+            renderCard();
+        }
+
+        // --- QUIZ LOGIC ---
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = ''; // Clear existing
+
+            quizData.forEach((item, index) => {
+                // Create Question Wrapper
+                const qDiv = document.createElement('div');
+                qDiv.className = 'border-b border-slate-100 pb-8 last:border-0';
+                
+                // Question Text
+                const title = document.createElement('h3');
+                title.className = 'text-lg font-semibold text-slate-800 mb-4';
+                title.textContent = `${index + 1}. ${item.q}`;
+                qDiv.appendChild(title);
+
+                // Options Container
+                const optsDiv = document.createElement('div');
+                optsDiv.className = 'grid grid-cols-1 gap-3';
+                
+                // Feedback Div (Hidden initially)
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.id = `feedback-${index}`;
+                feedbackDiv.className = 'hidden mt-4 p-4 rounded-lg text-sm';
+
+                // Shuffle Options (Visual only, Logic maps back)
+                // We create a localized array of options with original indices to track correctness
+                const shuffledOpts = item.opts.map((opt, i) => ({...opt, originalIndex: i}))
+                                            .sort(() => Math.random() - 0.5);
+
+                shuffledOpts.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = `w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors relative option-btn-${index}`;
+                    btn.textContent = opt.t;
+                    
+                    btn.onclick = () => {
+                        // Disable all buttons for this question
+                        const allBtns = document.querySelectorAll(`.option-btn-${index}`);
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.add('opacity-70', 'cursor-not-allowed');
+                        });
+
+                        // Highlight selected
+                        if (opt.c) {
+                            btn.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                            feedbackDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 text-green-900 border border-green-200 block';
+                            feedbackDiv.innerHTML = `<strong>Correct!</strong> ${opt.r}`;
+                        } else {
+                            btn.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+                            feedbackDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 text-red-900 border border-red-200 block';
+                            feedbackDiv.innerHTML = `<strong>Incorrect.</strong> ${opt.r}`;
+                        }
+                    };
+                    optsDiv.appendChild(btn);
+                });
+
+                qDiv.appendChild(optsDiv);
+                
+                // Hint Toggle
+                const hintBtn = document.createElement('button');
+                hintBtn.className = 'mt-2 text-xs text-slate-400 hover:text-blue-500 underline';
+                hintBtn.textContent = 'Show Hint';
+                hintBtn.onclick = () => {
+                    if(hintBtn.textContent === 'Show Hint') {
+                        hintBtn.textContent = `Hint: ${item.h}`;
+                        hintBtn.classList.remove('underline');
+                    }
+                };
+                qDiv.appendChild(hintBtn);
+
+                qDiv.appendChild(feedbackDiv);
+                container.appendChild(qDiv);
+            });
+        }
+
+        function resetQuiz() {
+            renderQuiz();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+    </script>
+</body>
+</html>
