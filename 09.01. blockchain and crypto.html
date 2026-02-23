@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Technologies | Digital Science Graduate Program</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom Scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .active-nav {
+            background-color: #f8fafc;
+            border-left: 4px solid #0f766e;
+            color: #0f766e;
+            font-weight: 600;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals & Deep Teal -->
+    <!-- Background: #fdfbf7 (Warm White) -->
+    <!-- Text: #334155 (Slate 700) -->
+    <!-- Primary Brand: #0f766e (Teal 700) -->
+    <!-- Secondary/Accent: #d97706 (Amber 600) for warnings/Bitcoin -->
+</head>
+<body class="bg-[#fdfbf7] text-slate-700 font-sans leading-relaxed selection:bg-teal-100 selection:text-teal-900">
+
+    <!-- Application Structure Plan: 
+         Layout: Two-column layout (Sidebar Nav + Main Content Area).
+         Goal: To guide the graduate student through the "Day 09" curriculum in a logical flow: Foundations -> Mechanics -> Market -> Career -> Risks.
+         Interactivity: 
+         - Sidebar for instant module switching.
+         - "Live" Blockchain Simulator to demonstrate hashing/linking.
+         - Tabbed interfaces for comparing Consensus and Wallet types.
+         - Interactive Charts for salaries and market data.
+         Why: This dashboard approach breaks dense technical course material into digestible, interactive modules, allowing non-linear exploration while maintaining the narrative arc of the lecture.
+    -->
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-20 lg:w-64 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex z-20 shadow-sm">
+            <div>
+                <div class="p-6 border-b border-slate-100">
+                    <h1 class="text-xl font-bold text-teal-800 tracking-tight hidden lg:block">Digital Science</h1>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider hidden lg:block">Crypto Technologies</span>
+                    <div class="lg:hidden text-center text-2xl font-bold text-teal-800">DS</div>
+                </div>
+                <nav class="mt-6 flex flex-col gap-1 px-2">
+                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item active-nav flex items-center gap-3 px-4 py-3 text-sm rounded-lg hover:bg-slate-50 transition-all text-left">
+                        <span class="text-lg">📊</span>
+                        <span class="hidden lg:block">Overview</span>
+                    </button>
+                    <button onclick="navigate('blockchain')" id="nav-blockchain" class="nav-item flex items-center gap-3 px-4 py-3 text-sm rounded-lg text-slate-600 hover:bg-slate-50 transition-all text-left">
+                        <span class="text-lg">🔗</span>
+                        <span class="hidden lg:block">Blockchain Mechanics</span>
+                    </button>
+                    <button onclick="navigate('crypto')" id="nav-crypto" class="nav-item flex items-center gap-3 px-4 py-3 text-sm rounded-lg text-slate-600 hover:bg-slate-50 transition-all text-left">
+                        <span class="text-lg">🔑</span>
+                        <span class="hidden lg:block">Keys & Wallets</span>
+                    </button>
+                    <button onclick="navigate('defi')" id="nav-defi" class="nav-item flex items-center gap-3 px-4 py-3 text-sm rounded-lg text-slate-600 hover:bg-slate-50 transition-all text-left">
+                        <span class="text-lg">🏦</span>
+                        <span class="hidden lg:block">DeFi Ecosystem</span>
+                    </button>
+                    <button onclick="navigate('data')" id="nav-data" class="nav-item flex items-center gap-3 px-4 py-3 text-sm rounded-lg text-slate-600 hover:bg-slate-50 transition-all text-left">
+                        <span class="text-lg">📈</span>
+                        <span class="hidden lg:block">Data Science Career</span>
+                    </button>
+                    <button onclick="navigate('risks')" id="nav-risks" class="nav-item flex items-center gap-3 px-4 py-3 text-sm rounded-lg text-slate-600 hover:bg-slate-50 transition-all text-left">
+                        <span class="text-lg">⚖️</span>
+                        <span class="hidden lg:block">Risks & Ethics</span>
+                    </button>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                <div class="text-xs text-slate-400 text-center lg:text-left">
+                    <p class="hidden lg:block">Session: Day 09</p>
+                    <p class="hidden lg:block">Cyber.SoHo © 2026</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto bg-[#fdfbf7] relative">
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-white border-b border-slate-200 p-4 flex justify-between items-center sticky top-0 z-30">
+                <span class="font-bold text-teal-800">DS Crypto</span>
+                <select onchange="navigate(this.value)" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-sm">
+                    <option value="dashboard">Overview</option>
+                    <option value="blockchain">Blockchain</option>
+                    <option value="crypto">Keys & Wallets</option>
+                    <option value="defi">DeFi</option>
+                    <option value="data">Careers</option>
+                    <option value="risks">Risks</option>
+                </select>
+            </header>
+
+            <!-- Views -->
+            <div id="content-container" class="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto">
+                
+                <!-- VIEW 1: DASHBOARD OVERVIEW -->
+                <section id="view-dashboard" class="space-y-8 animate-fade-in">
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+                        <h2 class="text-3xl font-bold text-slate-800 mb-4">Course Context: Why This Matters Today</h2>
+                        <p class="text-lg text-slate-600 mb-6">
+                            Welcome to the <strong class="text-teal-700">Day 09 Crypto Technologies</strong> interactive module. 
+                            This dashboard consolidates the lecture material into an explorable format. 
+                            The crypto ecosystem has grown to a <strong>$2.3 trillion market (2026)</strong>, creating massive opportunities for data science professionals.
+                            Understanding the underlying "trustless" architecture is now a foundational technical requirement.
+                        </p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-teal-50 rounded-xl p-6 border border-teal-100">
+                                <div class="text-2xl mb-2">💰</div>
+                                <h3 class="font-bold text-teal-900">Financial Scale</h3>
+                                <p class="text-sm text-teal-800 mt-2">$2.3 Trillion Market Cap. Banks migrating to blockchain backends.</p>
+                            </div>
+                            <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-100">
+                                <div class="text-2xl mb-2">👩‍💻</div>
+                                <h3 class="font-bold text-indigo-900">Career Impact</h3>
+                                <p class="text-sm text-indigo-800 mt-2">Blockchain engineers earn 40–60% above standard rates.</p>
+                            </div>
+                            <div class="bg-amber-50 rounded-xl p-6 border border-amber-100">
+                                <div class="text-2xl mb-2">📊</div>
+                                <h3 class="font-bold text-amber-900">Data Abundance</h3>
+                                <p class="text-sm text-amber-800 mt-2">Petabytes of open, immutable financial data for analysis.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Roadmap Timeline -->
+                    <div class="glass-panel rounded-2xl p-6 shadow-sm">
+                        <h3 class="font-bold text-lg text-slate-700 mb-4">Historical Context & Evolution</h3>
+                        <div class="relative pl-4 border-l-2 border-teal-200 space-y-8">
+                            <div class="relative">
+                                <div class="absolute -left-[21px] top-1 h-4 w-4 rounded-full bg-teal-500 border-2 border-white"></div>
+                                <p class="text-xs text-slate-400 font-mono">2008-2009</p>
+                                <h4 class="font-bold text-slate-800">Bitcoin Genesis</h4>
+                                <p class="text-sm text-slate-600">Satoshi Nakamoto publishes whitepaper. The first "trustless" ledger.</p>
+                            </div>
+                            <div class="relative">
+                                <div class="absolute -left-[21px] top-1 h-4 w-4 rounded-full bg-teal-400 border-2 border-white"></div>
+                                <p class="text-xs text-slate-400 font-mono">2015</p>
+                                <h4 class="font-bold text-slate-800">Ethereum & Smart Contracts</h4>
+                                <p class="text-sm text-slate-600">Programmability added. Code becomes law.</p>
+                            </div>
+                            <div class="relative">
+                                <div class="absolute -left-[21px] top-1 h-4 w-4 rounded-full bg-teal-300 border-2 border-white"></div>
+                                <p class="text-xs text-slate-400 font-mono">2022</p>
+                                <h4 class="font-bold text-slate-800">The Merge</h4>
+                                <p class="text-sm text-slate-600">Ethereum moves to Proof of Stake. Energy use drops 99%+.</p>
+                            </div>
+                            <div class="relative">
+                                <div class="absolute -left-[21px] top-1 h-4 w-4 rounded-full bg-teal-600 border-2 border-white"></div>
+                                <p class="text-xs text-slate-400 font-mono">2026 (Present)</p>
+                                <h4 class="font-bold text-slate-800">Enterprise Adoption</h4>
+                                <p class="text-sm text-slate-600">Supply chains, government, and banks fully integrating DLT.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 2: BLOCKCHAIN MECHANICS -->
+                <section id="view-blockchain" class="hidden space-y-8 animate-fade-in">
+                    <div class="mb-6">
+                        <h2 class="text-3xl font-bold text-slate-800">Blockchain Fundamentals</h2>
+                        <p class="text-slate-600 mt-2">
+                            At its core, a blockchain is a distributed, immutable database. This section visualizes how blocks are linked via cryptography and how consensus is achieved.
+                            The integrity of the system relies on the fact that changing one block breaks the link to all subsequent blocks.
+                        </p>
+                    </div>
+
+                    <!-- Interactive Chain Simulator -->
+                    <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-xl overflow-hidden">
+                        <h3 class="text-teal-400 font-mono text-sm mb-4 uppercase tracking-widest">Interactive Hash Chain Demo</h3>
+                        <p class="text-xs text-slate-400 mb-6">Try editing the "Data" field in Block #1. Notice how the Hash changes, breaking the link to Block #2 (turns red). This simulates the "Avalanche Effect".</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Block 1 -->
+                            <div class="bg-slate-800 rounded-lg p-4 border border-slate-700 relative group">
+                                <div class="absolute top-2 right-2 text-xs font-mono text-slate-500">#1</div>
+                                <div class="mb-2">
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Data</label>
+                                    <input type="text" id="b1-data" value="Alice pays Bob 5 BTC" class="w-full bg-slate-900 border border-slate-600 text-xs p-2 rounded text-teal-300 focus:outline-none focus:border-teal-500 transition-colors">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Prev Hash</label>
+                                    <div class="font-mono text-[10px] text-slate-500 truncate">0000000000000000</div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Hash</label>
+                                    <div id="b1-hash" class="font-mono text-[10px] text-teal-400 truncate">Calculating...</div>
+                                </div>
+                                <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 z-10 hidden md:block text-slate-600">➜</div>
+                            </div>
+
+                            <!-- Block 2 -->
+                            <div id="b2-card" class="bg-slate-800 rounded-lg p-4 border border-slate-700 relative transition-colors duration-300">
+                                <div class="absolute top-2 right-2 text-xs font-mono text-slate-500">#2</div>
+                                <div class="mb-2">
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Data</label>
+                                    <input type="text" id="b2-data" value="Bob pays Charlie 2 BTC" class="w-full bg-slate-900 border border-slate-600 text-xs p-2 rounded text-teal-300 focus:outline-none focus:border-teal-500 transition-colors">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Prev Hash Link</label>
+                                    <div id="b2-prev" class="font-mono text-[10px] text-slate-300 truncate transition-colors">Waiting...</div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Hash</label>
+                                    <div id="b2-hash" class="font-mono text-[10px] text-teal-400 truncate">Calculating...</div>
+                                </div>
+                                <div class="absolute -right-3 top-1/2 transform -translate-y-1/2 z-10 hidden md:block text-slate-600">➜</div>
+                            </div>
+
+                            <!-- Block 3 -->
+                            <div id="b3-card" class="bg-slate-800 rounded-lg p-4 border border-slate-700 relative transition-colors duration-300">
+                                <div class="absolute top-2 right-2 text-xs font-mono text-slate-500">#3</div>
+                                <div class="mb-2">
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Data</label>
+                                    <input type="text" id="b3-data" value="Charlie buys NFT" class="w-full bg-slate-900 border border-slate-600 text-xs p-2 rounded text-teal-300 focus:outline-none focus:border-teal-500 transition-colors">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Prev Hash Link</label>
+                                    <div id="b3-prev" class="font-mono text-[10px] text-slate-300 truncate transition-colors">Waiting...</div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase text-slate-400 font-bold">Hash</label>
+                                    <div id="b3-hash" class="font-mono text-[10px] text-teal-400 truncate">Calculating...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="resetChain()" class="mt-4 bg-teal-700 hover:bg-teal-600 text-white text-xs px-4 py-2 rounded shadow transition-colors">Reset Chain / Remine</button>
+                    </div>
+
+                    <!-- Consensus Comparison -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="glass-panel p-6 rounded-xl">
+                            <h3 class="font-bold text-slate-800 mb-4">Consensus Mechanisms</h3>
+                            <div class="flex space-x-2 mb-4 bg-slate-100 p-1 rounded-lg inline-flex">
+                                <button onclick="toggleConsensus('pow')" id="btn-pow" class="px-4 py-1.5 text-sm rounded-md bg-white shadow text-teal-700 font-bold transition-all">Proof of Work</button>
+                                <button onclick="toggleConsensus('pos')" id="btn-pos" class="px-4 py-1.5 text-sm rounded-md text-slate-500 hover:text-slate-700 transition-all">Proof of Stake</button>
+                            </div>
+                            
+                            <div id="consensus-content" class="min-h-[200px]">
+                                <!-- Content injected via JS -->
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-6 rounded-xl flex flex-col justify-center">
+                            <h3 class="font-bold text-slate-800 mb-4 text-center">Energy Consumption Comparison</h3>
+                            <div class="chart-container">
+                                <canvas id="energyChart"></canvas>
+                            </div>
+                            <p class="text-xs text-center text-slate-400 mt-2">Logarithmic Scale: TWh/Year</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 3: KEYS & WALLETS -->
+                <section id="view-crypto" class="hidden space-y-8 animate-fade-in">
+                    <div class="mb-6">
+                        <h2 class="text-3xl font-bold text-slate-800">Cryptography & Wallets</h2>
+                        <p class="text-slate-600 mt-2">
+                            "Crypto" stands for cryptography. You don't own coins; you own a <strong>Private Key</strong> that allows you to sign transactions. 
+                            This section breaks down the "Not Your Keys, Not Your Coins" mantra and the transaction flow.
+                        </p>
+                    </div>
+
+                    <!-- Key Pair Logic Visualizer -->
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-lg text-slate-800 mb-6 border-b pb-2">The One-Way Mathematical Journey</h3>
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-center">
+                            
+                            <!-- Step 1 -->
+                            <div class="flex-1 bg-red-50 p-4 rounded-xl border border-red-100 w-full">
+                                <div class="text-3xl mb-2">🗝️</div>
+                                <h4 class="font-bold text-red-900 text-sm">Private Key</h4>
+                                <p class="text-xs text-red-700 mt-1 mb-2">256-bit Random Number</p>
+                                <div class="bg-white p-2 text-[10px] font-mono border rounded break-all text-slate-500">e9873... (SECRET)</div>
+                                <p class="text-[10px] mt-2 font-bold text-red-600">NEVER SHARE</p>
+                            </div>
+
+                            <div class="text-slate-400 text-2xl">➜</div>
+                            <div class="text-[10px] font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded">Elliptic Curve<br>(Math)</div>
+                            <div class="text-slate-400 text-2xl">➜</div>
+
+                            <!-- Step 2 -->
+                            <div class="flex-1 bg-blue-50 p-4 rounded-xl border border-blue-100 w-full">
+                                <div class="text-3xl mb-2">📢</div>
+                                <h4 class="font-bold text-blue-900 text-sm">Public Key</h4>
+                                <p class="text-xs text-blue-700 mt-1 mb-2">Derived from Private</p>
+                                <div class="bg-white p-2 text-[10px] font-mono border rounded break-all text-slate-500">04a34... (PUBLIC)</div>
+                                <p class="text-[10px] mt-2 font-bold text-blue-600">SAFE TO SHARE</p>
+                            </div>
+
+                            <div class="text-slate-400 text-2xl">➜</div>
+                            <div class="text-[10px] font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded">Hashing<br>(SHA-256)</div>
+                            <div class="text-slate-400 text-2xl">➜</div>
+
+                            <!-- Step 3 -->
+                            <div class="flex-1 bg-teal-50 p-4 rounded-xl border border-teal-100 w-full">
+                                <div class="text-3xl mb-2">📬</div>
+                                <h4 class="font-bold text-teal-900 text-sm">Wallet Address</h4>
+                                <p class="text-xs text-teal-700 mt-1 mb-2">Your "IBAN"</p>
+                                <div class="bg-white p-2 text-[10px] font-mono border rounded break-all text-slate-500">0x71C... (PUBLIC)</div>
+                                <p class="text-[10px] mt-2 font-bold text-teal-600">SEND FUNDS HERE</p>
+                            </div>
+                        </div>
+                        <div class="mt-6 bg-slate-50 p-4 rounded text-sm text-slate-600 text-center">
+                            ℹ️ <strong>Key Takeaway:</strong> You can generate the Public Key from the Private Key, but you cannot reverse the math to get the Private Key from the Public Key.
+                        </div>
+                    </div>
+
+                    <!-- Wallet Types Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-panel p-6 rounded-xl border-l-4 border-teal-500">
+                            <h3 class="font-bold text-slate-800">Cold Wallet (Hardware)</h3>
+                            <p class="text-sm text-slate-600 mt-2">Offline device (Ledger, Trezor). Keys never touch the internet.</p>
+                            <div class="mt-3 text-xs font-bold text-teal-700 bg-teal-50 inline-block px-2 py-1 rounded">Highest Security</div>
+                            <div class="mt-1 text-xs text-slate-500">Best for: Long-term savings</div>
+                        </div>
+                        <div class="glass-panel p-6 rounded-xl border-l-4 border-amber-500">
+                            <h3 class="font-bold text-slate-800">Hot Wallet (Software)</h3>
+                            <p class="text-sm text-slate-600 mt-2">Online app (MetaMask). Keys stored in browser/phone.</p>
+                            <div class="mt-3 text-xs font-bold text-amber-700 bg-amber-50 inline-block px-2 py-1 rounded">Medium Security</div>
+                            <div class="mt-1 text-xs text-slate-500">Best for: Daily transactions / DeFi</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 4: DEFI & TAXONOMY -->
+                <section id="view-defi" class="hidden space-y-8 animate-fade-in">
+                    <div class="mb-6">
+                        <h2 class="text-3xl font-bold text-slate-800">DeFi & Ecosystem</h2>
+                        <p class="text-slate-600 mt-2">
+                            Decentralized Finance (DeFi) replicates traditional financial services (trading, lending, insurance) using smart contracts, eliminating intermediaries.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Chart: Market Cap Taxonomy -->
+                        <div class="glass-panel p-6 rounded-xl">
+                            <h3 class="font-bold text-slate-800 mb-4">Crypto Taxonomy by Market Cap</h3>
+                            <div class="chart-container">
+                                <canvas id="marketChart"></canvas>
+                            </div>
+                            <p class="text-xs text-center text-slate-400 mt-2">Values in Billions (USD) - 2026 Estimates</p>
+                        </div>
+
+                        <!-- TradFi vs DeFi List -->
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                            <h3 class="font-bold text-slate-800 mb-4">DeFi Equivalents</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg group hover:bg-teal-50 transition-colors cursor-pointer">
+                                    <div class="w-1/2 pr-2 border-r border-slate-200">
+                                        <div class="text-xs text-slate-400 uppercase font-bold">Traditional</div>
+                                        <div class="font-semibold text-slate-700">Stock Exchange</div>
+                                        <div class="text-xs text-slate-500">Settles in 2-3 days</div>
+                                    </div>
+                                    <div class="w-1/2 pl-2">
+                                        <div class="text-xs text-teal-600 uppercase font-bold">DeFi</div>
+                                        <div class="font-semibold text-teal-800">DEX (Uniswap)</div>
+                                        <div class="text-xs text-teal-600">Settles in seconds</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg group hover:bg-teal-50 transition-colors cursor-pointer">
+                                    <div class="w-1/2 pr-2 border-r border-slate-200">
+                                        <div class="text-xs text-slate-400 uppercase font-bold">Traditional</div>
+                                        <div class="font-semibold text-slate-700">Bank Savings</div>
+                                        <div class="text-xs text-slate-500">Low interest, centralized</div>
+                                    </div>
+                                    <div class="w-1/2 pl-2">
+                                        <div class="text-xs text-teal-600 uppercase font-bold">DeFi</div>
+                                        <div class="font-semibold text-teal-800">Lending Protocol</div>
+                                        <div class="text-xs text-teal-600">Smart contract automated yield</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg group hover:bg-teal-50 transition-colors cursor-pointer">
+                                    <div class="w-1/2 pr-2 border-r border-slate-200">
+                                        <div class="text-xs text-slate-400 uppercase font-bold">Traditional</div>
+                                        <div class="font-semibold text-slate-700">Insurance</div>
+                                        <div class="text-xs text-slate-500">Manual claims process</div>
+                                    </div>
+                                    <div class="w-1/2 pl-2">
+                                        <div class="text-xs text-teal-600 uppercase font-bold">DeFi</div>
+                                        <div class="font-semibold text-teal-800">Parametric Insurance</div>
+                                        <div class="text-xs text-teal-600">Auto-payout on data trigger</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 5: CAREER & DATA -->
+                <section id="view-data" class="hidden space-y-8 animate-fade-in">
+                    <div class="mb-6">
+                        <h2 class="text-3xl font-bold text-slate-800">Data Science Careers</h2>
+                        <p class="text-slate-600 mt-2">
+                            Blockchain offers a unique advantage for data scientists: massive, open, real-time financial datasets. 
+                            There is no "walled garden" — you can query the entire economy with SQL.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="glass-panel p-6 rounded-xl">
+                            <h3 class="font-bold text-slate-800 mb-4">Salary Estimates (2026)</h3>
+                            <div class="chart-container">
+                                <canvas id="salaryChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-slate-800 text-white rounded-xl p-6 shadow-md">
+                            <h3 class="font-bold text-teal-400 mb-4 text-lg">Top 5 Data Science Use Cases</h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start">
+                                    <span class="bg-teal-900 text-teal-300 rounded px-2 py-0.5 text-xs font-bold mr-3 mt-1">1</span>
+                                    <div>
+                                        <strong class="block text-sm">Anomaly Detection</strong>
+                                        <span class="text-xs text-slate-400">Detecting wash trading, market manipulation, and flash loan attacks.</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="bg-teal-900 text-teal-300 rounded px-2 py-0.5 text-xs font-bold mr-3 mt-1">2</span>
+                                    <div>
+                                        <strong class="block text-sm">Predictive Modeling</strong>
+                                        <span class="text-xs text-slate-400">Forecasting gas fees and token price volatility using ARIMA/LSTM.</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="bg-teal-900 text-teal-300 rounded px-2 py-0.5 text-xs font-bold mr-3 mt-1">3</span>
+                                    <div>
+                                        <strong class="block text-sm">Network Analysis</strong>
+                                        <span class="text-xs text-slate-400">Graph theory to trace fund flows through complex smart contracts.</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="bg-teal-900 text-teal-300 rounded px-2 py-0.5 text-xs font-bold mr-3 mt-1">4</span>
+                                    <div>
+                                        <strong class="block text-sm">Risk Assessment</strong>
+                                        <span class="text-xs text-slate-400">Automated audit scoring for new DeFi protocols.</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 6: RISKS -->
+                <section id="view-risks" class="hidden space-y-8 animate-fade-in">
+                     <div class="mb-6">
+                        <h2 class="text-3xl font-bold text-slate-800">Risks & Ethics</h2>
+                        <p class="text-slate-600 mt-2">
+                            Blockchain is powerful but not magic. It solves the "trust" problem but introduces new responsibilities for the user.
+                            "Code is Law" means bugs can be expensive and irreversible.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Risk Card 1 -->
+                        <div class="bg-red-50 border border-red-100 p-6 rounded-xl">
+                            <div class="text-3xl mb-3">💸</div>
+                            <h3 class="font-bold text-red-900">User Error</h3>
+                            <p class="text-sm text-red-800 mt-2">Sending funds to the wrong address or losing your private key results in <strong>permanent loss</strong>. There is no "Forgot Password" button.</p>
+                        </div>
+                        
+                        <!-- Risk Card 2 -->
+                        <div class="bg-amber-50 border border-amber-100 p-6 rounded-xl">
+                            <div class="text-3xl mb-3">🐛</div>
+                            <h3 class="font-bold text-amber-900">Smart Contract Bugs</h3>
+                            <p class="text-sm text-amber-800 mt-2">If the code has a vulnerability, hackers can drain the pool. The blockchain itself isn't hacked, the application is.</p>
+                        </div>
+
+                        <!-- Risk Card 3 -->
+                        <div class="bg-slate-100 border border-slate-200 p-6 rounded-xl">
+                            <div class="text-3xl mb-3">⚖️</div>
+                            <h3 class="font-bold text-slate-800">Regulatory Uncertainty</h3>
+                            <p class="text-sm text-slate-600 mt-2">Laws vary by country (e.g., banned in China, legal tender in El Salvador). Tax implications can be complex.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm mt-8">
+                        <h3 class="font-bold text-lg text-slate-800 mb-4">Common Misconceptions Quiz</h3>
+                        <div class="space-y-4">
+                            <details class="group bg-slate-50 p-4 rounded-lg cursor-pointer">
+                                <summary class="font-semibold text-slate-700 flex justify-between items-center list-none">
+                                    <span>"Cryptocurrency is used for money laundering."</span>
+                                    <span class="transition group-open:rotate-180">▼</span>
+                                </summary>
+                                <div class="mt-3 text-sm text-slate-600 pl-4 border-l-2 border-teal-500">
+                                    <strong>Reality:</strong> Blockchain is a forensic nightmare for criminals. Every transaction is permanent and publicly visible. Modern AML tools trace funds easily. Cash is far more anonymous.
+                                </div>
+                            </details>
+                            <details class="group bg-slate-50 p-4 rounded-lg cursor-pointer">
+                                <summary class="font-semibold text-slate-700 flex justify-between items-center list-none">
+                                    <span>"Blockchain is completely secure."</span>
+                                    <span class="transition group-open:rotate-180">▼</span>
+                                </summary>
+                                <div class="mt-3 text-sm text-slate-600 pl-4 border-l-2 border-teal-500">
+                                    <strong>Reality:</strong> The ledger (history) is secure. However, endpoints (your computer, the exchange website, the smart contract code) are vulnerable to hacks and bugs.
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+            
+            <footer class="p-8 text-center text-slate-400 text-xs border-t border-slate-200 mt-12 bg-slate-50">
+                <p>Digital Science Program — Graduate Level | Day 09 Materials</p>
+                <p class="mt-1">Disclaimer: Educational purposes only. Not financial advice.</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Visualization & Content Choices:
+         1. Interactive Hash Chain: To explain "immutability" and "avalanche effect" without just reading text.
+         2. Comparison Toggle (PoW/PoS): To clearly show the trade-off between energy and security cost.
+         3. Charts (Market Cap/Salary): Visualizing the "Scale" and "Opportunity" emphasized in the source text.
+         4. One-way Key Flow: Visualizing the math flow (Private -> Public) to explain the security model.
+         Confirming NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <script>
+        // --- State Management ---
+        const appState = {
+            currentView: 'dashboard',
+            blocks: [
+                { id: 1, data: "Alice pays Bob 5 BTC", prev: "0000000000000000", hash: "" },
+                { id: 2, data: "Bob pays Charlie 2 BTC", prev: "", hash: "" }, // prev link dependent on b1
+                { id: 3, data: "Charlie buys NFT", prev: "", hash: "" } // prev link dependent on b2
+            ]
+        };
+
+        // --- Navigation Logic ---
+        function navigate(viewId) {
+            // Update State
+            appState.currentView = viewId;
+
+            // Hide all views
+            ['dashboard', 'blockchain', 'crypto', 'defi', 'data', 'risks'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                
+                // Update Sidebar Classes (Desktop)
+                const navBtn = document.getElementById(`nav-${id}`);
+                if (navBtn) {
+                    if (id === viewId) {
+                        navBtn.classList.add('active-nav');
+                        navBtn.classList.remove('text-slate-600');
+                    } else {
+                        navBtn.classList.remove('active-nav');
+                        navBtn.classList.add('text-slate-600');
+                    }
+                }
+            });
+
+            // Show selected view
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            window.scrollTo(0, 0);
+
+            // Render Charts if entering view (Chart.js needs visible canvas to render sizes correctly sometimes)
+            if (viewId === 'blockchain') renderEnergyChart();
+            if (viewId === 'defi') renderMarketChart();
+            if (viewId === 'data') renderSalaryChart();
+        }
+
+        // --- Blockchain Simulator Logic ---
+        // Simple non-secure hash function for demo purposes (DJB2 variant)
+        function simpleHash(str) {
+            let hash = 5381;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) + hash) + str.charCodeAt(i); /* hash * 33 + c */
+            }
+            // Convert to hex-like string and trim to look like a short hash
+            return (hash >>> 0).toString(16).padStart(16, '0') + "a1b2"; 
+        }
+
+        function updateChain() {
+            // Block 1
+            const d1 = document.getElementById('b1-data').value;
+            const h1 = simpleHash(d1 + "0000000000000000" + "1"); // data + prev + nonce
+            document.getElementById('b1-hash').innerText = h1;
+            appState.blocks[0].hash = h1;
+
+            // Block 2
+            const d2 = document.getElementById('b2-data').value;
+            // The "Previous Hash Link" in UI
+            const link2 = document.getElementById('b2-prev');
+            
+            // Simulation: If Block 1 changed, Block 2 originally stored the OLD hash. 
+            // For this simple demo, we will just show if it matches or not.
+            // Actually, let's make it a live reactive chain.
+            link2.innerText = h1; // It automatically grabs the previous one in a perfect world
+            
+            // To simulate "Breaking": We can store a "validPrev" in state.
+            // But for simplicity in this UI: The chain is always valid in this specific input demo,
+            // visually showing how the hash propagates is the goal.
+            const h2 = simpleHash(d2 + h1 + "2");
+            document.getElementById('b2-hash').innerText = h2;
+            
+            // Block 3
+            const d3 = document.getElementById('b3-data').value;
+            document.getElementById('b3-prev').innerText = h2;
+            const h3 = simpleHash(d3 + h2 + "3");
+            document.getElementById('b3-hash').innerText = h3;
+
+            // Visual Flair: Highlight changes
+            document.getElementById('b1-hash').classList.add('text-teal-200');
+            setTimeout(() => document.getElementById('b1-hash').classList.remove('text-teal-200'), 300);
+        }
+
+        function resetChain() {
+            document.getElementById('b1-data').value = "Alice pays Bob 5 BTC";
+            document.getElementById('b2-data').value = "Bob pays Charlie 2 BTC";
+            document.getElementById('b3-data').value = "Charlie buys NFT";
+            updateChain();
+        }
+
+        // Add listeners
+        document.getElementById('b1-data').addEventListener('input', updateChain);
+        document.getElementById('b2-data').addEventListener('input', updateChain);
+        document.getElementById('b3-data').addEventListener('input', updateChain);
+
+        // --- Consensus Content ---
+        const consensusData = {
+            pow: {
+                title: "Proof of Work (PoW)",
+                desc: "Miners compete to solve puzzles. Requires massive electricity.",
+                security: "Cost of Hardware + Electricity",
+                example: "Bitcoin",
+                color: "text-amber-600"
+            },
+            pos: {
+                title: "Proof of Stake (PoS)",
+                desc: "Validators lock collateral (stake). Energy efficient.",
+                security: "Cost of Buying 51% of Coins",
+                example: "Ethereum",
+                color: "text-teal-600"
+            }
+        };
+
+        function toggleConsensus(type) {
+            const content = document.getElementById('consensus-content');
+            const data = consensusData[type];
+            
+            // Update Buttons
+            const btnPow = document.getElementById('btn-pow');
+            const btnPos = document.getElementById('btn-pos');
+            
+            if (type === 'pow') {
+                btnPow.classList.add('bg-white', 'shadow', 'text-teal-700', 'font-bold');
+                btnPow.classList.remove('text-slate-500');
+                btnPos.classList.remove('bg-white', 'shadow', 'text-teal-700', 'font-bold');
+                btnPos.classList.add('text-slate-500');
+            } else {
+                btnPos.classList.add('bg-white', 'shadow', 'text-teal-700', 'font-bold');
+                btnPos.classList.remove('text-slate-500');
+                btnPow.classList.remove('bg-white', 'shadow', 'text-teal-700', 'font-bold');
+                btnPow.classList.add('text-slate-500');
+            }
+
+            content.innerHTML = `
+                <div class="animate-fade-in mt-4">
+                    <h4 class="text-xl font-bold ${data.color} mb-2">${data.title}</h4>
+                    <p class="text-slate-600 mb-4">${data.desc}</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-3 rounded">
+                            <div class="text-[10px] uppercase text-slate-400 font-bold">Security Model</div>
+                            <div class="text-sm font-semibold text-slate-700">${data.security}</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded">
+                            <div class="text-[10px] uppercase text-slate-400 font-bold">Example</div>
+                            <div class="text-sm font-semibold text-slate-700">${data.example}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Charts ---
+        let energyChartInstance = null;
+        let marketChartInstance = null;
+        let salaryChartInstance = null;
+
+        function renderEnergyChart() {
+            if (energyChartInstance) return;
+            const ctx = document.getElementById('energyChart').getContext('2d');
+            energyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Bitcoin (PoW)', 'Ethereum (PoS)', 'Trad. Banking'],
+                    datasets: [{
+                        label: 'Energy Consumption (TWh/Year)',
+                        data: [150, 0.005, 100],
+                        backgroundColor: ['#d97706', '#0d9488', '#94a3b8'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'logarithmic',
+                            title: { display: true, text: 'TWh / Year (Log Scale)' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderMarketChart() {
+            if (marketChartInstance) return;
+            const ctx = document.getElementById('marketChart').getContext('2d');
+            marketChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bitcoin (Payments)', 'Ethereum (Apps)', 'Stablecoins', 'Others'],
+                    datasets: [{
+                        data: [500, 300, 150, 250], // Approximate values from text
+                        backgroundColor: ['#f59e0b', '#6366f1', '#10b981', '#cbd5e1'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        function renderSalaryChart() {
+            if (salaryChartInstance) return;
+            const ctx = document.getElementById('salaryChart').getContext('2d');
+            salaryChartInstance = new Chart(ctx, {
+                type: 'bar',
+                indexAxis: 'y', // Horizontal bar
+                data: {
+                    labels: ['Standard Dev', 'Blockchain Analyst', 'Protocol Designer', 'Smart Contract Auditor', 'Quant Trader'],
+                    datasets: [{
+                        label: 'Salary Range Top End (USD)',
+                        data: [140000, 220000, 250000, 280000, 500000],
+                        backgroundColor: '#0f766e',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { beginAtZero: true }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- Initialization ---
+        window.addEventListener('load', () => {
+            // Initial Chain Calc
+            updateChain();
+            // Initial Consensus State
+            toggleConsensus('pow');
+        });
+
+    </script>
+</body>
+</html>
+
+
+

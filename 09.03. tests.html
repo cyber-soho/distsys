@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Technologies Mastery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax for rendering LaTeX formulas -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Flashcard 3D Flip Styles */
+        .perspective {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .flip-card-inner {
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased selection:bg-blue-200 selection:text-blue-900">
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 flex items-center justify-center gap-3">
+                <i data-lucide="blocks" class="w-8 h-8 text-blue-600"></i>
+                Crypto Technologies Mastery
+            </h1>
+            <p class="text-slate-500 mt-2">Master the fundamentals of blockchain, consensus, and cryptography.</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="flex justify-center mb-8">
+            <div class="bg-slate-200/60 p-1 rounded-xl inline-flex shadow-sm">
+                <button id="btn-tab-flashcards" onclick="switchTab('flashcards')" class="px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 bg-white text-blue-700 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="gallery-horizontal" class="w-4 h-4"></i>
+                        Flashcards (25)
+                    </div>
+                </button>
+                <button id="btn-tab-quiz" onclick="switchTab('quiz')" class="px-6 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:text-slate-900 transition-all duration-200">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="check-square" class="w-4 h-4"></i>
+                        Practice Quiz (10)
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Flashcards Tab Content -->
+        <div id="tab-flashcards" class="block animate-in fade-in duration-500">
+            <div class="flex flex-col items-center">
+                
+                <!-- Progress Indicator -->
+                <div class="text-sm font-semibold tracking-wide text-slate-500 mb-4 uppercase flex items-center gap-2">
+                    Card <span id="fc-current" class="text-blue-600">1</span> of <span id="fc-total">25</span>
+                </div>
+
+                <!-- Flashcard -->
+                <div id="flashcard-container" class="perspective w-full max-w-2xl h-[350px] cursor-pointer group" onclick="toggleFlip()">
+                    <div class="flip-card-inner relative w-full h-full transform-style-3d shadow-xl rounded-2xl group-hover:shadow-2xl transition-shadow duration-300">
+                        
+                        <!-- Front (Question) -->
+                        <div class="absolute w-full h-full backface-hidden bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center p-8 md:p-12 text-center">
+                            <div class="absolute top-4 left-4 text-slate-300">
+                                <i data-lucide="help-circle" class="w-6 h-6"></i>
+                            </div>
+                            <h2 id="fc-front-text" class="text-2xl md:text-3xl font-semibold text-slate-800 leading-tight"></h2>
+                            <div class="absolute bottom-6 text-sm text-slate-400 flex items-center gap-2 animate-pulse">
+                                <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i> Click to flip
+                            </div>
+                        </div>
+
+                        <!-- Back (Answer) -->
+                        <div class="absolute w-full h-full backface-hidden bg-blue-600 rotate-y-180 rounded-2xl border border-blue-500 flex flex-col items-center justify-center p-8 md:p-12 text-center">
+                            <div class="absolute top-4 left-4 text-blue-300">
+                                <i data-lucide="lightbulb" class="w-6 h-6"></i>
+                            </div>
+                            <p id="fc-back-text" class="text-xl md:text-2xl font-medium text-white leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center gap-4 mt-8">
+                    <button onclick="prevCard()" class="p-3 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <button onclick="toggleFlip()" class="px-8 py-3 rounded-xl bg-slate-800 text-white font-medium hover:bg-slate-700 transition-colors shadow-md flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+                        <i data-lucide="refresh-cw" class="w-5 h-5"></i> Flip Card
+                    </button>
+                    <button onclick="nextCard()" class="p-3 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Tab Content -->
+        <div id="tab-quiz" class="hidden animate-in fade-in duration-500">
+            <div class="max-w-3xl mx-auto flex flex-col gap-6" id="quiz-container">
+                <!-- Quiz questions will be injected here by JS -->
+            </div>
+            <div class="mt-8 text-center" id="quiz-results" style="display: none;">
+                <div class="inline-block bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-2">Quiz Completed!</h3>
+                    <p class="text-slate-600 mb-6">You've reached the end of the practice questions.</p>
+                    <button onclick="resetQuiz()" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                        Retake Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // --- DATA ---
+
+        const flashcardsData = [
+            { front: "Definition of Blockchain", back: "A distributed, immutable, cryptographically-linked sequence of data records (blocks) shared across peer-to-peer network nodes." },
+            { front: "SHA-256 Output Size", back: "256 bits (represented as a 64-character hexadecimal string)." },
+            { front: "Avalanche Effect", back: "A property of hash functions where a single bit change in the input results in a completely different output hash." },
+            { front: "Mechanism linking blockchain blocks", back: "The <code>previous_hash</code> field included in the header of the subsequent block." },
+            { front: "Proof of Work (PoW)", back: "A consensus mechanism where miners compete to solve computationally intensive puzzles to validate blocks and earn rewards." },
+            { front: "Proof of Stake (PoS)", back: "A consensus mechanism where validators are selected to create blocks based on the amount of cryptocurrency they hold and lock up as collateral." },
+            { front: "Smart Contract", back: "A self-executing program stored on a blockchain that automatically runs when predetermined conditions are met." },
+            { front: "Function of a Private Key", back: "To sign transactions and prove ownership of funds without revealing the key itself." },
+            { front: "Function of a Public Key", back: "Derived from the private key, it allows others to verify digital signatures and verify addresses." },
+            { front: "Cold Wallet", back: "An offline device used to store private keys, offering high security against online hacking attempts." },
+            { front: "DeFi (Decentralized Finance)", back: "Financial services like lending and trading built on public blockchains using smart contracts, removing intermediaries like banks." },
+            { front: "Stablecoin", back: "A cryptocurrency designed to minimize price volatility, often pegged to a fiat currency like the US Dollar." },
+            { front: "51% Attack", back: "An attack where a single entity gains control of more than 50% of the network's mining power or stake, enabling them to alter transaction history." },
+            { front: "Nonce", back: "A random number used once in Proof of Work mining to vary the block's hash until it meets the difficulty target." },
+            { front: "Equation for the secp256k1 curve", back: "$y^2 = x^3 + 7 \\pmod p$" },
+            { front: "ECDSA", back: "Elliptic Curve Digital Signature Algorithm; used to create digital signatures that prove transaction authorization." },
+            { front: "Double-Spend Problem", back: "The risk that a digital currency token could be spent more than once; solved by blockchain's timestamped public ledger." },
+            { front: "DEX (Decentralized Exchange)", back: "A peer-to-peer marketplace where users trade cryptocurrencies directly via smart contracts without a central authority." },
+            { front: "Merkle Root", back: "A single hash representing the cryptographic summary of all transactions in a block." },
+            { front: "Ethereum 'The Merge'", back: "The 2022 transition of Ethereum from Proof of Work to Proof of Stake, reducing energy consumption by over 99%." },
+            { front: "Layer 2 Scaling", back: "Protocols built on top of a base blockchain (Layer 1) to increase transaction speed and reduce costs." },
+            { front: "Immutability in Blockchain", back: "The inability to delete or alter data once confirmed on the blockchain, due to cryptographic linking." },
+            { front: "Yield Farming", back: "A DeFi strategy where users provide liquidity to protocols in exchange for interest and token rewards." },
+            { front: "Security vs. Speed Tradeoff", back: "Decentralized networks sacrifice speed and efficiency to achieve higher security and censorship resistance." },
+            { front: "Not Your Keys, Not Your Coins", back: "A common saying emphasizing that if you don't control the private keys (e.g., using a custodial exchange), you don't truly own the assets." }
+        ];
+
+        const quizData = [
+            {
+                question: "If a malicious actor attempts to alter the transaction data in Block 10 of a blockchain, what is the immediate cryptographic consequence that alerts the network?",
+                hint: "Think about how blocks are linked together like a chain and what happens to that link if one link is modified.",
+                options: [
+                    { text: "The timestamp of Block 10 will automatically reset to the current time.", isCorrect: false, rationale: "Timestamps are static data fields set when the block is mined and do not change automatically upon data alteration." },
+                    { text: "The hash of Block 10 changes, causing a mismatch with the 'previous hash' field in Block 11, invalidating it and all subsequent blocks.", isCorrect: true, rationale: "This describes the 'Avalanche Effect' where a change in input changes the hash, breaking the cryptographic link to the next block." },
+                    { text: "The network's difficulty target increases, making it impossible to mine new blocks until the error is fixed.", isCorrect: false, rationale: "Difficulty adjustments are periodic and programmatic based on block time, not a direct response to data tampering in a specific block." },
+                    { text: "The private key of the miner who mined Block 10 is revealed to the network.", isCorrect: false, rationale: "Private keys are never revealed by the protocol, and data alteration does not reverse the one-way cryptography used to derive public keys." }
+                ]
+            },
+            {
+                question: "In the context of the 'Double-Spend Problem', how does a blockchain prevents a user from sending the same digital coin to two different people?",
+                hint: "Consider how a bank ensures you don't spend money you don't have, and how a decentralized network achieves this without a bank.",
+                options: [
+                    { text: "By encrypting the coin file so it cannot be copied.", isCorrect: false, rationale: "Coins are not files that can be encrypted or copied; they are entries in a ledger." },
+                    { text: "By using a central authority to verify every transaction manually.", isCorrect: false, rationale: "Blockchains are decentralized and do not rely on a central authority or manual verification." },
+                    { text: "By requiring the sender to delete the coin from their hard drive before sending.", isCorrect: false, rationale: "Ownership is tracked on the public ledger, not by files on a user's local hard drive." },
+                    { text: "By maintaining a timestamped public ledger where the network rejects any transaction attempting to spend an already-spent output.", isCorrect: true, rationale: "The network consensus validates against the full history to ensure the specific unspent transaction output (UTXO) hasn't been used yet." }
+                ]
+            },
+            {
+                question: "Which of the following best describes the security model of Proof of Stake (PoS) compared to Proof of Work (PoW)?",
+                hint: "Focus on what a malicious actor would lose in each system if they tried to cheat.",
+                options: [
+                    { text: "PoS relies on economic disincentives (slashing) rather than physical resource costs (electricity/hardware).", isCorrect: true, rationale: "PoS secures the network by making it expensive to attack via locked capital, whereas PoW uses energy and hardware costs." },
+                    { text: "PoS is less secure because it requires less energy.", isCorrect: false, rationale: "Energy consumption is not a direct measure of security; economic cost to attack is the primary metric." },
+                    { text: "PoS relies on the reputation of the validators rather than cryptographic proofs.", isCorrect: false, rationale: "It relies on cryptographic proofs and economic stake, not reputation." },
+                    { text: "PoS requires validators to solve complex mathematical puzzles faster than others.", isCorrect: false, rationale: "This describes Proof of Work; PoS selects validators based on stake size and randomization." }
+                ]
+            },
+            {
+                question: "You have a friend who wants to send you cryptocurrency. Which piece of information is safe to share with them to receive the funds?",
+                hint: "Think about the analogy of an email system: what do you give someone so they can write to you versus what you use to log in.",
+                options: [
+                    { text: "Your Private Key", isCorrect: false, rationale: "The private key grants full control over funds and must never be shared." },
+                    { text: "Your Wallet Address", isCorrect: true, rationale: "The wallet address is derived from the public key and is designed to be shared publicly for receiving funds." },
+                    { text: "Your Seed Phrase", isCorrect: false, rationale: "The seed phrase can regenerate your private keys and must be kept secret." },
+                    { text: "Your Digital Signature", isCorrect: false, rationale: "A digital signature is specific to a single transaction and isn't used as a destination address." }
+                ]
+            },
+            {
+                question: "What role does the ECDSA signature play in a blockchain transaction?",
+                hint: "Recall the mechanism that prevents me from spending money from your wallet even if I know your address.",
+                options: [
+                    { text: "It encrypts the transaction details so only the recipient can read them.", isCorrect: false, rationale: "Transactions on public blockchains are generally not encrypted; ECDSA is for authentication, not privacy." },
+                    { text: "It generates the random nonce used for mining the block.", isCorrect: false, rationale: "The nonce is part of the block header for PoW, distinct from transaction signatures." },
+                    { text: "It proves the sender authorized the specific transaction parameters without revealing their private key.", isCorrect: true, rationale: "ECDSA allows the network to verify the transaction came from the owner of the private key using only the public key." },
+                    { text: "It determines the gas fee required for the transaction.", isCorrect: false, rationale: "Gas fees are determined by network demand and complexity, not by the cryptographic signature." }
+                ]
+            },
+            {
+                question: "Why are Smart Contracts described as 'deterministic'?",
+                hint: "Think about why 10,000 different computers need to agree on the result of a calculation.",
+                options: [
+                    { text: "Because they can predict future market prices with high accuracy.", isCorrect: false, rationale: "Smart contracts cannot predict the future; they only execute code." },
+                    { text: "Because they always execute the exact same way given the same input, regardless of who runs them.", isCorrect: true, rationale: "Determinism ensures that every node in the distributed network reaches the exact same state after processing transactions." },
+                    { text: "Because they are legally binding in all jurisdictions.", isCorrect: false, rationale: "Legal status varies by jurisdiction and is not a technical property of the code." },
+                    { text: "Because they determine the consensus mechanism of the blockchain.", isCorrect: false, rationale: "The consensus mechanism is part of the underlying protocol, not the smart contracts running on top of it." }
+                ]
+            },
+            {
+                question: "A 'Rug Pull' in the DeFi space typically involves which of the following?",
+                hint: "The term implies the support structure (liquidity) is suddenly yanked away from under the investors.",
+                options: [
+                    { text: "A hacker breaking the SHA-256 encryption of the blockchain.", isCorrect: false, rationale: "SHA-256 is a hashing algorithm, not encryption, and breaking it is currently computationally infeasible." },
+                    { text: "Developers withdrawing all liquidity from a pool, causing the token value to crash to zero.", isCorrect: true, rationale: "This describes a common scam where the creators remove the backing value, leaving investors with worthless tokens." },
+                    { text: "Users losing their private keys and being unable to access their funds.", isCorrect: false, rationale: "This is user error or a lost key, not a malicious 'rug pull' by developers." },
+                    { text: "The government banning a specific cryptocurrency.", isCorrect: false, rationale: "This is regulatory action, not a developer-led scam." }
+                ]
+            },
+            {
+                question: "In the context of blockchain data science, what makes 'On-Chain Analysis' distinct from traditional financial analysis?",
+                hint: "Consider the difference between asking a bank for their transaction logs versus looking at a public ledger.",
+                options: [
+                    { text: "Data is private and requires a court order to access.", isCorrect: false, rationale: "On-chain data is public and accessible to anyone without permission." },
+                    { text: "Every transaction is publicly visible, permanent, and queryable via SQL without gatekeepers.", isCorrect: true, rationale: "The public, immutable nature of the ledger allows for real-time, comprehensive analysis of all financial flows." },
+                    { text: "It relies primarily on quarterly earnings reports PDF filings.", isCorrect: false, rationale: "Crypto protocols generally don't file PDFs; analysis is done on raw transaction data." },
+                    { text: "It is only possible for Centralized Exchanges like Binance.", isCorrect: false, rationale: "On-chain analysis focuses on decentralized public ledgers, not internal databases of centralized exchanges." }
+                ]
+            },
+            {
+                question: "What is the primary function of a 'Nonce' in a Proof of Work block header?",
+                hint: "It stands for 'Number used once' and is the piece of the puzzle miners change repeatedly.",
+                options: [
+                    { text: "To timestamp the block accurately.", isCorrect: false, rationale: "The timestamp field handles time; the nonce serves a different purpose related to mining." },
+                    { text: "To count the number of transactions in the block.", isCorrect: false, rationale: "Transaction count is separate from the nonce." },
+                    { text: "To provide a variable input that miners change to try and produce a hash below the target difficulty.", isCorrect: true, rationale: "Miners iterate through nonce values to generate different block hashes until one meets the difficulty criteria." },
+                    { text: "To encrypt the transaction data.", isCorrect: false, rationale: "The nonce is not used for encryption; block data is hashed, not encrypted." }
+                ]
+            },
+            {
+                question: "Which of the following is a correct distinction between a Coin and a Token?",
+                hint: "Think about the relationship between the operating system (the chain) and the applications (smart contracts) running on it.",
+                options: [
+                    { text: "Coins are digital, Tokens are physical.", isCorrect: false, rationale: "Both are purely digital assets." },
+                    { text: "Coins have their own native blockchain (e.g., BTC, ETH), while Tokens exist on top of another blockchain (e.g., UNI on Ethereum).", isCorrect: true, rationale: "This is the fundamental technical definition: Coins are native Layer 1 assets; Tokens are Layer 2 assets defined by smart contracts." },
+                    { text: "Coins are used for illegal activities, Tokens are for legitimate business.", isCorrect: false, rationale: "Legitimacy is determined by usage, not the technical standard." },
+                    { text: "Coins are always worth more than Tokens.", isCorrect: false, rationale: "Value is determined by market demand, not the technical classification." }
+                ]
+            }
+        ];
+
+        // --- FLASHCARD LOGIC ---
+        
+        let currentCardIndex = 0;
+        let isFlipped = false;
+        const flashcardContainer = document.getElementById('flashcard-container');
+        const frontText = document.getElementById('fc-front-text');
+        const backText = document.getElementById('fc-back-text');
+        const currentCountEl = document.getElementById('fc-current');
+
+        function renderCard() {
+            // Remove flip state to show front
+            isFlipped = false;
+            flashcardContainer.classList.remove('flipped');
+            
+            // Wait for flip animation to finish before changing text to prevent reading backtext backwards
+            setTimeout(() => {
+                frontText.innerHTML = flashcardsData[currentCardIndex].front;
+                backText.innerHTML = flashcardsData[currentCardIndex].back;
+                currentCountEl.textContent = currentCardIndex + 1;
+                
+                // Re-typeset MathJax in case equations are rendered
+                if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+                    MathJax.typesetPromise([frontText, backText]).catch(function (err) {
+                        console.error('MathJax error:', err);
+                    });
+                }
+            }, 150);
+        }
+
+        function toggleFlip() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                flashcardContainer.classList.add('flipped');
+            } else {
+                flashcardContainer.classList.remove('flipped');
+            }
+        }
+
+        function nextCard() {
+            if (isFlipped) {
+                toggleFlip();
+                setTimeout(() => {
+                    currentCardIndex = (currentCardIndex + 1) % flashcardsData.length;
+                    renderCard();
+                }, 300); // wait for unflip
+            } else {
+                currentCardIndex = (currentCardIndex + 1) % flashcardsData.length;
+                renderCard();
+            }
+        }
+
+        function prevCard() {
+            if (isFlipped) {
+                toggleFlip();
+                setTimeout(() => {
+                    currentCardIndex = (currentCardIndex - 1 + flashcardsData.length) % flashcardsData.length;
+                    renderCard();
+                }, 300);
+            } else {
+                currentCardIndex = (currentCardIndex - 1 + flashcardsData.length) % flashcardsData.length;
+                renderCard();
+            }
+        }
+
+        // --- QUIZ LOGIC ---
+
+        const quizContainer = document.getElementById('quiz-container');
+        let quizState = new Array(quizData.length).fill(null); // stores selected option index
+
+        function renderQuiz() {
+            quizContainer.innerHTML = '';
+            
+            quizData.forEach((q, qIndex) => {
+                const questionCard = document.createElement('div');
+                questionCard.className = "bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm transition-shadow hover:shadow-md";
+                
+                // Question Header
+                let html = `
+                    <div class="flex gap-4 items-start mb-6">
+                        <div class="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 mt-0.5">
+                            ${qIndex + 1}
+                        </div>
+                        <div>
+                            <h3 class="text-lg md:text-xl font-semibold text-slate-800">${q.question}</h3>
+                            <button onclick="toggleHint(${qIndex})" class="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 group">
+                                <i data-lucide="help-circle" class="w-4 h-4"></i> Show Hint
+                            </button>
+                            <p id="hint-${qIndex}" class="hidden mt-2 text-sm italic text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">${q.hint}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 pl-0 md:pl-12">
+                `;
+
+                // Options
+                q.options.forEach((opt, oIndex) => {
+                    // Check if this option was selected in state
+                    const isSelected = quizState[qIndex] === oIndex;
+                    const isAnswered = quizState[qIndex] !== null;
+                    
+                    let btnClass = "w-full text-left p-4 rounded-xl border transition-all duration-200 relative group flex items-start gap-3 ";
+                    
+                    if (!isAnswered) {
+                        btnClass += "border-slate-200 hover:border-blue-400 hover:bg-blue-50 cursor-pointer";
+                    } else {
+                        btnClass += "cursor-default ";
+                        if (opt.isCorrect) {
+                            btnClass += "border-green-500 bg-green-50 shadow-[0_0_0_1px_rgba(34,197,94,1)] "; // Highlight correct
+                        } else if (isSelected && !opt.isCorrect) {
+                            btnClass += "border-red-300 bg-red-50 text-red-900 "; // Highlight wrong selection
+                        } else {
+                            btnClass += "border-slate-200 opacity-60 "; // Dim others
+                        }
+                    }
+
+                    html += `
+                        <button class="${btnClass}" onclick="selectOption(${qIndex}, ${oIndex})" ${isAnswered ? 'disabled' : ''}>
+                            <div class="flex-1 text-slate-700 font-medium">${opt.text}</div>
+                            ${isAnswered && opt.isCorrect ? '<i data-lucide="check-circle-2" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>' : ''}
+                            ${isAnswered && isSelected && !opt.isCorrect ? '<i data-lucide="x-circle" class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"></i>' : ''}
+                        </button>
+                    `;
+                });
+
+                html += `</div>`;
+
+                // Rationale container (hidden initially)
+                html += `
+                    <div id="rationale-container-${qIndex}" class="mt-4 pl-0 md:pl-12 ${quizState[qIndex] !== null ? 'block' : 'hidden'} animate-in slide-in-from-top-2 duration-300">
+                        <div class="p-4 rounded-xl ${quizState[qIndex] !== null && q.options[quizState[qIndex]].isCorrect ? 'bg-green-100 border border-green-200' : 'bg-red-50 border border-red-100'}">
+                            <h4 class="font-bold text-sm mb-1 flex items-center gap-2 ${quizState[qIndex] !== null && q.options[quizState[qIndex]].isCorrect ? 'text-green-800' : 'text-red-800'}">
+                                ${quizState[qIndex] !== null && q.options[quizState[qIndex]].isCorrect ? '<i data-lucide="check" class="w-4 h-4"></i> Correct!' : '<i data-lucide="x" class="w-4 h-4"></i> Incorrect'}
+                            </h4>
+                            <p class="text-slate-700 text-sm leading-relaxed" id="rationale-text-${qIndex}">
+                                ${quizState[qIndex] !== null ? q.options[quizState[qIndex]].rationale : ''}
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                questionCard.innerHTML = html;
+                quizContainer.appendChild(questionCard);
+            });
+            
+            lucide.createIcons();
+            
+            // Check if all answered
+            if(quizState.every(val => val !== null)) {
+                document.getElementById('quiz-results').style.display = 'block';
+            } else {
+                document.getElementById('quiz-results').style.display = 'none';
+            }
+        }
+
+        function selectOption(qIndex, oIndex) {
+            if (quizState[qIndex] !== null) return; // already answered
+            quizState[qIndex] = oIndex;
+            renderQuiz(); // Re-render to show states
+        }
+
+        function toggleHint(qIndex) {
+            const hintEl = document.getElementById(`hint-${qIndex}`);
+            if (hintEl.classList.contains('hidden')) {
+                hintEl.classList.remove('hidden');
+            } else {
+                hintEl.classList.add('hidden');
+            }
+        }
+
+        function resetQuiz() {
+            quizState = new Array(quizData.length).fill(null);
+            renderQuiz();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        // --- TAB SWITCHING LOGIC ---
+        
+        function switchTab(tabId) {
+            const flashcardsTab = document.getElementById('tab-flashcards');
+            const quizTab = document.getElementById('tab-quiz');
+            const btnFlashcards = document.getElementById('btn-tab-flashcards');
+            const btnQuiz = document.getElementById('btn-tab-quiz');
+
+            if (tabId === 'flashcards') {
+                flashcardsTab.classList.remove('hidden');
+                quizTab.classList.add('hidden');
+                
+                // Active button styling
+                btnFlashcards.className = "px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 bg-white text-blue-700 shadow-sm";
+                btnQuiz.className = "px-6 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:text-slate-900 transition-all duration-200";
+            } else {
+                flashcardsTab.classList.add('hidden');
+                quizTab.classList.remove('hidden');
+                
+                // Active button styling
+                btnQuiz.className = "px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 bg-white text-blue-700 shadow-sm";
+                btnFlashcards.className = "px-6 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:text-slate-900 transition-all duration-200";
+            }
+        }
+
+        // --- INITIALIZATION ---
+        
+        // Init Flashcards
+        document.getElementById('fc-total').textContent = flashcardsData.length;
+        renderCard();
+
+        // Init Quiz
+        renderQuiz();
+
+    </script>
+</body>
+</html>
+
+
