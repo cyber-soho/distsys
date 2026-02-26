@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfraScale Module 04: Containerization Interactive Guide</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Custom Font Import */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC; /* Slate-50 - Warm Neutral Background */
+            color: #1E293B; /* Slate-800 */
+        }
+
+        h1, h2, h3, h4, h5 {
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.025em;
+        }
+
+        code, pre {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Chart Container Styling Requirement */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8; 
+        }
+
+        /* Diagram Connection Lines (CSS Only, No SVG) */
+        .connector-line {
+            position: absolute;
+            background-color: #94A3B8;
+            z-index: 0;
+        }
+        .connector-arrow::after {
+            content: '▼';
+            position: absolute;
+            color: #94A3B8;
+            font-size: 12px;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .connector-arrow-right::after {
+            content: '▶';
+            position: absolute;
+            color: #94A3B8;
+            font-size: 12px;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .code-preview {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .active-tab {
+            border-bottom: 2px solid #0F172A;
+            color: #0F172A;
+            font-weight: 600;
+        }
+        .inactive-tab {
+            color: #64748B;
+            border-bottom: 2px solid transparent;
+        }
+        .inactive-tab:hover {
+            color: #334155;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Slate) with Deep Blue Accents -->
+    <!-- Application Structure Plan: 
+         1. Hero & Overview: Sets context, displays "Ponderation" breakdown using charts.
+         2. Interactive Architecture: A clickable CSS-grid diagram of the 3-container stack + registry. Clicking nodes reveals details/code snippets. This replaces linear reading with exploration.
+         3. Workflow Simulation: A step-by-step interactive guide for the "Registry" phase (Tag -> Push -> Pull), visualizing data movement.
+         4. Knowledge Check: Interactive quiz based on the "Understand What Just Happened" section.
+         5. Progress Checklist: A persistent utility to track lab completion.
+         Rationale: The lab is complex and structural. Users need to visualize the *system* they are building (Architecture) and the *process* they are following (Workflow) separately.
+    -->
+    <!-- Visualization & Content Choices:
+         1. Lab Weight/Time -> Goal: Inform -> Doughnut Chart (Chart.js) -> Shows effort distribution.
+         2. Architecture -> Goal: Organize/Relationships -> CSS Grid + JS Modals -> Clicking "Nginx" shows its config. Replaces static text descriptions.
+         3. Code & Config -> Goal: Inform -> Tabbed Code Viewers -> Allows comparison of files without scrolling.
+         4. Registry Logic -> Goal: Change/Process -> Interactive Step Flow -> Buttons trigger state changes in a visual flow diagram (CSS).
+         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-slate-800">InfraScale <span class="text-slate-500 font-light">| Module 04</span></span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <button onclick="scrollToSection('overview')" class="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Overview</button>
+                    <button onclick="scrollToSection('architecture')" class="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Architecture</button>
+                    <button onclick="scrollToSection('registry')" class="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Registry Flow</button>
+                    <button onclick="scrollToSection('checklist')" class="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Checklist</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Section 1: Hero & Overview -->
+        <section id="overview" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <span class="inline-block px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold tracking-wide uppercase mb-4">Project Task 4</span>
+                    <h1 class="text-4xl font-extrabold text-slate-900 mb-4">Containerization</h1>
+                    <p class="text-lg text-slate-600 mb-6">
+                        Build, orchestrate, and distribute containerized services. This lab moves you from simple VM management to modern DevOps practices using Docker/Podman, Compose, and Private Registries.
+                    </p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div class="text-sm text-slate-500">Duration</div>
+                            <div class="text-xl font-bold text-slate-800">4 Hours</div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div class="text-sm text-slate-500">Deliverable</div>
+                            <div class="text-xl font-bold text-slate-800">Compose Stack</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border-l-4 border-amber-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-amber-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-amber-800">Safety & Ethics</h3>
+                                <div class="mt-2 text-sm text-amber-700">
+                                    <p>Do not expose ports to the public internet. Never commit secrets to Git. Operate only within your authorized lab environment.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ponderation Chart -->
+                <div class="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Lab Ponderation (1-2-1)</h3>
+                    <p class="text-sm text-slate-500 mb-4">The distribution of effort and grading weight across the lab phases.</p>
+                    <div class="chart-container">
+                        <canvas id="ponderationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Architecture & Stack Explorer -->
+        <section id="architecture" class="space-y-6">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-3xl font-bold text-slate-900">The Application Stack</h2>
+                <p class="text-slate-600 mt-2">
+                    Explore the 3-container architecture you will build in Exercise 2. This interactive diagram visualizes the relationships between Nginx, the Python Webapp, and Redis.
+                    <br><span class="text-sm font-semibold text-indigo-600">Click on any component below to view its implementation details.</span>
+                </p>
+            </div>
+
+            <!-- Interactive Architecture Diagram (CSS Grid) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 relative overflow-hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                    
+                    <!-- Nginx Node -->
+                    <div onclick="showComponent('nginx')" class="cursor-pointer group relative bg-white border-2 border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all rounded-xl p-6 flex flex-col items-center justify-center h-48 z-10">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
+                            <i class="fas fa-server text-green-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800">Nginx Proxy</h3>
+                        <p class="text-xs text-slate-500 text-center mt-2">Public Port: 8080<br>Container Port: 80</p>
+                        <span class="absolute top-2 right-2 text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Frontend</span>
+                    </div>
+
+                    <!-- Webapp Node -->
+                    <div onclick="showComponent('webapp')" class="cursor-pointer group relative bg-white border-2 border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all rounded-xl p-6 flex flex-col items-center justify-center h-48 z-10">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
+                            <i class="fab fa-python text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800">Python Flask App</h3>
+                        <p class="text-xs text-slate-500 text-center mt-2">Internal Port: 5000<br>Runs as: appuser (1001)</p>
+                        <span class="absolute top-2 right-2 text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Logic</span>
+                    </div>
+
+                    <!-- Redis Node -->
+                    <div onclick="showComponent('redis')" class="cursor-pointer group relative bg-white border-2 border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all rounded-xl p-6 flex flex-col items-center justify-center h-48 z-10">
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-red-200 transition-colors">
+                            <i class="fas fa-database text-red-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800">Redis Cache</h3>
+                        <p class="text-xs text-slate-500 text-center mt-2">Internal Port: 6379<br>Persistence: Volume</p>
+                        <span class="absolute top-2 right-2 text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Data</span>
+                    </div>
+                </div>
+
+                <!-- Connectors for Desktop -->
+                <div class="hidden md:block absolute top-1/2 left-0 w-full h-2 -translate-y-1/2 z-0">
+                    <div class="w-2/3 h-0.5 bg-slate-300 mx-auto relative top-1/2">
+                        <!-- Arrow heads -->
+                        <div class="absolute right-1/2 -top-1.5 text-slate-300">▶</div>
+                        <div class="absolute left-1/2 -top-1.5 text-slate-300">◀</div>
+                    </div>
+                </div>
+
+                <!-- Details Panel (Dynamic Content) -->
+                <div id="component-details" class="mt-8 border-t border-slate-100 pt-6 bg-slate-50 rounded-xl p-6 transition-all duration-300 hidden">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 id="detail-title" class="text-xl font-bold text-slate-800">Component Title</h3>
+                            <p id="detail-desc" class="text-slate-600 text-sm">Description goes here.</p>
+                        </div>
+                        <button onclick="hideDetails()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="flex space-x-4 border-b border-slate-200 mb-4" id="detail-tabs">
+                        <!-- Tabs injected by JS -->
+                    </div>
+
+                    <!-- Code Block -->
+                    <div class="bg-slate-900 rounded-lg p-4 overflow-x-auto">
+                        <pre><code id="detail-code" class="text-sm text-green-400 font-mono"># Code will appear here</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Registry Workflow Simulation -->
+        <section id="registry" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Private Registry Workflow</h2>
+                <p class="text-slate-600 mt-2">
+                    In Exercise 3, you simulate a production environment by pushing images to a private registry and pulling them from a secondary node. Follow the interactive flow below to understand the commands.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Visual Flow -->
+                <div class="lg:col-span-2 space-y-4">
+                    <!-- Step 1: Tag -->
+                    <div id="step-tag" class="p-4 border border-slate-200 rounded-lg bg-slate-50 opacity-50 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-500">1</span>
+                                <h4 class="font-bold text-slate-700">Tag Image</h4>
+                            </div>
+                            <span class="text-xs font-mono bg-slate-200 px-2 py-1 rounded">docker tag</span>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-2 ml-11">Prepare local image for the remote registry.</p>
+                    </div>
+
+                    <!-- Step 2: Push -->
+                    <div id="step-push" class="p-4 border border-slate-200 rounded-lg bg-slate-50 opacity-50 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-500">2</span>
+                                <h4 class="font-bold text-slate-700">Push to Registry</h4>
+                            </div>
+                            <span class="text-xs font-mono bg-slate-200 px-2 py-1 rounded">docker push</span>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-2 ml-11">Upload layers to <code class="text-xs">localhost:5000</code>.</p>
+                    </div>
+
+                    <!-- Step 3: Pull -->
+                    <div id="step-pull" class="p-4 border border-slate-200 rounded-lg bg-slate-50 opacity-50 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-8 h-8 flex items-center justify-center bg-white border border-slate-300 rounded-full font-bold text-slate-500">3</span>
+                                <h4 class="font-bold text-slate-700">Pull on Node 2</h4>
+                            </div>
+                            <span class="text-xs font-mono bg-slate-200 px-2 py-1 rounded">docker pull</span>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-2 ml-11">Download image on the secondary node.</p>
+                    </div>
+                </div>
+
+                <!-- Control Panel -->
+                <div class="bg-slate-800 text-white p-6 rounded-xl flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-lg mb-4 text-emerald-400">Command Simulator</h4>
+                        <div class="space-y-3">
+                            <button onclick="runRegistryStep(1)" class="w-full text-left px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 transition-colors flex items-center">
+                                <i class="fas fa-tag mr-3 text-slate-400"></i> Run Tag
+                            </button>
+                            <button onclick="runRegistryStep(2)" class="w-full text-left px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 transition-colors flex items-center">
+                                <i class="fas fa-upload mr-3 text-slate-400"></i> Run Push
+                            </button>
+                            <button onclick="runRegistryStep(3)" class="w-full text-left px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 transition-colors flex items-center">
+                                <i class="fas fa-download mr-3 text-slate-400"></i> Run Pull
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label class="text-xs text-slate-400 uppercase font-bold tracking-wider">Console Output</label>
+                        <div class="mt-2 h-32 bg-black rounded p-3 font-mono text-xs text-green-400 overflow-y-auto" id="registry-console">
+                            > Waiting for input..._
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Progress & Checklist -->
+        <section id="checklist" class="max-w-4xl mx-auto">
+             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Lab Checklist</h2>
+                        <p class="text-sm text-slate-500">Track your progress through the 4 exercises.</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold text-indigo-600" id="progress-percent">0%</div>
+                        <div class="text-xs text-slate-500">Completion</div>
+                    </div>
+                </div>
+
+                <div class="p-0">
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-slate-200 h-2">
+                        <div class="bg-indigo-600 h-2 transition-all duration-500" style="width: 0%" id="progress-bar"></div>
+                    </div>
+
+                    <div class="divide-y divide-slate-100">
+                        <!-- Exercise 1 -->
+                        <div class="p-4 hover:bg-slate-50">
+                            <h4 class="font-bold text-slate-800 mb-2">Exercise 1: Foundation</h4>
+                            <label class="flex items-center space-x-3 mb-2 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Install Podman/Docker on Node 1 & 2</span>
+                            </label>
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Verify <code>hello-world</code> and networking</span>
+                            </label>
+                        </div>
+
+                        <!-- Exercise 2 -->
+                        <div class="p-4 hover:bg-slate-50">
+                            <h4 class="font-bold text-slate-800 mb-2">Exercise 2: The Stack</h4>
+                            <label class="flex items-center space-x-3 mb-2 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Create Python Webapp & Dockerfile</span>
+                            </label>
+                            <label class="flex items-center space-x-3 mb-2 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Create Nginx Config & Dockerfile</span>
+                            </label>
+                             <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Launch Stack with <code>docker-compose up</code></span>
+                            </label>
+                        </div>
+
+                        <!-- Exercise 3 -->
+                        <div class="p-4 hover:bg-slate-50">
+                            <h4 class="font-bold text-slate-800 mb-2">Exercise 3: Registry</h4>
+                            <label class="flex items-center space-x-3 mb-2 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Deploy Registry Container</span>
+                            </label>
+                            <label class="flex items-center space-x-3 mb-2 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Configure Insecure Registry (Node 1 & 2)</span>
+                            </label>
+                             <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Push Images & Pull on Node 2</span>
+                            </label>
+                        </div>
+
+                         <!-- Exercise 4 -->
+                         <div class="p-4 hover:bg-slate-50">
+                            <h4 class="font-bold text-slate-800 mb-2">Exercise 4: Integration</h4>
+                            <label class="flex items-center space-x-3 mb-2 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Create <code>manage.sh</code> script</span>
+                            </label>
+                             <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" onchange="updateProgress()" class="form-checkbox h-5 w-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-slate-700">Update DNS Records</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-slate-200 py-8 mt-12">
+            <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
+                <p>Module 04 Lab Interactive Guide &copy; Cyber.SoHo, 2026</p>
+                <p class="mt-2">Use this tool to assist your learning. Always refer to the official PDF for grading criteria.</p>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Data Store ---
+        const componentData = {
+            nginx: {
+                title: "Nginx Reverse Proxy",
+                desc: "The entry point for all traffic. It handles port 8080 (host) -> 80 (container) mapping and routes requests to the Webapp.",
+                files: [
+                    {
+                        name: "Dockerfile",
+                        code: `FROM nginx:1.25-alpine
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80`
+                    },
+                    {
+                        name: "nginx.conf",
+                        code: `events { worker_connections 1024; }
+http {
+  upstream dashboard_backend {
+    server webapp:5000;
+  }
+  server {
+    listen 80;
+    location / {
+      proxy_pass http://dashboard_backend;
+    }
+  }
+}`
+                    }
+                ]
+            },
+            webapp: {
+                title: "Python Web Application",
+                desc: "A Flask app running via Gunicorn. It checks Redis for cached data or generates fresh system status.",
+                files: [
+                    {
+                        name: "Dockerfile",
+                        code: `FROM python:3.12-slim AS base
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+EXPOSE 5000
+RUN useradd --create-home --uid 1001 appuser
+USER 1001
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]`
+                    },
+                    {
+                        name: "app.py (Snippet)",
+                        code: `@app.route("/status")
+def system_status():
+    cached = cache.get("system_status")
+    if cached:
+        return jsonify({"source": "cache", "data": cached})
+    # ... logic to get fresh data ...
+    cache.setex("system_status", 30, str(status_data))`
+                    }
+                ]
+            },
+            redis: {
+                title: "Redis Cache",
+                desc: "In-memory data store. Uses a named volume (redis_data) for persistence.",
+                files: [
+                    {
+                        name: "docker-compose.yml (Snippet)",
+                        code: `redis:
+  image: redis:7-alpine
+  container_name: infrascale-redis
+  volumes:
+    - redis_data:/data
+  networks:
+    - infrascale-net
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]`
+                    }
+                ]
+            }
+        };
+
+        // --- Chart.js Initialization ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('ponderationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Foundation (Ex 1)', 'Core Work (Ex 2 & 3)', 'Integration (Ex 4)'],
+                    datasets: [{
+                        data: [1, 4, 1], // 1-2-1 weighting where Core has 2 exercises of weight 2
+                        backgroundColor: [
+                            '#94A3B8', // Slate 400
+                            '#4F46E5', // Indigo 600
+                            '#10B981'  // Emerald 500
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        // --- Architecture Interaction ---
+        function showComponent(componentKey) {
+            const data = componentData[componentKey];
+            const detailsPanel = document.getElementById('component-details');
+            const title = document.getElementById('detail-title');
+            const desc = document.getElementById('detail-desc');
+            const tabsContainer = document.getElementById('detail-tabs');
+            
+            // Set Text
+            title.textContent = data.title;
+            desc.textContent = data.desc;
+            
+            // Build Tabs
+            tabsContainer.innerHTML = '';
+            data.files.forEach((file, index) => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 text-sm font-medium ${index === 0 ? 'active-tab' : 'inactive-tab'} transition-colors`;
+                btn.textContent = file.name;
+                btn.onclick = () => switchTab(index, data.files, btn);
+                tabsContainer.appendChild(btn);
+            });
+
+            // Show first file code
+            document.getElementById('detail-code').textContent = data.files[0].code;
+
+            // Reveal
+            detailsPanel.classList.remove('hidden');
+            detailsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function switchTab(index, files, btnElement) {
+            document.getElementById('detail-code').textContent = files[index].code;
+            
+            // Update Tab Styles
+            const tabs = document.getElementById('detail-tabs').children;
+            for(let tab of tabs) {
+                tab.className = 'px-4 py-2 text-sm font-medium inactive-tab transition-colors';
+            }
+            btnElement.className = 'px-4 py-2 text-sm font-medium active-tab transition-colors';
+        }
+
+        function hideDetails() {
+            document.getElementById('component-details').classList.add('hidden');
+        }
+
+        // --- Registry Simulator ---
+        function runRegistryStep(step) {
+            const consoleDiv = document.getElementById('registry-console');
+            const cards = {
+                1: document.getElementById('step-tag'),
+                2: document.getElementById('step-push'),
+                3: document.getElementById('step-pull')
+            };
+
+            // Reset opacities
+            Object.values(cards).forEach(c => {
+                c.classList.remove('ring-2', 'ring-indigo-500', 'bg-white', 'opacity-100');
+                c.classList.add('bg-slate-50', 'opacity-50');
+            });
+
+            // Activate current
+            const currentCard = cards[step];
+            currentCard.classList.remove('bg-slate-50', 'opacity-50');
+            currentCard.classList.add('bg-white', 'ring-2', 'ring-indigo-500', 'opacity-100');
+
+            // Console Output simulation
+            let command = "";
+            let output = "";
+            
+            if (step === 1) {
+                command = "docker tag compose-webapp:latest 192.168.56.10:5000/infrascale/dashboard:1.0.0";
+                output = "> Image tagged successfully.";
+            } else if (step === 2) {
+                command = "docker push 192.168.56.10:5000/infrascale/dashboard:1.0.0";
+                output = "> The push refers to repository [192.168.56.10:5000/infrascale/dashboard]\n> 8e3ba11ec2a2: Pushed\n> 1.0.0: digest: sha256:7d... size: 1234";
+            } else if (step === 3) {
+                command = "[root@node2] docker pull 192.168.56.10:5000/infrascale/dashboard:1.0.0";
+                output = "> 1.0.0: Pulling from infrascale/dashboard\n> Digest: sha256:7d...\n> Status: Downloaded newer image";
+            }
+
+            consoleDiv.innerHTML += `<br><span class="text-white">$ ${command}</span><br>${output}`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        // --- Checklist Logic ---
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const total = checkboxes.length;
+            let checked = 0;
+            
+            checkboxes.forEach(cb => {
+                if (cb.checked) checked++;
+            });
+
+            const percent = Math.round((checked / total) * 100);
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-percent').textContent = `${percent}%`;
+        }
+
+        // --- Navigation ---
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
+
+
+

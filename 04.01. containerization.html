@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 04: Containerization Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/js/all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAFAF9; /* Warm neutral background */
+            color: #1C1917; /* Warm dark grey */
+        }
+
+        /* Chart Container Strict Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Scrollbar for side nav */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d6d3d1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e; 
+        }
+
+        .nav-item.active {
+            background-color: #E7E5E4; /* Warm grey selection */
+            border-left: 4px solid #EA580C; /* Orange accent */
+            font-weight: 600;
+        }
+
+        .layer-stack-item {
+            transition: all 0.3s ease;
+        }
+        .layer-stack-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Stone/Orange/Blue) -->
+    <!-- Application Structure Plan: 
+         Structure: A Dashboard/Learning Lab layout. Left sidebar for linear navigation through the 5 lessons. Main content area for dynamic interaction.
+         Rationale: The slide deck is structured as a 5-lesson course. A linear but skippable navigation works best to guide the student through the concepts (What -> How -> Recipe -> Arch -> Distribution).
+         Key Interactions: 
+         1. Intro: Toggle comparison between VM and Containers (updates charts).
+         2. Internals: Interactive "Apartment" analogy visualization using grid.
+         3. Dockerfile: "Fix the Bad Dockerfile" simulation comparing metrics.
+         4. Layers: Stack visualization that highlights read/write layers.
+         5. Registry: Simulated Push/Pull workflow with status indicators.
+    -->
+    <!-- Visualization & Content Choices:
+         1. Comparison (VM vs Container): Chart.js Bar Chart. Goal: Compare metrics. Justification: Visualizes the drastic difference in startup time/size.
+         2. Concept (Namespaces): Interactive Grid (Apartment). Goal: Explain isolation. Justification: The analogy maps perfectly to visual blocks.
+         3. Process (Dockerfile): Code Block + Metrics Chart. Goal: Show impact of best practices. Justification: Side-by-side comparison makes the "why" obvious.
+         4. Architecture (Layers): Stacked HTML Divs. Goal: Visualize "pancakes". Justification: CSS blocks clearly show hierarchy and read-only status.
+         5. Flow (Registry): Step-by-step progress bar/flow. Goal: Explain lifecycle. Justification: Linear process flow.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <nav class="w-full md:w-64 bg-white border-r border-stone-200 flex flex-col h-auto md:h-full shrink-0 z-20 shadow-sm">
+        <div class="p-6 border-b border-stone-100 bg-stone-50">
+            <h1 class="text-xl font-bold text-stone-800">Containerization <span class="text-orange-600">Lab</span></h1>
+            <p class="text-xs text-stone-500 mt-1">Week 04 Distributed Systems</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-1" id="nav-container">
+            <!-- Nav items injected by JS -->
+        </div>
+        <div class="p-4 border-t border-stone-100 text-xs text-center text-stone-400">
+            &copy; Cyber.SoHo | Interactive Module
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-stone-50 p-4 md:p-8 relative" id="main-content">
+        <!-- Content sections injected by JS -->
+    </main>
+
+    <script>
+        // --- Data & State ---
+        
+        const state = {
+            currentSection: 'intro',
+            dockerfileMode: 'bad', // 'bad' or 'good'
+            vmComparisonMode: 'startup', // 'startup' or 'size'
+            packageManager: 'apt' // 'apt' or 'dnf'
+        };
+
+        const contentData = {
+            intro: {
+                title: "Why Containers?",
+                subtitle: "The Foundation of Modern Distributed Deployment",
+                introText: "Welcome to Week 04. Before we dive into the technical commands, we need to understand the fundamental problem containers solve: <strong>\"It works on my machine.\"</strong> This module compares traditional Virtual Machines with Containers to demonstrate why the industry has shifted to containerization for distributed systems.",
+                vmStats: [5, 45, 120000], // startup (s), size (GB*100 for scale), overhead
+                containerStats: [0.5, 0.5, 500] // startup (s), size (GB), overhead
+            },
+            namespaces: {
+                title: "The Kernel Magic",
+                subtitle: "Lesson 1: Namespaces & Cgroups",
+                introText: "Containers aren't real physical objects; they are processes lying to each other using Linux Kernel features. <strong>Namespaces</strong> control what a process can <em>see</em>, while <strong>Cgroups</strong> control what a process can <em>use</em>. Explore the 'Apartment Analogy' below to understand this isolation.",
+                namespacesList: [
+                    { id: 'pid', name: 'PID', desc: 'Process ID', detail: 'Sees only its own processes' },
+                    { id: 'net', name: 'NET', desc: 'Network', detail: 'Own IP, ports, and routing' },
+                    { id: 'mnt', name: 'MNT', desc: 'Mount', detail: 'Own filesystem tree' },
+                    { id: 'uts', name: 'UTS', desc: 'UTS', detail: 'Own hostname' },
+                    { id: 'ipc', name: 'IPC', desc: 'IPC', detail: 'Isolated shared memory' },
+                    { id: 'user', name: 'USER', desc: 'User', detail: 'Root inside, nobody outside' }
+                ]
+            },
+            dockerfile: {
+                title: "The Recipe",
+                subtitle: "Lesson 2: Dockerfile Best Practices",
+                introText: "A Dockerfile is a text document that contains all the commands to assemble an image. Writing a 'working' Dockerfile is easy, but writing a <strong>production-ready</strong> one requires discipline. Toggle between the 'Bad' and 'Good' examples below to see how optimization affects size, security, and build speed.",
+                badCode: `FROM ubuntu:latest
+RUN apt-get update
+RUN apt-get install -y python3
+RUN apt-get install -y python3-pip
+COPY . /app
+RUN pip install -r /app/requirements.txt
+CMD ["python3", "/app/main.py"]`,
+                goodCode: `FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+USER 1001
+CMD ["python", "main.py"]`,
+                metrics: {
+                    bad: { size: 1200, layers: 6, buildTime: 45, security: 'Low (Root)' },
+                    good: { size: 180, layers: 4, buildTime: 10, security: 'High (User 1001)' }
+                }
+            },
+            packages: {
+                title: "The Ingredients",
+                subtitle: "Lesson 3: Package Management (apt vs dnf)",
+                introText: "Containers are bare-bones Linux environments. To add utility, you need to install system libraries using a package manager. The command you use depends entirely on your base image family. Incorrect commands lead to build failures.",
+                apt: { name: 'Debian/Ubuntu', cmd: 'apt-get', file: '.deb', syntax: 'apt-get update && apt-get install -y pkg && apt-get clean' },
+                dnf: { name: 'Fedora/RHEL', cmd: 'dnf', file: '.rpm', syntax: 'dnf install -y pkg && dnf clean all' }
+            },
+            architecture: {
+                title: "Architecture & Layers",
+                subtitle: "Lesson 4: Image Layering & Podman vs Docker",
+                introText: "Container images are built like a layered cake. Efficiency comes from reusing these read-only layers across different containers. We also compare the two main runtimes: Docker (Client-Server) and Podman (Daemonless).",
+                layers: [
+                    { name: 'Layer 5: Runtime', type: 'RW', desc: 'Read-Write (Ephemeral). Deleted when container stops.', color: 'bg-orange-100 border-orange-300 text-orange-800' },
+                    { name: 'Layer 4: Application Code', type: 'RO', desc: 'COPY . . (Changes most often)', color: 'bg-stone-200 border-stone-300 text-stone-700' },
+                    { name: 'Layer 3: App Dependencies', type: 'RO', desc: 'RUN pip install ...', color: 'bg-stone-300 border-stone-400 text-stone-800' },
+                    { name: 'Layer 2: System Packages', type: 'RO', desc: 'RUN apt-get install ...', color: 'bg-stone-400 border-stone-500 text-stone-900' },
+                    { name: 'Layer 1: Base OS', type: 'RO', desc: 'FROM debian:slim', color: 'bg-stone-500 border-stone-600 text-white' }
+                ]
+            },
+            registry: {
+                title: "Distribution",
+                subtitle: "Lesson 5: Registries & Lifecycle",
+                introText: "The Registry is the 'App Store' for your images. It is the central hub where images are stored (Pushed) and retrieved (Pulled). Understanding the tagging strategy is crucial to prevent deployment disasters.",
+                registries: ['Docker Hub', 'GitHub GHCR', 'Amazon ECR', 'Google Artifact', 'Azure ACR', 'Quay.io']
+            }
+        };
+
+        // --- View Rendering ---
+
+        function init() {
+            renderNav();
+            renderContent('intro');
+        }
+
+        function renderNav() {
+            const navContainer = document.getElementById('nav-container');
+            const sections = [
+                { id: 'intro', label: '1. Why Containers?', icon: 'fa-box' },
+                { id: 'namespaces', label: '2. Namespaces & Cgroups', icon: 'fa-puzzle-piece' },
+                { id: 'dockerfile', label: '3. Dockerfile Recipe', icon: 'fa-file-code' },
+                { id: 'packages', label: '4. Package Managers', icon: 'fa-cubes' },
+                { id: 'architecture', label: '5. Arch & Layering', icon: 'fa-layer-group' },
+                { id: 'registry', label: '6. Registry & Summary', icon: 'fa-cloud-upload-alt' }
+            ];
+
+            navContainer.innerHTML = sections.map(s => `
+                <button onclick="changeSection('${s.id}')" 
+                    class="nav-item w-full text-left px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors flex items-center gap-3 ${state.currentSection === s.id ? 'active' : ''}">
+                    <i class="fas ${s.icon} w-5 text-center"></i>
+                    ${s.label}
+                </button>
+            `).join('');
+        }
+
+        function changeSection(sectionId) {
+            state.currentSection = sectionId;
+            renderNav();
+            renderContent(sectionId);
+        }
+
+        function renderContent(sectionId) {
+            const container = document.getElementById('main-content');
+            container.innerHTML = ''; // Clear current
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'max-w-4xl mx-auto fade-in pb-12';
+            
+            // Common Header
+            const header = `
+                <div class="mb-8">
+                    <span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-bold rounded-full mb-2 uppercase tracking-wide">Week 04</span>
+                    <h2 class="text-3xl font-bold text-stone-900">${contentData[sectionId]?.title || contentData.intro.title}</h2>
+                    <p class="text-lg text-stone-500 mt-1">${contentData[sectionId]?.subtitle || ''}</p>
+                    <div class="mt-4 p-4 bg-white border-l-4 border-orange-500 rounded shadow-sm">
+                        <p class="text-stone-700 leading-relaxed">${contentData[sectionId]?.introText || ''}</p>
+                    </div>
+                </div>
+            `;
+            
+            let contentHtml = '';
+            
+            // Section Specific Rendering
+            switch(sectionId) {
+                case 'intro': contentHtml = renderIntro(); break;
+                case 'namespaces': contentHtml = renderNamespaces(); break;
+                case 'dockerfile': contentHtml = renderDockerfile(); break;
+                case 'packages': contentHtml = renderPackages(); break;
+                case 'architecture': contentHtml = renderArchitecture(); break;
+                case 'registry': contentHtml = renderRegistry(); break;
+            }
+
+            wrapper.innerHTML = header + contentHtml;
+            container.appendChild(wrapper);
+
+            // Post-render init (Charts, etc.)
+            if(sectionId === 'intro') initIntroChart();
+            if(sectionId === 'dockerfile') initDockerfileChart();
+        }
+
+        // --- Section Renderers ---
+
+        function renderIntro() {
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-100">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-server text-stone-400"></i> Virtual Machine</h3>
+                        <ul class="space-y-3 text-sm text-stone-600">
+                            <li class="flex items-start gap-2"><i class="fas fa-times text-red-500 mt-1"></i> Full hardware virtualization</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times text-red-500 mt-1"></i> Each has its own kernel (Heavy)</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times text-red-500 mt-1"></i> Startup: Seconds to Minutes</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times text-red-500 mt-1"></i> Size: Gigabytes</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-orange-100 ring-1 ring-orange-500/20">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2 text-orange-700"><i class="fas fa-box-open text-orange-500"></i> Container</h3>
+                        <ul class="space-y-3 text-sm text-stone-600">
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-500 mt-1"></i> Shared Host Kernel</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-500 mt-1"></i> Isolation via Namespaces</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-500 mt-1"></i> Startup: Milliseconds</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-500 mt-1"></i> Size: Megabytes</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-bold text-stone-800">Performance Comparison</h3>
+                        <div class="flex bg-stone-100 rounded-lg p-1">
+                            <button onclick="updateIntroChart('startup')" id="btn-startup" class="px-3 py-1 text-sm rounded-md bg-white shadow text-stone-800 font-medium transition-all">Startup Time</button>
+                            <button onclick="updateIntroChart('size')" id="btn-size" class="px-3 py-1 text-sm rounded-md text-stone-500 hover:text-stone-800 transition-all">Image Size</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="introChart"></canvas>
+                    </div>
+                    <p class="text-center text-xs text-stone-400 mt-2">Note: Charts scale logarithmically for visibility.</p>
+                </div>
+            `;
+        }
+
+        function renderNamespaces() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Concept Panel -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-stone-800 mb-4">Isolation Pillars</h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                                <h4 class="font-bold text-blue-800 mb-1"><i class="fas fa-eye mr-2"></i> Namespaces</h4>
+                                <p class="text-sm text-blue-600">Answer: <strong>"What can this process SEE?"</strong></p>
+                                <p class="text-xs text-blue-500 mt-2">Isolates system resources like PID, Network, Mounts.</p>
+                            </div>
+                            <div class="p-4 bg-orange-50 border border-orange-100 rounded-lg">
+                                <h4 class="font-bold text-orange-800 mb-1"><i class="fas fa-hand-paper mr-2"></i> Cgroups</h4>
+                                <p class="text-sm text-orange-600">Answer: <strong>"How MUCH can this process USE?"</strong></p>
+                                <p class="text-xs text-orange-500 mt-2">Limits CPU, Memory, Disk I/O to prevent resource hogging.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analogy Interactive -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-stone-800 mb-4">Analogy: The Apartment Building</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                             ${renderApartmentAnalogy()}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-stone-800 text-white p-6 rounded-lg shadow-md">
+                    <h3 class="font-bold text-lg mb-4 text-orange-400">Namespace Explorer</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        ${contentData.namespaces.namespacesList.map(ns => `
+                            <div class="bg-stone-700 p-3 rounded hover:bg-stone-600 transition cursor-help group relative">
+                                <div class="font-mono text-orange-300 font-bold">${ns.name}</div>
+                                <div class="text-xs text-stone-300">${ns.desc}</div>
+                                <div class="absolute bottom-full left-0 w-full mb-2 hidden group-hover:block bg-black text-white text-xs p-2 rounded z-10 shadow-lg">
+                                    ${ns.detail}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderApartmentAnalogy() {
+            const analogyItems = [
+                { title: 'Host OS', icon: 'fa-building', text: 'The entire Building' },
+                { title: 'Container', icon: 'fa-door-closed', text: 'Individual Apartment' },
+                { title: 'PID', icon: 'fa-key', text: 'Private Front Door' },
+                { title: 'NET', icon: 'fa-mailbox', text: 'Private Mailbox' },
+                { title: 'MNT', icon: 'fa-couch', text: 'Private Furniture' },
+                { title: 'Cgroups', icon: 'fa-bolt', text: 'Electricity Meter' }
+            ];
+            return analogyItems.map(item => `
+                <div class="flex flex-col items-center text-center p-3 border border-stone-100 rounded bg-stone-50">
+                    <i class="fas ${item.icon} text-2xl text-stone-400 mb-2"></i>
+                    <span class="font-bold text-sm text-stone-700">${item.title}</span>
+                    <span class="text-xs text-stone-500">${item.text}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderDockerfile() {
+            const isGood = state.dockerfileMode === 'good';
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+                    <!-- Code Editor Side -->
+                    <div class="flex flex-col">
+                        <div class="flex bg-stone-200 rounded-t-lg p-2 gap-2">
+                            <button onclick="toggleDockerfile('bad')" class="flex-1 py-2 text-sm font-bold rounded ${!isGood ? 'bg-red-500 text-white shadow' : 'text-stone-600 hover:bg-stone-300'}">
+                                <i class="fas fa-thumbs-down mr-2"></i> Bad Dockerfile
+                            </button>
+                            <button onclick="toggleDockerfile('good')" class="flex-1 py-2 text-sm font-bold rounded ${isGood ? 'bg-green-600 text-white shadow' : 'text-stone-600 hover:bg-stone-300'}">
+                                <i class="fas fa-thumbs-up mr-2"></i> Good Dockerfile
+                            </button>
+                        </div>
+                        <div class="bg-stone-900 text-stone-100 p-6 rounded-b-lg font-mono text-sm overflow-x-auto shadow-inner flex-grow leading-relaxed relative">
+                            <pre id="code-display">${isGood ? contentData.dockerfile.goodCode : contentData.dockerfile.badCode}</pre>
+                            ${isGood ? 
+                                `<div class="absolute top-4 right-4 text-green-400 text-xs border border-green-800 bg-green-900/30 px-2 py-1 rounded">
+                                    <i class="fas fa-check"></i> Optimized
+                                </div>` : 
+                                `<div class="absolute top-4 right-4 text-red-400 text-xs border border-red-800 bg-red-900/30 px-2 py-1 rounded">
+                                    <i class="fas fa-exclamation-triangle"></i> Inefficient
+                                </div>`
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Analysis Side -->
+                    <div class="flex flex-col gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                            <h3 class="font-bold text-stone-800 mb-4">Build Metrics Analysis</h3>
+                            <div class="chart-container">
+                                <canvas id="dockerfileChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 flex-grow">
+                            <h3 class="font-bold text-stone-800 mb-3">Critique</h3>
+                            <ul class="space-y-3 text-sm" id="critique-list">
+                                ${isGood ? 
+                                    `<li class="flex gap-2 text-green-700"><i class="fas fa-check-circle mt-1"></i> <strong>Base Image:</strong> Pinned specific version (slim) for reproducibility.</li>
+                                     <li class="flex gap-2 text-green-700"><i class="fas fa-check-circle mt-1"></i> <strong>Layers:</strong> Combined where possible.</li>
+                                     <li class="flex gap-2 text-green-700"><i class="fas fa-check-circle mt-1"></i> <strong>Caching:</strong> Dependencies copied BEFORE code.</li>
+                                     <li class="flex gap-2 text-green-700"><i class="fas fa-check-circle mt-1"></i> <strong>Security:</strong> Running as non-root user (1001).</li>` 
+                                    : 
+                                    `<li class="flex gap-2 text-red-600"><i class="fas fa-times-circle mt-1"></i> <strong>Base Image:</strong> 'latest' is unpredictable and large.</li>
+                                     <li class="flex gap-2 text-red-600"><i class="fas fa-times-circle mt-1"></i> <strong>Layers:</strong> Too many RUN commands create bloat.</li>
+                                     <li class="flex gap-2 text-red-600"><i class="fas fa-times-circle mt-1"></i> <strong>Caching:</strong> Code copy breaks cache for install.</li>
+                                     <li class="flex gap-2 text-red-600"><i class="fas fa-times-circle mt-1"></i> <strong>Security:</strong> Running as root (Dangerous).</li>`
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPackages() {
+            const isApt = state.packageManager === 'apt';
+            return `
+                <div class="flex flex-col items-center">
+                    <div class="bg-white p-2 rounded-full shadow border border-stone-200 mb-8 inline-flex">
+                        <button onclick="setPkgManager('apt')" class="px-6 py-2 rounded-full font-bold transition-all ${isApt ? 'bg-orange-500 text-white shadow-md' : 'text-stone-500 hover:bg-stone-100'}">APT (Debian/Ubuntu)</button>
+                        <button onclick="setPkgManager('dnf')" class="px-6 py-2 rounded-full font-bold transition-all ${!isApt ? 'bg-blue-600 text-white shadow-md' : 'text-stone-500 hover:bg-stone-100'}">DNF (Fedora/RHEL)</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+                        <!-- Info Card -->
+                        <div class="bg-white p-8 rounded-xl shadow-lg border-t-4 ${isApt ? 'border-orange-500' : 'border-blue-600'}">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold ${isApt ? 'bg-orange-500' : 'bg-blue-600'}">
+                                    <i class="fas ${isApt ? 'fa-box' : 'fa-cube'}"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-stone-800">${isApt ? 'Debian / Ubuntu' : 'Fedora / RHEL'}</h3>
+                                    <p class="text-stone-500">Format: <code>${isApt ? '.deb' : '.rpm'}</code></p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold uppercase text-stone-400">Update Catalog</label>
+                                    <div class="font-mono bg-stone-100 p-2 rounded text-sm text-stone-800">
+                                        ${isApt ? 'apt-get update' : 'dnf check-update'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold uppercase text-stone-400">Install</label>
+                                    <div class="font-mono bg-stone-100 p-2 rounded text-sm text-stone-800">
+                                        ${isApt ? 'apt-get install -y <pkg>' : 'dnf install -y <pkg>'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold uppercase text-stone-400">Cleanup (Crucial!)</label>
+                                    <div class="font-mono bg-stone-100 p-2 rounded text-sm text-stone-800">
+                                        ${isApt ? 'apt-get clean && rm -rf /var/lib/apt/lists/*' : 'dnf clean all'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analogy Card -->
+                        <div class="bg-stone-800 text-stone-300 p-8 rounded-xl shadow-lg flex flex-col justify-center">
+                            <h3 class="text-xl font-bold text-white mb-4"><i class="fas fa-shopping-cart mr-2"></i> The Grocery Store Analogy</h3>
+                            <p class="mb-4">Imagine APT and DNF are two different grocery chains.</p>
+                            <ul class="space-y-4 text-sm">
+                                <li class="flex gap-3">
+                                    <i class="fas fa-check text-green-400 mt-1"></i>
+                                    <span><strong>Same Products:</strong> You can buy 'nginx' or 'curl' at both stores.</span>
+                                </li>
+                                <li class="flex gap-3">
+                                    <i class="fas fa-check text-green-400 mt-1"></i>
+                                    <span><strong>Different Checkout:</strong> The way you pay (syntax) is different.</span>
+                                </li>
+                                <li class="flex gap-3">
+                                    <i class="fas fa-check text-green-400 mt-1"></i>
+                                    <span><strong>Loyalty Card:</strong> Your base image (OS) determines which store you MUST shop at.</span>
+                                </li>
+                            </ul>
+                            <div class="mt-6 p-4 bg-stone-900/50 rounded border border-stone-700">
+                                <span class="font-bold text-white">Rule:</span> Combine Update + Install + Cleanup in <span class="text-orange-400">ONE RUN instruction</span> to keep layers small.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderArchitecture() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Layer Stack Visualization -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-stone-800 mb-6 text-center">Image Layering Model</h3>
+                        <div class="flex flex-col-reverse gap-2 max-w-sm mx-auto">
+                            ${contentData.architecture.layers.map((layer, index) => `
+                                <div class="layer-stack-item p-4 rounded-md border ${layer.color} relative group cursor-pointer">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-sm">${layer.name}</span>
+                                        <span class="text-xs font-mono px-2 py-0.5 bg-white/30 rounded">${layer.type}</span>
+                                    </div>
+                                    <p class="text-xs mt-1 opacity-90">${layer.desc}</p>
+                                    ${index === 4 ? '<div class="absolute -right-24 top-1/2 -translate-y-1/2 text-orange-600 text-sm font-bold w-20 text-center"><i class="fas fa-arrow-left"></i> Writeable</div>' : ''}
+                                    ${index === 2 ? '<div class="absolute -right-24 top-1/2 -translate-y-1/2 text-stone-400 text-sm w-20 text-center"><i class="fas fa-arrow-left"></i> Read-Only</div>' : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <p class="text-center text-xs text-stone-400 mt-6">Lower layers are cached and shared. Only the top layer is writeable.</p>
+                    </div>
+
+                    <!-- Docker vs Podman -->
+                    <div class="flex flex-col gap-6">
+                         <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                            <h3 class="font-bold text-blue-900 flex justify-between">
+                                <span><i class="fab fa-docker mr-2"></i> Docker</span>
+                                <span class="text-xs bg-blue-200 px-2 py-1 rounded text-blue-800">Client-Server</span>
+                            </h3>
+                            <div class="mt-2 text-sm text-blue-800">
+                                Uses a daemon (<code>dockerd</code>) that runs as root. <br>
+                                <span class="font-bold">Pro:</span> Industry standard, vast ecosystem.<br>
+                                <span class="font-bold">Con:</span> Security risk (root daemon), single point of failure.
+                            </div>
+                         </div>
+                         
+                         <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
+                            <h3 class="font-bold text-purple-900 flex justify-between">
+                                <span><i class="fas fa-feather-alt mr-2"></i> Podman</span>
+                                <span class="text-xs bg-purple-200 px-2 py-1 rounded text-purple-800">Daemonless</span>
+                            </h3>
+                            <div class="mt-2 text-sm text-purple-800">
+                                Direct fork-exec model (No daemon). Rootless by default.<br>
+                                <span class="font-bold">Pro:</span> More secure, native Pod support (Kubernetes-like).<br>
+                                <span class="font-bold">Compat:</span> <code>alias docker=podman</code> works perfectly.
+                            </div>
+                         </div>
+
+                         <div class="bg-white p-4 rounded border border-stone-200 shadow-sm text-sm">
+                            <table class="w-full text-left">
+                                <thead class="border-b border-stone-100 text-stone-400 uppercase text-xs">
+                                    <tr><th class="py-2">Feature</th><th>Docker</th><th>Podman</th></tr>
+                                </thead>
+                                <tbody class="text-stone-700">
+                                    <tr class="border-b border-stone-50"><td class="py-2 font-medium">Daemon</td><td>Required (Root)</td><td><span class="text-green-600 font-bold">None</span></td></tr>
+                                    <tr class="border-b border-stone-50"><td class="py-2 font-medium">Rootless</td><td>Hard Setup</td><td><span class="text-green-600 font-bold">Default</span></td></tr>
+                                    <tr><td class="py-2 font-medium">Pods</td><td>No</td><td><span class="text-green-600 font-bold">Native</span></td></tr>
+                                </tbody>
+                            </table>
+                         </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRegistry() {
+            return `
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 mb-8">
+                    <h3 class="font-bold text-stone-800 mb-6 text-center">The Lifecycle Workflow</h3>
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4 relative">
+                        <!-- Step 1 -->
+                        <div class="text-center z-10 w-full md:w-1/4">
+                            <div class="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2 text-stone-600 border-2 border-stone-200">
+                                <i class="fas fa-laptop-code text-xl"></i>
+                            </div>
+                            <h4 class="font-bold text-sm">Dev Laptop</h4>
+                            <p class="text-xs text-stone-500">Build & Tag</p>
+                        </div>
+
+                        <!-- Arrow 1 -->
+                        <div class="hidden md:flex flex-col items-center flex-1 text-orange-500">
+                            <span class="text-xs font-bold uppercase mb-1">Push</span>
+                            <div class="h-1 w-full bg-orange-200 rounded relative">
+                                <div class="absolute right-0 -top-1.5 w-3 h-3 bg-orange-200 rotate-45 transform origin-center border-t-2 border-r-2 border-orange-200"></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="text-center z-10 w-full md:w-1/4">
+                            <div class="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-2 text-orange-600 border-2 border-orange-200 shadow-md">
+                                <i class="fas fa-database text-3xl"></i>
+                            </div>
+                            <h4 class="font-bold text-base">Registry</h4>
+                            <p class="text-xs text-stone-500">Store Images</p>
+                        </div>
+
+                        <!-- Arrow 2 -->
+                        <div class="hidden md:flex flex-col items-center flex-1 text-blue-500">
+                            <span class="text-xs font-bold uppercase mb-1">Pull</span>
+                            <div class="h-1 w-full bg-blue-200 rounded relative">
+                                <div class="absolute right-0 -top-1.5 w-3 h-3 bg-blue-200 rotate-45 transform origin-center border-t-2 border-r-2 border-blue-200"></div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="text-center z-10 w-full md:w-1/4">
+                            <div class="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2 text-stone-600 border-2 border-stone-200">
+                                <i class="fas fa-server text-xl"></i>
+                            </div>
+                            <h4 class="font-bold text-sm">Production</h4>
+                            <p class="text-xs text-stone-500">Run Container</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="font-bold text-stone-800 mb-4">Tagging Strategy</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-green-50 border-l-4 border-green-500 text-sm">
+                                <div class="font-bold text-green-800">✅ Semantic Versioning</div>
+                                <div class="font-mono text-green-700 text-xs">myapp:1.2.3</div>
+                                <div class="text-green-600 text-xs mt-1">Clear, predictable.</div>
+                            </div>
+                             <div class="p-3 bg-green-50 border-l-4 border-green-500 text-sm">
+                                <div class="font-bold text-green-800">✅ Git SHA</div>
+                                <div class="font-mono text-green-700 text-xs">myapp:abc1234</div>
+                                <div class="text-green-600 text-xs mt-1">Traceable to code commit.</div>
+                            </div>
+                             <div class="p-3 bg-red-50 border-l-4 border-red-500 text-sm opacity-75">
+                                <div class="font-bold text-red-800">❌ Latest</div>
+                                <div class="font-mono text-red-700 text-xs">myapp:latest</div>
+                                <div class="text-red-600 text-xs mt-1">Moving target. Never use in prod!</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-800 text-white p-6 rounded-lg shadow-md">
+                        <h3 class="font-bold text-orange-400 mb-4">Major Registries</h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${contentData.registry.registries.map(r => `
+                                <span class="px-3 py-1 bg-stone-700 rounded-full text-xs hover:bg-stone-600 transition cursor-default">${r}</span>
+                            `).join('')}
+                        </div>
+                        <div class="mt-6 pt-6 border-t border-stone-700">
+                             <h4 class="font-bold text-sm mb-2">Summary Checklist</h4>
+                             <ul class="text-xs text-stone-400 space-y-2">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Use Namespaces & Cgroups for isolation.</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Pin base images in Dockerfiles.</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Use non-root users.</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i> Never use :latest tag.</li>
+                             </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // --- Interaction Logic ---
+
+        function toggleDockerfile(mode) {
+            state.dockerfileMode = mode;
+            renderContent('dockerfile');
+            // Re-render chart is handled by renderContent calling initDockerfileChart
+        }
+
+        function setPkgManager(mgr) {
+            state.packageManager = mgr;
+            renderContent('packages');
+        }
+
+        function updateIntroChart(metric) {
+            state.vmComparisonMode = metric;
+            // Update buttons
+            document.getElementById('btn-startup').className = metric === 'startup' ? 
+                "px-3 py-1 text-sm rounded-md bg-white shadow text-stone-800 font-medium transition-all" : 
+                "px-3 py-1 text-sm rounded-md text-stone-500 hover:text-stone-800 transition-all";
+            
+            document.getElementById('btn-size').className = metric === 'size' ? 
+                "px-3 py-1 text-sm rounded-md bg-white shadow text-stone-800 font-medium transition-all" : 
+                "px-3 py-1 text-sm rounded-md text-stone-500 hover:text-stone-800 transition-all";
+
+            // Update Chart Data
+            const chart = Chart.getChart("introChart");
+            if (chart) {
+                if (metric === 'startup') {
+                    chart.data.labels = ['VM (Seconds)', 'Container (Seconds)'];
+                    chart.data.datasets[0].data = [45, 0.5];
+                    chart.data.datasets[0].label = 'Startup Time (Lower is Better)';
+                    chart.data.datasets[0].backgroundColor = ['#EF4444', '#22C55E'];
+                } else {
+                    chart.data.labels = ['VM (GB)', 'Container (MB)'];
+                    chart.data.datasets[0].data = [2.5, 0.05]; // Normalized roughly
+                    chart.data.datasets[0].label = 'Base Size (Lower is Better)';
+                    chart.data.datasets[0].backgroundColor = ['#EF4444', '#22C55E'];
+                }
+                chart.update();
+            }
+        }
+
+        // --- Charts ---
+
+        let chartInstance = null; // Global tracker to destroy if needed, though we use ID retrieval
+
+        function initIntroChart() {
+            const ctx = document.getElementById('introChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['VM (Startup)', 'Container (Startup)'],
+                    datasets: [{
+                        label: 'Time in Seconds',
+                        data: [45, 0.5],
+                        backgroundColor: ['#FCA5A5', '#86EFAC'],
+                        borderColor: ['#EF4444', '#22C55E'],
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + (state.vmComparisonMode === 'startup' ? ' seconds' : ' GB (approx)');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: true }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initDockerfileChart() {
+            const ctx = document.getElementById('dockerfileChart').getContext('2d');
+            const data = state.dockerfileMode === 'good' ? contentData.dockerfile.metrics.good : contentData.dockerfile.metrics.bad;
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Image Size (MB)', 'Build Time (s)'],
+                    datasets: [{
+                        data: [data.size, data.buildTime],
+                        backgroundColor: [
+                            state.dockerfileMode === 'good' ? '#22C55E' : '#EF4444', 
+                            state.dockerfileMode === 'good' ? '#3B82F6' : '#F59E0B'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: {
+                            display: true,
+                            text: state.dockerfileMode === 'good' ? 'Optimized Metrics' : 'Bloated Metrics'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize App
+        window.onload = init;
+
+    </script>
+</body>
+</html>
+
+

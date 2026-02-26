@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Containerization Study App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Flashcard Flip Animation Styles */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+        
+        /* Custom Scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Containerization Concepts</h1>
+            <p class="text-slate-500">Master Docker, Podman, and the Linux kernel magic behind containers.</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="flex justify-center mb-8 space-x-2">
+            <button id="btn-flashcards" onclick="showTab('flashcards')" class="px-6 py-2.5 rounded-full font-semibold transition-colors bg-blue-600 text-white shadow-md flex items-center gap-2">
+                <i data-lucide="layers"></i> Flashcards
+            </button>
+            <button id="btn-quiz" onclick="showTab('quiz')" class="px-6 py-2.5 rounded-full font-semibold transition-colors bg-white text-slate-600 hover:bg-slate-100 shadow-sm border border-slate-200 flex items-center gap-2">
+                <i data-lucide="check-circle"></i> Practice Quiz
+            </button>
+        </div>
+
+        <!-- ==================== FLASHCARDS TAB ==================== -->
+        <div id="tab-flashcards" class="transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl p-6 md:p-10 mb-6 max-w-2xl mx-auto">
+                
+                <!-- Progress Indicator -->
+                <div class="flex justify-between items-center mb-6 text-sm font-medium text-slate-400">
+                    <span id="flashcard-progress">Card 1 of 25</span>
+                    <span class="flex items-center gap-1"><i data-lucide="info" class="w-4 h-4"></i> Click card to flip</span>
+                </div>
+
+                <!-- Card Container -->
+                <div class="perspective-1000 w-full h-64 md:h-80 cursor-pointer" onclick="toggleFlip()">
+                    <div id="flashcard" class="flip-card w-full h-full relative">
+                        <div class="flip-card-inner w-full h-full absolute rounded-xl shadow-inner border border-slate-100">
+                            <!-- Front -->
+                            <div class="flip-card-front bg-slate-50 rounded-xl flex items-center justify-center p-8 text-center border-2 border-slate-200">
+                                <h2 id="fc-front" class="text-2xl md:text-3xl font-bold text-slate-800">Front Text</h2>
+                            </div>
+                            <!-- Back -->
+                            <div class="flip-card-back bg-blue-600 rounded-xl flex items-center justify-center p-8 text-center shadow-lg">
+                                <p id="fc-back" class="text-xl md:text-2xl font-medium text-white leading-relaxed">Back Text</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex justify-between items-center mt-8">
+                    <button onclick="prevCard()" class="p-3 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                    </button>
+                    <button onclick="shuffleCards()" class="px-4 py-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-2 font-medium">
+                        <i data-lucide="shuffle" class="w-4 h-4"></i> Shuffle
+                    </button>
+                    <button onclick="nextCard()" class="p-3 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== QUIZ TAB ==================== -->
+        <div id="tab-quiz" class="hidden transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl p-6 md:p-10">
+                <div class="flex justify-between items-center mb-8 border-b border-slate-100 pb-4">
+                    <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="graduation-cap" class="text-blue-600"></i> Concept Check</h2>
+                    <div class="text-lg font-semibold bg-blue-50 text-blue-700 px-4 py-1 rounded-full">Score: <span id="quiz-score">0</span> / 10</div>
+                </div>
+
+                <div id="quiz-container" class="space-y-10">
+                    <!-- Quiz questions will be injected here via JavaScript -->
+                </div>
+                
+                <div class="mt-10 text-center">
+                    <button onclick="resetQuiz()" class="px-6 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors font-medium inline-flex items-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Restart Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA PAYLOADS ---
+        
+        const flashcardsData = [
+            { front: "Primary problem solved by containerization", back: "The 'it works on my machine' issue arising from inconsistent environments across different servers." },
+            { front: "Difference between VM and Container isolation", back: "VMs use full hardware virtualization; Containers use kernel namespaces and cgroups within a shared host kernel." },
+            { front: "Typical startup time: VM vs Container", back: "VMs take seconds to minutes; Containers take milliseconds." },
+            { front: "Function of Linux Namespaces", back: "They determine what a process can SEE (visibility isolation), such as PIDs, networks, and filesystems." },
+            { front: "Function of Cgroups (Control Groups)", back: "They determine how much a process can USE (resource limiting), such as CPU quota and memory limits." },
+            { front: "Purpose of the PID Namespace", back: "Isolates process IDs so a container sees only its own processes." },
+            { front: "Purpose of the NET Namespace", back: "Provides the container with its own network stack, including IP addresses and ports." },
+            { front: "Dockerfile", back: "A plain text file containing sequential instructions for building a container image." },
+            { front: "Best Practice for Base Image tags", back: "Pin specific versions (e.g., `python:3.12-slim`) rather than using `latest` to ensure reproducibility." },
+            { front: "Reason to combine RUN instructions", back: "To reduce the number of image layers and avoid bloat." },
+            { front: "Reason to copy dependencies before source code", back: "To leverage layer caching so dependencies aren't reinstalled when only the source code changes." },
+            { front: "Security risk of the default container user", back: "The default user is root; best practice is to specify a non-root USER (e.g., `USER 1001`)." },
+            { front: "Linux distributions using APT", back: "Debian, Ubuntu, and Linux Mint." },
+            { front: "Linux distributions using DNF", back: "Fedora, RHEL, AlmaLinux, and Rocky Linux." },
+            { front: "Crucial step after installing packages in a Dockerfile", back: "Clean up the cache (e.g., `apt-get clean` or `dnf clean all`) in the same RUN layer to reduce image size." },
+            { front: "Structure of a container image", back: "A stack of read-only layers with a single read-write (ephemeral) layer on top." },
+            { front: "Core component of Docker architecture", back: "The `dockerd` daemon, which runs as a persistent root process." },
+            { front: "Key architectural features of Podman", back: "It is daemonless and rootless by default, using a direct fork-exec model." },
+            { front: "Container Registry", back: "A specialized file server (e.g., Docker Hub, ECR) for storing and distributing container images." },
+            { front: "Reason to avoid the `:latest` tag in production", back: "It is a moving target that updates without warning, making rollbacks difficult and breaking reproducibility." },
+            { front: "Registry operation: Push vs Pull", back: "Push uploads an image to the registry; Pull downloads an image to a server." },
+            { front: "Benefit of layer sharing", back: "Common base layers (like the OS) are stored only once per host, saving significant disk space." },
+            { front: "Analogy for Host OS vs Container", back: "Host OS is the 'Apartment Building'; Container is an 'Individual Apartment'." },
+            { front: "Purpose of .dockerignore", back: "Excludes files (like `.git` or `node_modules`) from the build context to reduce size and prevent secret leakage." },
+            { front: "Command flag required for package installs in Dockerfiles", back: "The `-y` flag (auto-confirm), because there is no human user to type 'yes' during the build." }
+        ];
+
+        const quizData = [
+            {
+                question: "A developer is migrating an application from a Virtual Machine (VM) to a container. Which of the following fundamental differences explains why the container starts in milliseconds while the VM takes minutes?",
+                hint: "Consider what heavy 'boot' process the container avoids by piggybacking on the host.",
+                options: [
+                    { text: "The container shares the host operating system's kernel.", rationale: "Containers run as isolated processes on the host kernel, avoiding the overhead of booting a full second kernel and hardware initialization required by VMs.", isCorrect: true },
+                    { text: "The container uses a hypervisor to manage hardware resources.", rationale: "Hypervisors are used by Virtual Machines to virtualize hardware, which adds significant overhead; containers do not use hypervisors.", isCorrect: false },
+                    { text: "The container loads the entire operating system into memory.", rationale: "Loading a full OS into memory is characteristic of a VM and is the primary reason for their slower startup times.", isCorrect: false },
+                    { text: "The container compresses the application code more efficiently.", rationale: "While images use compression for storage, the startup speed comes from architectural differences (kernel sharing), not file compression.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You need to ensure that a containerized database cannot see the processes belonging to the web server running on the same host. Which Linux kernel feature provides this visibility isolation?",
+                hint: "Think about the feature that creates a private 'view' or 'space' for the process.",
+                options: [
+                    { text: "Namespaces", rationale: "Namespaces (specifically the PID namespace) are responsible for isolating what a process can 'see', ensuring containers have their own view of the system.", isCorrect: true },
+                    { text: "Cgroups", rationale: "Cgroups control resource usage (how much CPU/RAM is used), not visibility or isolation of process IDs.", isCorrect: false },
+                    { text: "Hypervisor", rationale: "Hypervisors isolate VMs at the hardware level, but they are not the kernel feature responsible for container process isolation.", isCorrect: false },
+                    { text: "Daemon", rationale: "A daemon is a background process (like dockerd) that manages containers, but it is not the kernel feature itself that enforces isolation.", isCorrect: false }
+                ]
+            },
+            {
+                question: "A container is consuming too much CPU, causing performance issues for other applications on the server. Which mechanism should you configure to limit its CPU usage?",
+                hint: "Recall the component that answers the question: 'How MUCH can this process use?'",
+                options: [
+                    { text: "Cgroups (Control Groups)", rationale: "Cgroups are explicitly designed to limit, account for, and isolate the resource usage (CPU, memory, disk I/O) of a collection of processes.", isCorrect: true },
+                    { text: "PID Namespace", rationale: "The PID namespace isolates process IDs so processes can't see each other, but it does not restrict resource consumption.", isCorrect: false },
+                    { text: "Network Namespace", rationale: "Network namespaces isolate the network stack (IPs, ports), having no effect on CPU processing power.", isCorrect: false },
+                    { text: "Chroot", rationale: "Chroot changes the apparent root directory for a process (file system isolation) but does not manage CPU scheduling or quotas.", isCorrect: false }
+                ]
+            },
+            {
+                question: "When reviewing a colleague's Dockerfile, you notice they used `FROM node:latest`. Why is this considered a bad practice for production deployments?",
+                hint: "Consider what happens if you build the image today versus next month using this tag.",
+                options: [
+                    { text: "It makes the build non-reproducible because the underlying version changes unpredictably.", rationale: "Using `latest` means the base image could change at any time, potentially introducing breaking changes or new bugs that weren't present during testing.", isCorrect: true },
+                    { text: "It significantly increases the build time by ignoring the local cache.", rationale: "While `latest` forces a check for updates, the primary risk is version inconsistency, not build time performance.", isCorrect: false },
+                    { text: "It requires root privileges to pull the image from the registry.", rationale: "Pulling images generally requires authentication, but the specific tag used (`latest` vs a version number) does not dictate permission levels.", isCorrect: false },
+                    { text: "It prevents the container from running on different Linux distributions.", rationale: "Containers are designed to run on any Linux kernel; the tag affects the contents of the image, not its kernel compatibility.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Why is it a best practice to copy dependency manifests (like `requirements.txt` or `package.json`) and install them *before* copying the full application source code?",
+                hint: "Think about which part of your project changes most often: your code or your list of libraries.",
+                options: [
+                    { text: "To leverage Docker's layer caching mechanism.", rationale: "By installing dependencies in an earlier layer, Docker can reuse that cached layer if the dependencies haven't changed, even if the source code in later layers has.", isCorrect: true },
+                    { text: "To ensure the application runs as a non-root user.", rationale: "User permissions are handled by the `USER` instruction and are unrelated to the order of copying files.", isCorrect: false },
+                    { text: "To reduce the final size of the base operating system.", rationale: "The order of operations affects build speed and layer reuse, but installing the same packages will result in the same size regardless of order.", isCorrect: false },
+                    { text: "To prevent the container from crashing on startup.", rationale: "As long as dependencies are installed before the CMD runs, the app will start; the ordering is an optimization for build efficiency, not runtime stability.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You are writing a Dockerfile based on `fedora:38`. Which command should you use to install a package?",
+                hint: "Recall the 'Grocery Store' analogy: Fedora belongs to the Red Hat family chain.",
+                options: [
+                    { text: "dnf install -y <package>", rationale: "Fedora and RHEL-based distributions use `dnf` as their package manager.", isCorrect: true },
+                    { text: "apt-get install -y <package>", rationale: "`apt-get` is the package manager for Debian and Ubuntu-based systems, not Fedora.", isCorrect: false },
+                    { text: "yum install <package>", rationale: "While `yum` was the predecessor, modern Fedora versions use `dnf`. Also, the `-y` flag is crucial in Dockerfiles to avoid interactive prompts.", isCorrect: false },
+                    { text: "apk add <package>", rationale: "`apk` is the package manager for Alpine Linux, not Fedora.", isCorrect: false }
+                ]
+            },
+            {
+                question: "In the context of container image layering, which statement correctly describes the behavior of layers?",
+                hint: "Think of the image as a 'stack of pancakes' where you can only add toppings to the very top one.",
+                options: [
+                    { text: "Lower layers are read-only and shared across containers; only the top layer is read-write.", rationale: "This copy-on-write architecture allows multiple containers to share the same underlying OS and library layers, saving disk space.", isCorrect: true },
+                    { text: "All layers are merged into a single read-write file system during the build process.", rationale: "Layers remain distinct in the image; the runtime unifies them, but they are stored separately to enable caching and sharing.", isCorrect: false },
+                    { text: "Every layer is writable, but changes are discarded when the container stops.", rationale: "Only the topmost 'container layer' is writable. Modifying a file from a lower layer essentially creates a copy in the top layer.", isCorrect: false },
+                    { text: "Layers are only used during the build and are removed when the container runs.", rationale: "The layers persist and form the filesystem that the container uses at runtime.", isCorrect: false }
+                ]
+            },
+            {
+                question: "What is the primary architectural difference between Podman and Docker regarding how they manage containers?",
+                hint: "Consider whether a background service needs to be running *all the time* for the tool to work.",
+                options: [
+                    { text: "Podman is daemonless, whereas Docker relies on a persistent background daemon.", rationale: "Podman uses a direct fork-exec model, while Docker relies on the `dockerd` daemon to manage all container activities.", isCorrect: true },
+                    { text: "Podman uses full hardware virtualization, whereas Docker uses kernel namespaces.", rationale: "Both Podman and Docker use the same OCI-compliant runtime technologies (namespaces and cgroups); neither uses hardware virtualization.", isCorrect: false },
+                    { text: "Podman can only run on Red Hat Linux, whereas Docker is cross-platform.", rationale: "Podman is open-source and runs on many Linux distributions, not just Red Hat.", isCorrect: false },
+                    { text: "Docker supports OCI images, whereas Podman uses a proprietary image format.", rationale: "Both tools fully support OCI (Open Container Initiative) standards and can run the same images.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Which of the following image tagging strategies is safest for a production release to ensure you can trace exactly which code is running?",
+                hint: "You want a tag that acts like a fingerprint for your specific code version.",
+                options: [
+                    { text: "Tagging with the Git Commit SHA (e.g., myapp:abc1234)", rationale: "This creates an immutable link between the container image and the specific state of the source code at the time of build.", isCorrect: true },
+                    { text: "Tagging with :latest", rationale: "The `latest` tag is mutable and can be overwritten by any new build, making it impossible to know exactly which version is running later.", isCorrect: false },
+                    { text: "Tagging with the developer's name (e.g., myapp:dave)", rationale: "While descriptive, this doesn't provide version control or traceability to the codebase state.", isCorrect: false },
+                    { text: "Not using a tag (defaulting to latest)", rationale: "Omitting the tag defaults to `latest`, which shares all the downsides of explicitly using `latest`.", isCorrect: false }
+                ]
+            },
+            {
+                question: "In the container lifecycle, which operation copies a container image from a central registry to a specific server for deployment?",
+                hint: "This action is similar to downloading a file from the internet.",
+                options: [
+                    { text: "Pull", rationale: "The `pull` command downloads the image layers from the registry to the local machine or server.", isCorrect: true },
+                    { text: "Push", rationale: "`Push` uploads an image *from* a local machine *to* the registry.", isCorrect: false },
+                    { text: "Build", rationale: "`Build` creates the image from a Dockerfile; it does not transfer it across the network.", isCorrect: false },
+                    { text: "Commit", rationale: "`Commit` saves changes from a running container into a new image locally; it is not used for distribution.", isCorrect: false }
+                ]
+            }
+        ];
+
+        // --- APP LOGIC ---
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Tabs Logic
+        function showTab(tabName) {
+            // Hide all
+            document.getElementById('tab-flashcards').classList.add('hidden');
+            document.getElementById('tab-quiz').classList.add('hidden');
+            
+            // Show target
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            // Style buttons
+            const btns = ['flashcards', 'quiz'];
+            btns.forEach(btn => {
+                const el = document.getElementById(`btn-${btn}`);
+                if (btn === tabName) {
+                    el.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                    el.classList.remove('bg-white', 'text-slate-600', 'shadow-sm', 'border-slate-200');
+                } else {
+                    el.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                    el.classList.add('bg-white', 'text-slate-600', 'shadow-sm', 'border-slate-200');
+                }
+            });
+        }
+
+        // --- FLASHCARD LOGIC ---
+        let currentCardIndex = 0;
+        let isFlipped = false;
+        let activeFlashcards = [...flashcardsData];
+
+        function renderFlashcard() {
+            const card = activeFlashcards[currentCardIndex];
+            const frontEl = document.getElementById('fc-front');
+            const backEl = document.getElementById('fc-back');
+            const cardEl = document.getElementById('flashcard');
+            
+            // Unflip if flipped before changing text
+            if (isFlipped) {
+                cardEl.classList.remove('flipped');
+                isFlipped = false;
+                // Wait for animation to finish before swapping text
+                setTimeout(() => {
+                    frontEl.innerHTML = card.front;
+                    backEl.innerHTML = card.back;
+                }, 300);
+            } else {
+                frontEl.innerHTML = card.front;
+                backEl.innerHTML = card.back;
+            }
+
+            document.getElementById('flashcard-progress').innerText = `Card ${currentCardIndex + 1} of ${activeFlashcards.length}`;
+        }
+
+        function toggleFlip() {
+            const cardEl = document.getElementById('flashcard');
+            cardEl.classList.toggle('flipped');
+            isFlipped = !isFlipped;
+        }
+
+        function nextCard() {
+            currentCardIndex = (currentCardIndex + 1) % activeFlashcards.length;
+            renderFlashcard();
+        }
+
+        function prevCard() {
+            currentCardIndex = (currentCardIndex - 1 + activeFlashcards.length) % activeFlashcards.length;
+            renderFlashcard();
+        }
+
+        function shuffleCards() {
+            for (let i = activeFlashcards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [activeFlashcards[i], activeFlashcards[j]] = [activeFlashcards[j], activeFlashcards[i]];
+            }
+            currentCardIndex = 0;
+            renderFlashcard();
+        }
+
+        // --- QUIZ LOGIC ---
+        let userScore = 0;
+        let answeredQuestions = new Set();
+
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+            userScore = 0;
+            answeredQuestions.clear();
+            document.getElementById('quiz-score').innerText = userScore;
+
+            quizData.forEach((q, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-50 border border-slate-200 rounded-xl p-6';
+                
+                // Question Header
+                let html = `
+                    <div class="mb-4">
+                        <h3 class="text-lg font-bold text-slate-800"><span class="text-blue-600 mr-2">${qIndex + 1}.</span>${q.question}</h3>
+                    </div>
+                `;
+
+                // Hint Button & Area
+                html += `
+                    <div class="mb-4">
+                        <button onclick="toggleHint(${qIndex})" class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                            <i data-lucide="lightbulb" class="w-4 h-4"></i> Show Hint
+                        </button>
+                        <div id="hint-${qIndex}" class="hidden mt-2 p-3 bg-blue-50 text-blue-800 text-sm rounded-lg border border-blue-100">
+                            ${q.hint}
+                        </div>
+                    </div>
+                `;
+
+                // Options
+                html += `<div class="space-y-3">`;
+                q.options.forEach((opt, oIndex) => {
+                    html += `
+                        <button id="btn-${qIndex}-${oIndex}" onclick="selectOption(${qIndex}, ${oIndex})" class="w-full text-left p-4 rounded-lg border-2 border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50 transition-all font-medium text-slate-700">
+                            ${opt.text}
+                        </button>
+                    `;
+                });
+                html += `</div>`;
+
+                // Rationale Box (Hidden initially)
+                html += `
+                    <div id="rationale-container-${qIndex}" class="hidden mt-4 p-4 rounded-lg">
+                        <div class="flex items-start gap-3">
+                            <div id="icon-${qIndex}" class="mt-0.5"></div>
+                            <div>
+                                <h4 id="rationale-title-${qIndex}" class="font-bold mb-1"></h4>
+                                <p id="rationale-text-${qIndex}" class="text-slate-700 text-sm"></p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                qDiv.innerHTML = html;
+                container.appendChild(qDiv);
+            });
+            
+            // Re-init newly added icons
+            lucide.createIcons();
+        }
+
+        function toggleHint(qIndex) {
+            const hintEl = document.getElementById(`hint-${qIndex}`);
+            hintEl.classList.toggle('hidden');
+        }
+
+        function selectOption(qIndex, selectedOptIndex) {
+            if (answeredQuestions.has(qIndex)) return; // Prevent changing answer
+            answeredQuestions.add(qIndex);
+
+            const question = quizData[qIndex];
+            const isCorrect = question.options[selectedOptIndex].isCorrect;
+            
+            // Update Score
+            if (isCorrect) {
+                userScore++;
+                document.getElementById('quiz-score').innerText = userScore;
+            }
+
+            // Style options
+            question.options.forEach((opt, oIndex) => {
+                const btn = document.getElementById(`btn-${qIndex}-${oIndex}`);
+                btn.classList.remove('hover:border-blue-300', 'hover:bg-blue-50', 'cursor-pointer');
+                btn.classList.add('cursor-default', 'opacity-50'); // dim all slightly
+
+                if (oIndex === selectedOptIndex) {
+                    btn.classList.remove('opacity-50');
+                    if (isCorrect) {
+                        btn.classList.replace('border-slate-200', 'border-emerald-500');
+                        btn.classList.replace('bg-white', 'bg-emerald-50');
+                        btn.classList.add('text-emerald-900');
+                    } else {
+                        btn.classList.replace('border-slate-200', 'border-rose-500');
+                        btn.classList.replace('bg-white', 'bg-rose-50');
+                        btn.classList.add('text-rose-900');
+                    }
+                } else if (opt.isCorrect) {
+                    // Highlight the correct one if user missed it
+                    btn.classList.remove('opacity-50');
+                    btn.classList.replace('border-slate-200', 'border-emerald-500');
+                    btn.classList.add('border-dashed'); // Make it dashed to indicate 'should have picked'
+                }
+            });
+
+            // Show Rationale
+            const rationaleContainer = document.getElementById(`rationale-container-${qIndex}`);
+            const iconEl = document.getElementById(`icon-${qIndex}`);
+            const titleEl = document.getElementById(`rationale-title-${qIndex}`);
+            const textEl = document.getElementById(`rationale-text-${qIndex}`);
+
+            rationaleContainer.classList.remove('hidden');
+            
+            if (isCorrect) {
+                rationaleContainer.classList.add('bg-emerald-100', 'border', 'border-emerald-200');
+                iconEl.innerHTML = `<i data-lucide="check-circle" class="text-emerald-600"></i>`;
+                titleEl.className = "font-bold mb-1 text-emerald-800";
+                titleEl.innerText = "Correct!";
+            } else {
+                rationaleContainer.classList.add('bg-rose-100', 'border', 'border-rose-200');
+                iconEl.innerHTML = `<i data-lucide="x-circle" class="text-rose-600"></i>`;
+                titleEl.className = "font-bold mb-1 text-rose-800";
+                titleEl.innerText = "Incorrect";
+            }
+            
+            textEl.innerText = question.options[selectedOptIndex].rationale;
+            lucide.createIcons();
+        }
+
+        function resetQuiz() {
+            renderQuiz();
+            window.scrollTo({ top: document.getElementById('tab-quiz').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        // Initialize App
+        renderFlashcard();
+        renderQuiz();
+
+    </script>
+</body>
+</html>
+
+
