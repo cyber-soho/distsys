@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Management & Automation Study App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 3D Flip Card Styles */
+        .flip-card {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .flip-card-front {
+            background-color: #ffffff;
+            color: #1f2937;
+            border: 2px solid #e5e7eb;
+        }
+        .flip-card-back {
+            background-color: #f3f4f6;
+            color: #111827;
+            transform: rotateY(180deg);
+            border: 2px solid #d1d5db;
+        }
+
+        /* Custom Scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Process Management & Automation</h1>
+            <p class="text-slate-500">Master Linux processes, signals, and Systemd</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="flex justify-center mb-8 border-b border-slate-200">
+            <button id="tab-flashcards" class="px-6 py-3 text-lg font-medium text-blue-600 border-b-2 border-blue-600 focus:outline-none transition-colors" onclick="switchTab('flashcards')">
+                Flashcards (25)
+            </button>
+            <button id="tab-quiz" class="px-6 py-3 text-lg font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 hover:border-slate-300 focus:outline-none transition-colors" onclick="switchTab('quiz')">
+                Practice Quiz (10)
+            </button>
+        </div>
+
+        <!-- Flashcards Section -->
+        <section id="section-flashcards" class="block">
+            <div class="max-w-2xl mx-auto">
+                
+                <!-- Card Container -->
+                <div class="relative w-full h-80 md:h-96 cursor-pointer flip-card group mb-6" id="flashcard-container" onclick="flipCard()">
+                    <div class="flip-card-inner" id="flashcard-inner">
+                        <!-- Front -->
+                        <div class="flip-card-front flex flex-col justify-center">
+                            <span class="text-sm text-slate-400 uppercase tracking-widest mb-4">Term / Concept</span>
+                            <h2 id="card-front-text" class="text-2xl md:text-3xl font-semibold leading-tight text-center">Loading...</h2>
+                            <span class="absolute bottom-4 text-xs text-slate-400">Tap to flip</span>
+                        </div>
+                        <!-- Back -->
+                        <div class="flip-card-back flex flex-col justify-center">
+                            <span class="text-sm text-slate-400 uppercase tracking-widest mb-4">Definition / Answer</span>
+                            <p id="card-back-text" class="text-xl md:text-2xl font-medium leading-relaxed text-center">Loading...</p>
+                            <span class="absolute bottom-4 text-xs text-slate-400">Tap to flip back</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                    <button onclick="prevCard()" class="p-2 md:px-4 md:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                        <span class="hidden md:inline">Previous</span>
+                    </button>
+                    
+                    <div class="text-slate-500 font-medium">
+                        <span id="current-card-index">1</span> / <span id="total-cards">25</span>
+                    </div>
+
+                    <button onclick="nextCard()" class="p-2 md:px-4 md:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2">
+                        <span class="hidden md:inline">Next</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quiz Section -->
+        <section id="section-quiz" class="hidden">
+            <div id="quiz-container" class="space-y-8">
+                <!-- Quiz questions will be injected here by JS -->
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- DATA ---
+        const flashcardsData = [
+            { front: "PID (Process Identifier)", back: "A unique number assigned to every running process." },
+            { front: "PPID (Parent Process Identifier)", back: "The PID of the process that created a given process." },
+            { front: "PID 1", back: "The first process started by the system (usually systemd or init) and the founding ancestor of every process." },
+            { front: "Process \"Running\" state (R)", back: "The state where a process is actively using the CPU." },
+            { front: "Process \"Sleeping\" state (S)", back: "The state where a process is waiting for I/O and can be interrupted or woken up." },
+            { front: "Process \"Uninterruptible Sleep\" state (D)", back: "The state where a process is in deep I/O wait and cannot be interrupted." },
+            { front: "Zombie process (Z)", back: "A process that has finished executing, but its parent hasn't read its exit status yet." },
+            { front: "Primary danger of Zombie processes", back: "They consume entries in the process table and can exhaust it, causing a system-wide outage." },
+            { front: "Linux Signals", back: "Short, predefined messages sent to processes to trigger specific behaviors, defined by POSIX." },
+            { front: "SIGTERM (Signal 15)", back: "A request for graceful shutdown; it can be caught and handled by the process to run cleanup code." },
+            { front: "SIGKILL (Signal 9)", back: "An emergency stop command that cannot be caught, handled, or ignored by the process." },
+            { front: "SIGHUP (Signal 1)", back: "A signal that tells a daemon to re-read its configuration file without restarting (zero-downtime updates)." },
+            { front: "ps command", back: "A monitoring tool that provides a static, one-time snapshot photo of running processes." },
+            { front: "top command", back: "A built-in monitoring tool that provides a continuous, real-time dashboard of processes and resource usage." },
+            { front: "htop command", back: "A modern, interactive process viewer with color-coded resource bars, mouse support, and a tree view." },
+            { front: "pgrep command", back: "A versatile tool for finding PIDs by searching process names using regular expressions and filters." },
+            { front: "Keyboard shortcut to pause a foreground job", back: "Ctrl+Z, which sends a SIGTSTP signal to stop the process." },
+            { front: "bg command", back: "Resumes a stopped or paused job in the background, freeing up the terminal prompt." },
+            { front: "fg command", back: "Brings a backgrounded job back to the foreground of the terminal." },
+            { front: "nohup command", back: "Runs a command immune to SIGHUP, allowing it to survive terminal disconnections." },
+            { front: "Primary drawback of SysV Init", back: "It started services sequentially using fragile shell scripts, resulting in very slow boot times." },
+            { front: "Major advantage of Systemd", back: "Parallel startup of services based on declarative dependency graphs and built-in process supervision." },
+            { front: "Systemd Target", back: "A logical grouping of units that acts as a boot checkpoint, replacing traditional SysV runlevels." },
+            { front: "Systemd Requires= directive", back: "A hard dependency rule indicating that if the required unit fails, the dependent unit must also fail." },
+            { front: "Systemd Wants= directive", back: "A soft dependency rule indicating that the dependent unit should still start even if the wanted unit fails." }
+        ];
+
+        const quizData = [
+            {
+                question: "You are troubleshooting a server that is becoming unresponsive, and you notice several processes stuck in the 'Z' state. What is the immediate operational risk if this continues?",
+                hint: "Think about what happens when an employee finishes their report but the manager never officially dismisses them from their desk.",
+                options: [
+                    { text: "They will exhaust the server's process table, preventing any new applications from starting.", rationale: "A zombie process holds its slot in the process table until its parent reads its exit status, and filling this table causes a system-wide outage.", isCorrect: true },
+                    { text: "They will consume all available CPU cycles trying to restart.", rationale: "These processes have already finished executing, meaning they consume absolutely no CPU or memory resources.", isCorrect: false },
+                    { text: "They will lock the file system in a deep, uninterruptible I/O wait state.", rationale: "Deep I/O wait is represented by the 'D' state, not the 'Z' state, which indicates a process has completed its task.", isCorrect: false },
+                    { text: "They will automatically send SIGKILL to their parent process.", rationale: "Processes do not retroactively attack their parents; they passively wait for their parent to acknowledge their termination.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You are writing a deployment script to perform a rolling update of a distributed web application. You need the old instances to save their current state and gracefully close database connections before exiting. Which signal should you send?",
+                hint: "You want to politely ask the application to wrap up its current work before exiting, similar to a professor giving a 5-minute warning before class ends.",
+                options: [
+                    { text: "SIGTERM (15)", rationale: "This signal acts as a polite request to shut down, allowing the application to catch the signal and execute necessary cleanup routines.", isCorrect: true },
+                    { text: "SIGKILL (9)", rationale: "This forces an immediate termination by the kernel, guaranteeing that no cleanup or state-saving code will be executed.", isCorrect: false },
+                    { text: "SIGHUP (1)", rationale: "This signal is traditionally used to instruct a process to reload its configuration files, not to shut down.", isCorrect: false },
+                    { text: "SIGTSTP", rationale: "This is a terminal stop signal used to pause a process, which leaves it running in the background but inactive.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Your production NGINX server needs to apply a newly issued SSL certificate. How can you apply this change without dropping any active user connections?",
+                hint: "Imagine sliding an updated menu under the kitchen door so the chefs don't have to stop cooking to read it.",
+                options: [
+                    { text: "Send a SIGHUP (1) signal to the NGINX master process.", rationale: "Modern daemons catch this signal as an instruction to re-read configuration files on the fly, enabling zero-downtime updates.", isCorrect: true },
+                    { text: "Send a SIGTERM (15) signal, then immediately restart the service.", rationale: "Even a graceful shutdown will terminate the process and briefly interrupt service for active users while it restarts.", isCorrect: false },
+                    { text: "Send a SIGKILL (9) signal to force a hard reset.", rationale: "This immediately destroys the process, dropping all current connections and potentially corrupting in-flight transactions.", isCorrect: false },
+                    { text: "Use the bg command to background NGINX while modifying the file.", rationale: "Job control commands manage terminal execution state, but they do not force a daemon to re-read its configuration files.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You are writing an automated bash script that periodically checks system health and logs CPU usage for specific tasks to a file. Which tool is best suited for this non-interactive data collection?",
+                hint: "You need a tool that takes a one-time \"photograph\" of the system state rather than providing a continuous, live video feed.",
+                options: [
+                    { text: "ps", rationale: "It captures a static, one-time snapshot of the system state, making it ideal for piping and script automation.", isCorrect: true },
+                    { text: "htop", rationale: "This is an interactive, curses-based dashboard designed for human viewing, which breaks script automation due to its UI.", isCorrect: false },
+                    { text: "top", rationale: "This provides a continuous, refreshing feed of data intended for an active terminal session, not for simple file redirection.", isCorrect: false },
+                    { text: "fzf", rationale: "This is a fuzzy finder used to interactively filter lists within a terminal, not a tool for gathering process metrics.", isCorrect: false }
+                ]
+            },
+            {
+                question: "An administrator needs to quickly extract the Process IDs (PIDs) of all running services owned by the user 'www-data' for a bulk operation. Which tool provides the most efficient, targeted lookup for this?",
+                hint: "Look for the tool known as the \"Swiss Army knife\" of PID lookup that supports complex search filters.",
+                options: [
+                    { text: "pgrep", rationale: "This tool is designed specifically for searching and filtering PIDs using advanced criteria like regular expressions and specific user flags.", isCorrect: true },
+                    { text: "pidof", rationale: "While fast, this tool only matches exact process names and lacks the capability to filter by the user who owns the process.", isCorrect: false },
+                    { text: "top", rationale: "This displays a live dashboard of high-resource processes, making it difficult to systematically extract a clean list of PIDs.", isCorrect: false },
+                    { text: "systemctl", rationale: "This is used to manage service states and dependencies, not to perform raw searches of the process table based on user ownership.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You accidentally executed a database backup script directly in your terminal, and it is now blocking your prompt. You realize it will take 2 hours to finish. How do you regain control of your terminal without canceling the backup?",
+                hint: "You first need to send a signal to pause the job, and then issue a command to resume it out of sight.",
+                options: [
+                    { text: "Press Ctrl+Z, then type 'bg'.", rationale: "The keyboard shortcut sends a SIGTSTP to pause the job, and the command moves it to execute silently in the background.", isCorrect: true },
+                    { text: "Press Ctrl+C, then type 'nohup'.", rationale: "The keyboard shortcut sends a SIGINT, which will completely terminate the backup script rather than pausing it.", isCorrect: false },
+                    { text: "Type 'fg', then press Ctrl+Z.", rationale: "The process is already in the foreground, so the foreground command is useless, and executing commands is impossible while the prompt is blocked.", isCorrect: false },
+                    { text: "Close the SSH session and immediately reconnect.", rationale: "Closing the session sends a SIGHUP to the shell's child processes, which will instantly kill the running backup script.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You are about to launch a critical data migration script over an unstable VPN connection. How should you format your command to ensure the script finishes even if your SSH session disconnects?",
+                hint: "You need a command that explicitly tells the process to ignore the specific signal sent when a terminal connection drops.",
+                options: [
+                    { text: "nohup migration_script.sh &", rationale: "This explicitly instructs the process to ignore the hangup signal sent when a terminal closes, while the ampersand runs it in the background.", isCorrect: true },
+                    { text: "bg migration_script.sh", rationale: "While this relates to backgrounding a paused process, it does not provide immunity against the termination signal sent when the session ends.", isCorrect: false },
+                    { text: "systemctl start migration_script.sh", rationale: "Unless explicitly configured as a pre-defined service unit, you cannot arbitrarily start a loose shell script using the service manager.", isCorrect: false },
+                    { text: "pgrep migration_script.sh &", rationale: "This searches for the process ID of an already running script; it does not execute the script itself.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You are configuring a Systemd unit for a web application. If the local database crashes, the web application will corrupt data, so it must be stopped immediately if the database fails. Which directive should you use in the web app's unit file?",
+                hint: "You need a dependency rule that is strictly binding, tying the fate of one service directly to the health of another.",
+                options: [
+                    { text: "Requires=", rationale: "This creates a strict, hard dependency, meaning the failure of the required unit will actively cause this dependent unit to fail as well.", isCorrect: true },
+                    { text: "Wants=", rationale: "This establishes a soft dependency, meaning the web application would attempt to stay running even if the database crashed.", isCorrect: false },
+                    { text: "After=", rationale: "This solely dictates boot sequence order; it has no mechanism to stop a running service if a prerequisite service crashes later.", isCorrect: false },
+                    { text: "Before=", rationale: "This only dictates boot sequence order, forcing the web application to start before the database, which contradicts the required logic.", isCorrect: false }
+                ]
+            },
+            {
+                question: "What is the primary architectural mechanism that allows Systemd to achieve much faster boot times compared to the older SysV Init system?",
+                hint: "Consider how chores are completed much faster when a team of people works on completely separate tasks at the same time, rather than one person doing them in a strict sequence.",
+                options: [
+                    { text: "It analyzes dependency graphs to launch independent services simultaneously.", rationale: "By understanding which services don't rely on each other, it can execute their startup routines in parallel rather than one by one.", isCorrect: true },
+                    { text: "It rewrites all service configurations into compiled C binaries.", rationale: "While the core manager is compiled, the individual service configurations remain as plain text declarative INI-style files.", isCorrect: false },
+                    { text: "It skips the initialization of background daemons until a user explicitly logs in.", rationale: "Essential background services are brought online based on targets during boot, entirely independent of user login events.", isCorrect: false },
+                    { text: "It groups all system services into a single monolithic process tree under PID 1.", rationale: "Services are managed by PID 1, but they remain distinct, isolated processes rather than being merged into a single application.", isCorrect: false }
+                ]
+            },
+            {
+                question: "You need to quickly search for a specific configuration string across thousands of files in a distributed systems codebase, but you want to automatically ignore compiled binaries and everything in the `.git` folder. Which tool should you use?",
+                hint: "Think about the blazingly fast, Rust-based utility that acts as a massive upgrade to traditional line-oriented search tools.",
+                options: [
+                    { text: "rg (ripgrep)", rationale: "This modern search tool is heavily parallelized and automatically respects source control ignore files out of the box.", isCorrect: true },
+                    { text: "grep", rationale: "While ubiquitous, this traditional tool requires complex manual flags to skip binary files and ignore specific version control directories.", isCorrect: false },
+                    { text: "fzf (fuzzy finder)", rationale: "This tool is used to interactively filter a provided list of items, not to recursively scan the inner contents of files on a disk.", isCorrect: false },
+                    { text: "pidof", rationale: "This command strictly searches the active process table for running applications, not the contents of files on a hard drive.", isCorrect: false }
+                ]
+            }
+        ];
+
+        // --- TAB LOGIC ---
+        function switchTab(tabId) {
+            const flashcardsTab = document.getElementById('tab-flashcards');
+            const quizTab = document.getElementById('tab-quiz');
+            const flashcardsSection = document.getElementById('section-flashcards');
+            const quizSection = document.getElementById('section-quiz');
+
+            if (tabId === 'flashcards') {
+                flashcardsSection.classList.remove('hidden');
+                quizSection.classList.add('hidden');
+                
+                flashcardsTab.classList.replace('text-slate-500', 'text-blue-600');
+                flashcardsTab.classList.replace('border-transparent', 'border-blue-600');
+                flashcardsTab.classList.remove('hover:text-slate-700', 'hover:border-slate-300');
+                
+                quizTab.classList.replace('text-blue-600', 'text-slate-500');
+                quizTab.classList.replace('border-blue-600', 'border-transparent');
+                quizTab.classList.add('hover:text-slate-700', 'hover:border-slate-300');
+            } else {
+                quizSection.classList.remove('hidden');
+                flashcardsSection.classList.add('hidden');
+                
+                quizTab.classList.replace('text-slate-500', 'text-blue-600');
+                quizTab.classList.replace('border-transparent', 'border-blue-600');
+                quizTab.classList.remove('hover:text-slate-700', 'hover:border-slate-300');
+                
+                flashcardsTab.classList.replace('text-blue-600', 'text-slate-500');
+                flashcardsTab.classList.replace('border-blue-600', 'border-transparent');
+                flashcardsTab.classList.add('hover:text-slate-700', 'hover:border-slate-300');
+            }
+        }
+
+        // --- FLASHCARD LOGIC ---
+        let currentCardIndex = 0;
+        const container = document.getElementById('flashcard-container');
+        const frontText = document.getElementById('card-front-text');
+        const backText = document.getElementById('card-back-text');
+        const currentIndexDisplay = document.getElementById('current-card-index');
+
+        document.getElementById('total-cards').innerText = flashcardsData.length;
+
+        function updateCardDisplay() {
+            // Remove flip state if active
+            container.classList.remove('flipped');
+            
+            // Wait slightly for animation to clear before changing text, for a smoother look
+            setTimeout(() => {
+                frontText.innerText = flashcardsData[currentCardIndex].front;
+                backText.innerText = flashcardsData[currentCardIndex].back;
+                currentIndexDisplay.innerText = currentCardIndex + 1;
+            }, 150);
+        }
+
+        function flipCard() {
+            container.classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (currentCardIndex < flashcardsData.length - 1) {
+                currentCardIndex++;
+            } else {
+                currentCardIndex = 0; // loop back to start
+            }
+            updateCardDisplay();
+        }
+
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+            } else {
+                currentCardIndex = flashcardsData.length - 1; // loop to end
+            }
+            updateCardDisplay();
+        }
+
+        // Initialize first card
+        updateCardDisplay();
+
+
+        // --- QUIZ LOGIC ---
+        const quizContainer = document.getElementById('quiz-container');
+
+        function renderQuiz() {
+            quizData.forEach((q, qIndex) => {
+                const questionBlock = document.createElement('div');
+                questionBlock.className = "bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200";
+
+                // Question Header & Hint Button
+                const headerHtml = `
+                    <div class="flex justify-between items-start mb-4 gap-4">
+                        <h3 class="text-xl font-semibold text-slate-800"><span class="text-blue-600 mr-2">${qIndex + 1}.</span>${q.question}</h3>
+                        <button onclick="toggleHint(${qIndex})" class="shrink-0 text-sm flex items-center gap-1 px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full hover:bg-yellow-100 transition-colors focus:outline-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" /></svg>
+                            Hint
+                        </button>
+                    </div>
+                    <div id="hint-${qIndex}" class="hidden mb-6 p-4 bg-yellow-50/50 border border-yellow-100 rounded-lg text-sm text-yellow-800 italic">
+                        <span class="font-semibold not-italic">Hint:</span> ${q.hint}
+                    </div>
+                `;
+                
+                // Options List
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = "space-y-3";
+
+                q.options.forEach((opt, oIndex) => {
+                    const optionBtn = document.createElement('button');
+                    optionBtn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-100 bg-slate-50 hover:border-blue-300 hover:bg-blue-50 transition-all focus:outline-none relative overflow-hidden group";
+                    optionBtn.innerHTML = `<span class="relative z-10 text-slate-700 font-medium">${opt.text}</span>`;
+                    
+                    // On click evaluation
+                    optionBtn.onclick = () => evaluateOption(optionBtn, opt, qIndex, optionsDiv);
+                    
+                    optionsDiv.appendChild(optionBtn);
+                });
+
+                // Feedback Container (initially hidden)
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.id = `feedback-${qIndex}`;
+                feedbackDiv.className = "hidden mt-4 p-4 rounded-lg text-sm font-medium";
+
+                questionBlock.innerHTML = headerHtml;
+                questionBlock.appendChild(optionsDiv);
+                questionBlock.appendChild(feedbackDiv);
+                
+                quizContainer.appendChild(questionBlock);
+            });
+        }
+
+        function toggleHint(qIndex) {
+            const hintDiv = document.getElementById(`hint-${qIndex}`);
+            hintDiv.classList.toggle('hidden');
+        }
+
+        function evaluateOption(clickedBtn, optionData, qIndex, optionsContainer) {
+            // Reset styles on all options for this question
+            const allBtns = optionsContainer.querySelectorAll('button');
+            allBtns.forEach(btn => {
+                btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-100 bg-slate-50 transition-all focus:outline-none relative overflow-hidden opacity-60";
+            });
+
+            // Style the clicked button based on correctness
+            clickedBtn.classList.remove('opacity-60');
+            if (optionData.isCorrect) {
+                clickedBtn.classList.add('border-green-500', 'bg-green-50', 'ring-1', 'ring-green-500');
+                clickedBtn.querySelector('span').classList.replace('text-slate-700', 'text-green-800');
+            } else {
+                clickedBtn.classList.add('border-red-400', 'bg-red-50');
+                clickedBtn.querySelector('span').classList.replace('text-slate-700', 'text-red-800');
+            }
+
+            // Show feedback rationale
+            const feedbackDiv = document.getElementById(`feedback-${qIndex}`);
+            feedbackDiv.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+            
+            if (optionData.isCorrect) {
+                feedbackDiv.classList.add('bg-green-100', 'text-green-800');
+                feedbackDiv.innerHTML = `<strong class="block mb-1">Correct!</strong> ${optionData.rationale}`;
+            } else {
+                feedbackDiv.classList.add('bg-red-100', 'text-red-800');
+                feedbackDiv.innerHTML = `<strong class="block mb-1">Not quite.</strong> ${optionData.rationale}`;
+            }
+        }
+
+        // Initialize quiz
+        renderQuiz();
+
+    </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 05 — Process Management & Automation | Distributed Systems</title>
+<style>
+/* ═══ RESET & BASE ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0B1120;--bg2:#111827;--bg3:#1F2937;--bg4:#374151;
+  --accent:#10B981;--accent2:#059669;--accent3:#34D399;
+  --gold:#FBBF24;--red:#EF4444;--blue:#3B82F6;--purple:#8B5CF6;
+  --text:#E5E7EB;--text2:#9CA3AF;--text3:#6B7280;
+  --white:#FFFFFF;--card:#1E293B;--card2:#0F172A;
+  --font-display:'Georgia',serif;
+  --font-body:'Segoe UI','Helvetica Neue',sans-serif;
+  --font-mono:'Cascadia Code','Fira Code','Consolas',monospace;
+  --glow:0 0 30px rgba(16,185,129,0.15);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--font-body);
+  line-height:1.7;overflow-x:hidden;
+}
+::selection{background:var(--accent);color:var(--bg)}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent2)}
+
+/* ═══ ANIMATED BG ═══ */
+body::before{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background:radial-gradient(ellipse at 20% 50%,rgba(16,185,129,0.06) 0%,transparent 50%),
+             radial-gradient(ellipse at 80% 20%,rgba(59,130,246,0.04) 0%,transparent 50%);
+  pointer-events:none;z-index:0;
+}
+
+/* ═══ LAYOUT ═══ */
+.container{max-width:960px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+/* ═══ HERO ═══ */
+.hero{
+  min-height:85vh;display:flex;flex-direction:column;justify-content:center;
+  text-align:center;padding:80px 0 60px;position:relative;
+}
+.hero-badge{
+  display:inline-block;padding:6px 20px;border:1px solid var(--accent2);
+  border-radius:40px;font-size:0.8rem;color:var(--accent);letter-spacing:3px;
+  text-transform:uppercase;margin-bottom:24px;
+  animation:fadeInDown 0.8s ease;
+}
+.hero h1{
+  font-family:var(--font-display);font-size:clamp(2.5rem,6vw,4.5rem);
+  color:var(--white);font-weight:700;line-height:1.15;margin-bottom:16px;
+  animation:fadeInUp 0.8s ease 0.2s both;
+}
+.hero h1 em{font-style:normal;color:var(--accent);position:relative}
+.hero-sub{
+  font-size:1.15rem;color:var(--text2);max-width:600px;margin:0 auto 40px;
+  animation:fadeInUp 0.8s ease 0.4s both;
+}
+.hero-topics{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+  animation:fadeInUp 0.8s ease 0.6s both;
+}
+.hero-topics span{
+  padding:8px 18px;background:var(--bg3);border-radius:8px;font-size:0.85rem;
+  color:var(--text2);border:1px solid rgba(255,255,255,0.06);
+  transition:all 0.3s;cursor:default;
+}
+.hero-topics span:hover{border-color:var(--accent2);color:var(--accent3);transform:translateY(-2px)}
+
+/* ═══ NAV (sticky ToC) ═══ */
+.toc-nav{
+  position:sticky;top:0;z-index:100;background:rgba(11,17,32,0.92);
+  backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:12px 0;transition:box-shadow 0.3s;
+}
+.toc-nav.scrolled{box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+.toc-links{
+  display:flex;gap:6px;overflow-x:auto;padding:0 24px;max-width:960px;margin:0 auto;
+  scrollbar-width:none;
+}
+.toc-links::-webkit-scrollbar{display:none}
+.toc-links a{
+  padding:6px 14px;border-radius:6px;font-size:0.78rem;color:var(--text3);
+  text-decoration:none;white-space:nowrap;transition:all 0.3s;
+  border:1px solid transparent;
+}
+.toc-links a:hover,.toc-links a.active{
+  color:var(--accent);background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.2);
+}
+
+/* ═══ PROGRESS BAR ═══ */
+.progress-bar{
+  position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--blue));
+  z-index:200;transition:width 0.1s;width:0%;
+}
+
+/* ═══ SECTIONS ═══ */
+.lesson-section{padding:80px 0 40px;border-top:1px solid rgba(255,255,255,0.04)}
+
+.section-label{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:4px 14px;border-radius:6px;font-size:0.75rem;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:12px;font-weight:600;
+}
+.section-label.l1{color:var(--accent);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2)}
+.section-label.l2{color:var(--red);background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2)}
+.section-label.l3{color:var(--blue);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2)}
+.section-label.l4{color:var(--gold);background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2)}
+.section-label.l5{color:var(--purple);background:rgba(139,92,207,0.1);border:1px solid rgba(139,92,207,0.2)}
+.section-label.bonus{color:#EC4899;background:rgba(236,72,153,0.1);border:1px solid rgba(236,72,153,0.2)}
+
+h2{
+  font-family:var(--font-display);font-size:2rem;color:var(--white);
+  margin-bottom:8px;line-height:1.3;
+}
+h3{
+  font-family:var(--font-display);font-size:1.35rem;color:var(--white);
+  margin:32px 0 12px;line-height:1.4;
+}
+h4{font-size:1.05rem;color:var(--accent3);margin:20px 0 8px;font-weight:600}
+p{margin-bottom:16px;color:var(--text)}
+.subtitle{font-size:1rem;color:var(--text2);margin-bottom:32px}
+
+/* ═══ CARDS ═══ */
+.card{
+  background:var(--card);border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;padding:24px;margin:20px 0;
+  transition:border-color 0.3s,box-shadow 0.3s;
+}
+.card:hover{border-color:rgba(255,255,255,0.12);box-shadow:var(--glow)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:20px 0}
+.card-sm{
+  background:var(--card2);border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;padding:20px;transition:all 0.3s;
+}
+.card-sm:hover{transform:translateY(-3px);box-shadow:var(--glow);border-color:rgba(16,185,129,0.3)}
+.card-sm h4{margin-top:0}
+
+/* ═══ KEY TAKEAWAY ═══ */
+.takeaway{
+  background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.02));
+  border-left:4px solid var(--accent);border-radius:0 12px 12px 0;
+  padding:20px 24px;margin:32px 0;
+}
+.takeaway-label{
+  font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent);font-weight:700;margin-bottom:8px;
+}
+.takeaway p{color:var(--white);margin:0;font-size:0.95rem}
+
+/* ═══ TABLES ═══ */
+.table-wrap{overflow-x:auto;margin:20px 0;border-radius:10px;border:1px solid rgba(255,255,255,0.06)}
+table{width:100%;border-collapse:collapse;font-size:0.9rem}
+thead{background:var(--bg3)}
+th{
+  padding:12px 16px;text-align:left;color:var(--accent);font-weight:600;
+  font-size:0.8rem;letter-spacing:0.5px;text-transform:uppercase;
+  border-bottom:2px solid rgba(16,185,129,0.2);
+}
+td{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text)}
+tbody tr{transition:background 0.2s}
+tbody tr:hover{background:rgba(16,185,129,0.04)}
+tbody tr:nth-child(even){background:rgba(255,255,255,0.015)}
+
+/* ═══ CODE BLOCKS ═══ */
+.code-block{
+  background:var(--card2);border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;overflow:hidden;margin:16px 0;
+}
+.code-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 16px;background:rgba(255,255,255,0.03);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.code-lang{font-size:0.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.code-copy{
+  padding:4px 12px;border:1px solid var(--bg4);border-radius:4px;
+  background:transparent;color:var(--text3);font-size:0.72rem;cursor:pointer;
+  transition:all 0.2s;
+}
+.code-copy:hover{border-color:var(--accent);color:var(--accent)}
+pre{padding:16px;overflow-x:auto;font-family:var(--font-mono);font-size:0.82rem;line-height:1.6;color:var(--text)}
+code{font-family:var(--font-mono)}
+.inline-code{
+  background:rgba(16,185,129,0.1);color:var(--accent3);
+  padding:2px 7px;border-radius:4px;font-size:0.88em;
+}
+.comment{color:#6A9955}
+.keyword{color:#569CD6}
+.string{color:#CE9178}
+.function{color:#DCDCAA}
+
+/* ═══ DIAGRAMS (ASCII art in styled boxes) ═══ */
+.diagram{
+  background:var(--card2);border:1px solid rgba(16,185,129,0.15);
+  border-radius:10px;padding:20px;margin:20px 0;overflow-x:auto;
+  font-family:var(--font-mono);font-size:0.78rem;line-height:1.5;
+  color:var(--accent3);
+}
+.diagram-label{
+  font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;
+  color:var(--text3);margin-bottom:10px;font-family:var(--font-body);
+}
+
+/* ═══ COLLAPSIBLE ═══ */
+.collapsible{margin:16px 0}
+.collapsible-toggle{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  padding:14px 20px;background:var(--card);border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;color:var(--white);font-size:0.95rem;font-weight:600;
+  cursor:pointer;transition:all 0.3s;font-family:var(--font-body);
+}
+.collapsible-toggle:hover{border-color:rgba(16,185,129,0.3);background:var(--card2)}
+.collapsible-toggle .arrow{transition:transform 0.3s;font-size:0.8rem;color:var(--accent)}
+.collapsible-toggle.open .arrow{transform:rotate(180deg)}
+.collapsible-content{
+  max-height:0;overflow:hidden;transition:max-height 0.4s ease;
+  border-radius:0 0 10px 10px;
+}
+.collapsible-content.open{max-height:3000px}
+.collapsible-inner{padding:20px;background:var(--card2);border:1px solid rgba(255,255,255,0.04);border-top:0;border-radius:0 0 10px 10px}
+
+/* ═══ ANALOGY BOX ═══ */
+.analogy{
+  background:linear-gradient(135deg,rgba(251,191,36,0.06),rgba(251,191,36,0.01));
+  border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
+  padding:16px 20px;margin:16px 0;
+}
+.analogy-label{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px}
+.analogy p{color:var(--text);margin:0;font-size:0.92rem}
+
+/* ═══ LISTS ═══ */
+ul,ol{margin:12px 0 16px 20px}
+li{margin-bottom:8px;color:var(--text)}
+li strong{color:var(--white)}
+
+/* ═══ LINKS ═══ */
+a{color:var(--accent);text-decoration:none;transition:color 0.2s}
+a:hover{color:var(--accent3);text-decoration:underline}
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:20px 0}
+.resource-card{
+  display:block;padding:16px;background:var(--card2);border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;transition:all 0.3s;text-decoration:none;
+}
+.resource-card:hover{border-color:var(--accent2);transform:translateY(-2px);text-decoration:none}
+.resource-card .rc-title{color:var(--white);font-weight:600;font-size:0.9rem;margin-bottom:4px}
+.resource-card .rc-url{color:var(--accent);font-size:0.75rem;font-family:var(--font-mono)}
+.resource-card .rc-desc{color:var(--text3);font-size:0.8rem;margin-top:6px}
+
+/* ═══ DISCLAIMER ═══ */
+.disclaimer{
+  margin-top:60px;padding:40px 0;border-top:1px solid rgba(255,255,255,0.06);
+}
+.disclaimer h3{font-size:1.1rem;margin-bottom:16px}
+.disclaimer p{font-size:0.85rem;color:var(--text3);line-height:1.7}
+.disclaimer strong{color:var(--text2)}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity 0.6s,transform 0.6s}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+/* ═══ BACK TO TOP ═══ */
+.back-to-top{
+  position:fixed;bottom:30px;right:30px;width:44px;height:44px;
+  border-radius:50%;background:var(--accent2);color:var(--white);
+  border:none;cursor:pointer;font-size:1.2rem;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:translateY(20px);transition:all 0.3s;z-index:100;
+  box-shadow:0 4px 15px rgba(16,185,129,0.3);
+}
+.back-to-top.visible{opacity:1;transform:translateY(0)}
+.back-to-top:hover{background:var(--accent);transform:translateY(-2px)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+  .hero h1{font-size:2.2rem}
+  .card-grid{grid-template-columns:1fr}
+  .toc-links{padding:0 16px}
+  .container{padding:0 16px}
+  h2{font-size:1.6rem}
+}
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hero">
+<div class="container">
+  <span class="hero-badge">Week 05 — Distributed Systems</span>
+  <h1>Process Management<br>& <em>Automation</em></h1>
+  <p class="hero-sub">From PIDs to systemd — mastering the engine room of every server you will ever touch.</p>
+  <div class="hero-topics">
+    <span>PID &amp; PPID</span><span>Signals</span><span>ps / top / htop</span>
+    <span>Job Control</span><span>Systemd</span><span>rg + fzf + Vim</span>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════ STICKY NAV ═══════════════════ -->
+<nav class="toc-nav" id="tocNav">
+  <div class="toc-links">
+    <a href="#lesson1">Lesson 1: Processes</a>
+    <a href="#lesson2">Lesson 2: Signals</a>
+    <a href="#lesson3">Lesson 3: Monitoring</a>
+    <a href="#lesson4">Lesson 4: Job Control</a>
+    <a href="#lesson5">Lesson 5: Systemd</a>
+    <a href="#bonus">Bonus: rg + fzf</a>
+    <a href="#resources">Resources</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════ LESSON 1 ═══════════════════ -->
+<section class="lesson-section fade-in" id="lesson1">
+  <span class="section-label l1">Lesson 1</span>
+  <h2>Process Concepts</h2>
+  <p class="subtitle">PID (Process Identifier), PPID (Parent Process Identifier), States — The foundation of everything.</p>
+
+  <h3>What Is a Process?</h3>
+  <p>A <strong>program</strong> is a recipe sitting in a cookbook — static instructions on paper. A <strong>process</strong> is a chef actively cooking from that recipe. One recipe can spawn multiple cooks working in parallel, just as one program (your web browser) can spawn dozens of processes simultaneously.</p>
+
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4>PID (Process Identifier)</h4>
+      <p>A unique number assigned to every running process — like an employee badge. No two active processes share the same PID.</p>
+    </div>
+    <div class="card-sm">
+      <h4>PPID (Parent Process Identifier)</h4>
+      <p>The PID of the process that created this one. Every process (except PID 1) has a parent, forming a hierarchy — a <strong>process tree</strong>.</p>
+    </div>
+    <div class="card-sm">
+      <h4>PID 1 — The Ancestor</h4>
+      <p>The first user-space process (systemd or init). Always PID 1. Every other process on the system descends from it.</p>
+    </div>
+  </div>
+
+  <h3>The Process Family Tree</h3>
+  <div class="diagram">
+    <div class="diagram-label">Process Hierarchy Example</div>
+PID 1 (systemd)
+├── PID 482 (sshd)
+│   └── PID 1200 (bash)
+│       └── PID 1350 (python server.py)
+├── PID 530 (nginx master)
+│   ├── PID 531 (nginx worker)
+│   └── PID 532 (nginx worker)
+└── PID 610 (postgres)
+    ├── PID 611 (postgres writer)
+    └── PID 612 (postgres worker)
+  </div>
+
+  <h3>Process States — The Lifecycle</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>State</th><th>Symbol</th><th>Description</th><th>Real-World Example</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Running</strong></td><td>R</td><td>Actively using the CPU (Central Processing Unit)</td><td>Your code executing right now</td></tr>
+        <tr><td><strong>Sleeping (Interruptible)</strong></td><td>S</td><td>Waiting for I/O (Input/Output) — can be woken by a signal</td><td>Web server waiting for a request</td></tr>
+        <tr><td><strong>Sleeping (Uninterruptible)</strong></td><td>D</td><td>Deep I/O wait — cannot be interrupted</td><td>Disk read in progress</td></tr>
+        <tr><td><strong>Stopped</strong></td><td>T</td><td>Paused by signal (SIGSTOP) or debugger</td><td>You pressed Ctrl+Z</td></tr>
+        <tr><td><strong>Zombie</strong></td><td>Z</td><td>Finished but parent hasn't called wait()</td><td>Ghost in the process table</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>The Zombie Problem</h3>
+  <div class="analogy">
+    <div class="analogy-label">Analogy</div>
+    <p>An employee who has finished a task standing at the manager's desk, report in hand, waiting to be dismissed. Until the manager (parent) accepts the report (<span class="inline-code">wait()</span>), the employee just stands there — occupying a slot on the roster but doing no actual work.</p>
+  </div>
+  <p>In a badly written distributed application, zombie accumulation can <strong>exhaust the system's process table</strong> — a real-world outage scenario. Fix: always ensure parent processes reap their children.</p>
+
+  <div class="collapsible">
+    <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+      <span>Code Example — Process Tree & Zombie Demo (Bash)</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="collapsible-content">
+      <div class="collapsible-inner">
+        <p><strong>Task:</strong> This Bash script forks child processes, prints their PID and PPID, shows their states, and creates a deliberate zombie to illustrate the concept.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="comment">#!/usr/bin/env bash</span>
+<span class="comment"># Demonstrate PID, PPID, and process states</span>
+
+<span class="keyword">echo</span> <span class="string">"[Parent] My PID is: $$"</span>
+<span class="keyword">echo</span> <span class="string">"[Parent] My PPID is: $PPID"</span>
+
+<span class="comment"># Fork a well-behaved child process</span>
+(
+    <span class="keyword">echo</span> <span class="string">"[Child-A] My PID is: $BASHPID"</span>
+    <span class="keyword">echo</span> <span class="string">"[Child-A] My PPID is: $$"</span>
+    <span class="keyword">sleep</span> 1
+    <span class="keyword">echo</span> <span class="string">"[Child-A] Finished. Exiting."</span>
+) &amp;
+CHILD_A_PID=$!
+
+<span class="comment"># Create a zombie on purpose</span>
+(
+    <span class="keyword">echo</span> <span class="string">"[Child-B] Exiting immediately."</span>
+    <span class="keyword">exit</span> 0
+) &amp;
+CHILD_B_PID=$!
+
+<span class="keyword">sleep</span> 2
+
+<span class="comment"># Show process states — look for "Z" (zombie)</span>
+<span class="keyword">ps</span> -o pid,ppid,stat,comm -p $CHILD_A_PID -p $CHILD_B_PID
+
+<span class="comment"># Reap all children</span>
+<span class="keyword">wait</span>
+<span class="keyword">echo</span> <span class="string">"All children reaped. No more zombies."</span></pre>
+        </div>
+        <h4>Step-by-Step</h4>
+        <ol>
+          <li><strong><span class="inline-code">$$</span></strong> gives the current script's PID; <strong><span class="inline-code">$PPID</span></strong> gives its parent.</li>
+          <li>Parentheses <span class="inline-code">( ... ) &</span> create a subshell (child process) running in the background.</li>
+          <li>Child-B exits immediately but the parent sleeps — creating a zombie (state Z).</li>
+          <li><span class="inline-code">ps -o pid,ppid,stat,comm</span> shows the state column where you can spot the zombie.</li>
+          <li><span class="inline-code">wait</span> reaps all children, clearing the zombies from the process table.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-label">Process State Lifecycle Diagram</div>
+   CREATED ──dispatch──► RUNNING (R)
+                            │
+              ┌─────────────┼──────────────┐
+              ▼             ▼              ▼
+        SLEEPING (S/D)   STOPPED (T)    ZOMBIE (Z)
+         wait for I/O     paused by      done, parent
+         or event         signal         hasn't reaped
+              │             │              │
+              ▼             ▼              ▼
+        RUNNING (R)    RUNNING (R)    TERMINATED
+        (event ready)  (SIGCONT)      (parent wait())
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-label">Key Takeaway</div>
+    <p>Every process has a PID, a parent (PPID), and moves through defined states (R, S, D, T, Z). Understanding this hierarchy is fundamental to managing distributed services, debugging hangs, and preventing resource exhaustion from zombie processes.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ LESSON 2 ═══════════════════ -->
+<section class="lesson-section fade-in" id="lesson2">
+  <span class="section-label l2">Lesson 2</span>
+  <h2>Signals</h2>
+  <p class="subtitle">SIGTERM, SIGKILL, SIGHUP — The kernel's messaging system.</p>
+
+  <p>If processes are employees working in separate offices, <strong>signals</strong> are the internal memo system. Each signal is a number with a name, defined by <a href="https://pubs.opengroup.org/onlinepubs/9699919799/" target="_blank">POSIX (Portable Operating System Interface)</a>. About 30 standard signals exist. Three are essential:</p>
+
+  <div class="card-grid">
+    <div class="card-sm" style="border-left:3px solid var(--accent)">
+      <h4 style="color:var(--accent)">SIGTERM — Signal 15</h4>
+      <p><strong>"Please shut down gracefully."</strong> The process CAN catch this signal. Best practice: save state, close connections, notify peers, exit. Used by <a href="https://kubernetes.io/" target="_blank">Kubernetes</a> during rolling deployments.</p>
+      <div class="analogy" style="margin-top:12px">
+        <div class="analogy-label">Analogy</div>
+        <p>Professor says: "Class ends in 5 minutes — save your notes."</p>
+      </div>
+    </div>
+    <div class="card-sm" style="border-left:3px solid var(--red)">
+      <h4 style="color:var(--red)">SIGKILL — Signal 9</h4>
+      <p><strong>"Terminate immediately."</strong> The process CANNOT catch, handle, or ignore this. The kernel kills it directly. Last resort only — no cleanup possible.</p>
+      <div class="analogy" style="margin-top:12px">
+        <div class="analogy-label">Analogy</div>
+        <p>The fire alarm dumps water on everything. Nobody saves their work.</p>
+      </div>
+    </div>
+    <div class="card-sm" style="border-left:3px solid var(--blue)">
+      <h4 style="color:var(--blue)">SIGHUP — Signal 1</h4>
+      <p><strong>"Reload your configuration."</strong> Originally meant "terminal disconnected." Modern usage: tell a daemon to re-read its config with zero downtime. Used by <a href="https://nginx.org/" target="_blank">NGINX</a>.</p>
+      <div class="analogy" style="margin-top:12px">
+        <div class="analogy-label">Analogy</div>
+        <p>Sliding an updated menu under the kitchen door — chefs don't stop cooking.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Signal Delivery Mechanism</h3>
+  <div class="diagram">
+    <div class="diagram-label">How Signals Travel</div>
+  SENDER              KERNEL              TARGET PROCESS
+  (user, process,     Marks signal        Signal handler runs
+   or kernel)         as "pending"        at next scheduling slot
+       │                  │                     │
+       └──── kill() ─────►└──── pending ───────►│
+                                                 │
+                                    ┌────────────┴─────────────┐
+                                    ▼            ▼             ▼
+                              SIGTERM(15)   SIGKILL(9)    SIGHUP(1)
+                              Catchable     Uncatchable   Catchable
+                              Graceful      Immediate     Config
+                              shutdown      termination   reload
+  </div>
+
+  <h3>Signal Reference Table</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Signal</th><th>Number</th><th>Catchable?</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><strong>SIGTERM</strong></td><td>15</td><td>Yes</td><td>Graceful shutdown request</td></tr>
+        <tr><td><strong>SIGKILL</strong></td><td>9</td><td>No</td><td>Immediate forced termination</td></tr>
+        <tr><td><strong>SIGHUP</strong></td><td>1</td><td>Yes</td><td>Terminal hangup / config reload</td></tr>
+        <tr><td>SIGINT</td><td>2</td><td>Yes</td><td>Keyboard interrupt (Ctrl+C)</td></tr>
+        <tr><td>SIGTSTP</td><td>20</td><td>Yes</td><td>Stop from terminal (Ctrl+Z)</td></tr>
+        <tr><td>SIGCONT</td><td>18</td><td>No</td><td>Resume a stopped process</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="collapsible">
+    <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+      <span>Code Example — Signal Handler Service (Bash)</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="collapsible-content">
+      <div class="collapsible-inner">
+        <p><strong>Task:</strong> A long-running service that handles SIGTERM gracefully, uses SIGHUP to reload config, and demonstrates SIGKILL cannot be caught.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="comment">#!/usr/bin/env bash</span>
+<span class="comment"># Simulate a service handling SIGTERM, SIGHUP, and SIGKILL</span>
+
+<span class="comment"># Configuration variable (simulates a real config value)</span>
+CONFIG_VALUE=<span class="string">"initial-setting"</span>
+
+<span class="comment"># Graceful shutdown handler for SIGTERM</span>
+<span class="function">handle_sigterm</span>() {
+    <span class="keyword">echo</span> <span class="string">"SIGTERM received. Saving state..."</span>
+    <span class="keyword">echo</span> <span class="string">"last_config=$CONFIG_VALUE"</span> &gt; /tmp/state.txt
+    <span class="keyword">echo</span> <span class="string">"Goodbye. Exiting cleanly."</span>
+    <span class="keyword">exit</span> 0
+}
+
+<span class="comment"># Config reload handler for SIGHUP</span>
+<span class="function">handle_sighup</span>() {
+    CONFIG_VALUE=<span class="string">"reloaded-$(date +%s)"</span>
+    <span class="keyword">echo</span> <span class="string">"SIGHUP: Config reloaded → $CONFIG_VALUE"</span>
+}
+
+<span class="comment"># Register signal handlers with trap</span>
+<span class="keyword">trap</span> handle_sigterm SIGTERM
+<span class="keyword">trap</span> handle_sighup SIGHUP
+
+<span class="keyword">echo</span> <span class="string">"Service PID: $$  |  Config: $CONFIG_VALUE"</span>
+<span class="keyword">echo</span> <span class="string">"Try: kill -SIGTERM $$  |  kill -SIGHUP $$  |  kill -9 $$"</span>
+
+<span class="comment"># Main heartbeat loop</span>
+<span class="keyword">while</span> true; <span class="keyword">do</span>
+    <span class="keyword">echo</span> <span class="string">"Heartbeat | uptime=${SECONDS}s | config=$CONFIG_VALUE"</span>
+    <span class="keyword">sleep</span> 3
+<span class="keyword">done</span></pre>
+        </div>
+        <h4>Step-by-Step</h4>
+        <ol>
+          <li><span class="inline-code">trap handle_sigterm SIGTERM</span> registers a custom handler function for signal 15.</li>
+          <li>When SIGTERM arrives, the function saves state to a file and exits with code 0.</li>
+          <li>SIGHUP triggers a config reload — the variable changes without restarting the service.</li>
+          <li>SIGKILL (<span class="inline-code">kill -9</span>) bypasses all handlers — the kernel terminates immediately.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-label">Key Takeaway</div>
+    <p>SIGTERM (15) = graceful shutdown (catchable). SIGKILL (9) = forced kill (uncatchable). SIGHUP (1) = config reload (catchable). Always prefer SIGTERM over SIGKILL in production. Graceful shutdown prevents data corruption, lock leaks, and orphaned connections in distributed systems.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ LESSON 3 ═══════════════════ -->
+<section class="lesson-section fade-in" id="lesson3">
+  <span class="section-label l3">Lesson 3</span>
+  <h2>Process Monitoring</h2>
+  <p class="subtitle">ps, top, htop, pidof, pgrep — Your system's vital signs.</p>
+
+  <p>In a distributed system with hundreds of microservices, knowing <strong>what is running, how much CPU (Central Processing Unit) and RAM (Random Access Memory) it consumes, and whether it is healthy</strong> is non-negotiable. Think of it as a hospital's vital-signs monitors — but for your operating system.</p>
+
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4>ps — Snapshot Camera</h4>
+      <p>One-time photo of running processes. Does not update.</p>
+      <p><span class="inline-code">ps aux</span> — All users, full format<br>
+         <span class="inline-code">ps -o pid,ppid,stat,%cpu</span> — Custom columns</p>
+      <p><strong>Best for:</strong> Scripts, piping to other commands</p>
+    </div>
+    <div class="card-sm">
+      <h4>top — Live Dashboard</h4>
+      <p>Continuous real-time view. Built into every Linux distro.</p>
+      <p>Shortcuts: <span class="inline-code">M</span>=memory, <span class="inline-code">P</span>=CPU, <span class="inline-code">k</span>=kill, <span class="inline-code">q</span>=quit</p>
+      <p><strong>Best for:</strong> Quick resource checks</p>
+    </div>
+    <div class="card-sm">
+      <h4><a href="https://htop.dev/" target="_blank">htop</a> — Modern Dashboard</h4>
+      <p>Color-coded CPU/RAM bars, mouse support, tree view. Install: <span class="inline-code">sudo apt install htop</span></p>
+      <p><strong>Best for:</strong> Daily interactive monitoring</p>
+    </div>
+    <div class="card-sm">
+      <h4>pidof — Quick Lookup</h4>
+      <p>Fast name → PID(s). <span class="inline-code">pidof nginx</span> → <span class="inline-code">1842 1843</span></p>
+      <p><strong>Best for:</strong> "Is X running?" checks</p>
+    </div>
+    <div class="card-sm">
+      <h4>pgrep — Regex Search</h4>
+      <p>Pattern-matching with filters. <span class="inline-code">pgrep -u www-data -l</span></p>
+      <p><strong>Best for:</strong> Complex filtered lookups</p>
+    </div>
+  </div>
+
+  <h3>Comparison Table</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tool</th><th>Type</th><th>Interactive</th><th>Install Required</th><th>Best For</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ps</strong></td><td>Snapshot</td><td>No</td><td>Built-in</td><td>Scripts &amp; piping</td></tr>
+        <tr><td><strong>top</strong></td><td>Live</td><td>Yes</td><td>Built-in</td><td>Quick resource check</td></tr>
+        <tr><td><strong>htop</strong></td><td>Live</td><td>Yes</td><td>Yes</td><td>Daily monitoring</td></tr>
+        <tr><td><strong>pidof</strong></td><td>Lookup</td><td>No</td><td>Built-in</td><td>"Is X running?"</td></tr>
+        <tr><td><strong>pgrep</strong></td><td>Search</td><td>No</td><td>Built-in</td><td>Complex filtered search</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="collapsible">
+    <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+      <span>Code Example — Interactive Process Monitor Dashboard (HTML)</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="collapsible-content">
+      <div class="collapsible-inner">
+        <p><strong>Task:</strong> A self-contained HTML dashboard simulating htop with live-updating CPU/memory bars. Save as <span class="inline-code">.html</span> and open in any browser.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">HTML</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="comment">&lt;!-- Save as lesson3_monitor.html and open in a browser --&gt;</span>
+&lt;body style=<span class="string">"background:#1a1a2e;color:#e0e0e0;font-family:monospace"</span>&gt;
+&lt;h1 style=<span class="string">"color:#00ff88;text-align:center"</span>&gt;Process Monitor&lt;/h1&gt;
+&lt;table style=<span class="string">"width:100%;border-collapse:collapse"</span>&gt;
+  &lt;thead&gt;&lt;tr style=<span class="string">"background:#16213e;color:#00ff88"</span>&gt;
+    &lt;th&gt;PID&lt;/th&gt;&lt;th&gt;USER&lt;/th&gt;&lt;th&gt;STATE&lt;/th&gt;
+    &lt;th&gt;CPU %&lt;/th&gt;&lt;th&gt;MEM %&lt;/th&gt;&lt;th&gt;CMD&lt;/th&gt;
+  &lt;/tr&gt;&lt;/thead&gt;
+  &lt;tbody id=<span class="string">"t"</span>&gt;&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;script&gt;
+<span class="comment">// Simulated processes resembling a real distributed system</span>
+<span class="keyword">var</span> procs=[
+  {pid:1,user:<span class="string">"root"</span>,cmd:<span class="string">"systemd"</span>},
+  {pid:1023,user:<span class="string">"www-data"</span>,cmd:<span class="string">"nginx"</span>},
+  {pid:1587,user:<span class="string">"postgres"</span>,cmd:<span class="string">"postgres"</span>},
+  {pid:1842,user:<span class="string">"app"</span>,cmd:<span class="string">"node server.js"</span>},
+  {pid:2305,user:<span class="string">"redis"</span>,cmd:<span class="string">"redis-server"</span>}
+];
+<span class="comment">// Refresh every 2 seconds — just like top/htop</span>
+<span class="keyword">setInterval</span>(<span class="keyword">function</span>(){
+  <span class="keyword">var</span> h=<span class="string">""</span>;
+  procs.<span class="function">forEach</span>(<span class="keyword">function</span>(p){
+    <span class="keyword">var</span> cpu=(Math.random()*90).toFixed(1);
+    <span class="keyword">var</span> mem=(Math.random()*70).toFixed(1);
+    <span class="keyword">var</span> st=[<span class="string">"R"</span>,<span class="string">"S"</span>,<span class="string">"S"</span>,<span class="string">"D"</span>][Math.floor(Math.random()*4)];
+    h+=<span class="string">"&lt;tr&gt;&lt;td&gt;"</span>+p.pid+<span class="string">"&lt;/td&gt;&lt;td&gt;"</span>+p.user
+      +<span class="string">"&lt;/td&gt;&lt;td&gt;"</span>+st+<span class="string">"&lt;/td&gt;&lt;td&gt;"</span>+cpu
+      +<span class="string">"&lt;/td&gt;&lt;td&gt;"</span>+mem+<span class="string">"&lt;/td&gt;&lt;td&gt;"</span>+p.cmd+<span class="string">"&lt;/td&gt;&lt;/tr&gt;"</span>;
+  });
+  document.getElementById(<span class="string">"t"</span>).innerHTML=h;
+},2000);
+&lt;/script&gt;</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-label">Key Takeaway</div>
+    <p>Use <span class="inline-code">ps</span> for scriptable snapshots, <span class="inline-code">top</span>/<span class="inline-code">htop</span> for interactive monitoring, and <span class="inline-code">pidof</span>/<span class="inline-code">pgrep</span> for targeted process lookup. These are the foundational tools that every higher-level monitoring system (Prometheus, Grafana) is built upon.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ LESSON 4 ═══════════════════ -->
+<section class="lesson-section fade-in" id="lesson4">
+  <span class="section-label l4">Lesson 4</span>
+  <h2>Job Control</h2>
+  <p class="subtitle">bg, fg, nohup — Multitasking in the terminal.</p>
+
+  <p><strong>Scenario:</strong> You SSH (Secure Shell) into a remote server and start a 4-hour data migration. Do you want your terminal locked the entire time? Job control solves this.</p>
+
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4>bg — Background</h4>
+      <p>When a process is stopped (Ctrl+Z), <span class="inline-code">bg</span> resumes it in the background. Your terminal prompt returns immediately.</p>
+    </div>
+    <div class="card-sm">
+      <h4>fg — Foreground</h4>
+      <p>Brings a background or stopped job back to the foreground. Use <span class="inline-code">fg %1</span> to specify job number. Use <span class="inline-code">jobs</span> to list all jobs.</p>
+    </div>
+    <div class="card-sm">
+      <h4>nohup — No Hang Up</h4>
+      <p>Makes a process immune to SIGHUP (Signal Hang Up). When you close SSH, the process survives. Output goes to <span class="inline-code">nohup.out</span>.</p>
+      <p>Modern alternatives: <span class="inline-code">tmux</span>, <span class="inline-code">screen</span></p>
+    </div>
+  </div>
+
+  <h3>Job Control Workflow</h3>
+  <div class="diagram">
+    <div class="diagram-label">State Transitions</div>
+  FOREGROUND ──Ctrl+Z──► STOPPED ──bg──► BACKGROUND
+       ▲                    │                 │
+       │                    │ fg              │ fg
+       │                    ▼                 │
+       └────────────────────┘◄────────────────┘
+                                      │
+                                    nohup
+                                      ▼
+                                 DETACHED
+                           (survives terminal close,
+                            output → nohup.out)
+  </div>
+
+  <div class="collapsible">
+    <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+      <span>Code Example — Job Control Demo (Bash)</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="collapsible-content">
+      <div class="collapsible-inner">
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="comment">#!/usr/bin/env bash</span>
+<span class="comment"># Simulate a long migration with job control</span>
+
+<span class="function">simulate_migration</span>() {
+    <span class="keyword">for</span> i <span class="keyword">in</span> $(seq 1 10); <span class="keyword">do</span>
+        <span class="keyword">echo</span> <span class="string">"[$1] Batch $i of 10..."</span>
+        <span class="keyword">sleep</span> 2
+    <span class="keyword">done</span>
+    <span class="keyword">echo</span> <span class="string">"[$1] Complete!"</span>
+}
+
+<span class="comment"># Launch in background with &amp;</span>
+simulate_migration <span class="string">"Job-A"</span> &amp;
+<span class="keyword">echo</span> <span class="string">"Launched Job-A, PID: $!"</span>
+
+<span class="comment"># List active jobs</span>
+<span class="keyword">jobs</span> -l
+
+<span class="comment"># Launch with nohup (survives terminal close)</span>
+<span class="keyword">nohup</span> bash -c <span class="string">'sleep 60 && echo done'</span> &lt;/dev/null &amp;
+<span class="keyword">echo</span> <span class="string">"nohup job PID: $!"</span>
+
+<span class="comment"># Wait for all background jobs</span>
+<span class="keyword">wait</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Command</th><th>Purpose</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><strong>bg</strong></td><td>Resume stopped job in background</td><td><span class="inline-code">bg %1</span></td></tr>
+        <tr><td><strong>fg</strong></td><td>Bring job to foreground</td><td><span class="inline-code">fg %1</span></td></tr>
+        <tr><td><strong>jobs</strong></td><td>List all shell jobs</td><td><span class="inline-code">jobs -l</span></td></tr>
+        <tr><td><strong>nohup</strong></td><td>Immune to SIGHUP</td><td><span class="inline-code">nohup cmd &</span></td></tr>
+        <tr><td><strong>Ctrl+Z</strong></td><td>Send SIGTSTP to foreground</td><td>(keyboard)</td></tr>
+        <tr><td><strong>&</strong></td><td>Launch in background</td><td><span class="inline-code">cmd &</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-label">Key Takeaway</div>
+    <p>Ctrl+Z stops, <span class="inline-code">bg</span> resumes in background, <span class="inline-code">fg</span> brings back, <span class="inline-code">nohup</span> survives disconnection. Master these four moves and you can multitask on any remote server. For persistent sessions, use <span class="inline-code">tmux</span> or <span class="inline-code">screen</span>.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ LESSON 5 ═══════════════════ -->
+<section class="lesson-section fade-in" id="lesson5">
+  <span class="section-label l5">Lesson 5</span>
+  <h2>Systemd Architecture</h2>
+  <p class="subtitle">Units, Targets, Dependencies — and the SysV init comparison.</p>
+
+  <h3>A Brief History: SysV Init → Systemd</h3>
+  <div class="card-grid">
+    <div class="card-sm" style="border-left:3px solid var(--gold)">
+      <h4 style="color:var(--gold)">SysV Init — The Old Way</h4>
+      <ul>
+        <li>Sequential shell scripts in <span class="inline-code">/etc/init.d/</span></li>
+        <li>Numbered runlevels (0–6)</li>
+        <li><strong>Slow boot:</strong> 50 services started one at a time</li>
+        <li>No dependency management</li>
+        <li>No process supervision (crash = stay crashed)</li>
+        <li>Scattered logging</li>
+      </ul>
+    </div>
+    <div class="card-sm" style="border-left:3px solid var(--accent)">
+      <h4 style="color:var(--accent)"><a href="https://systemd.io/" target="_blank">Systemd</a> — The Modern Way</h4>
+      <ul>
+        <li><strong>Parallel startup</strong> — simultaneous where dependencies allow</li>
+        <li><strong>Declarative unit files</strong> — INI (Initialization)-style config</li>
+        <li><strong>Automatic dependency resolution</strong></li>
+        <li><strong>Built-in supervision</strong> — auto-restart on failure</li>
+        <li><strong>Unified logging</strong> — <span class="inline-code">journalctl</span></li>
+        <li>Socket activation, timers, path watchers</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Systemd Units — The Building Blocks</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Unit Type</th><th>Extension</th><th>Purpose</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Service</strong></td><td>.service</td><td>A daemon or one-shot process</td><td>nginx.service</td></tr>
+        <tr><td><strong>Target</strong></td><td>.target</td><td>Group of units (checkpoint)</td><td>multi-user.target</td></tr>
+        <tr><td><strong>Socket</strong></td><td>.socket</td><td>IPC (Inter-Process Communication) / network socket</td><td>sshd.socket</td></tr>
+        <tr><td><strong>Timer</strong></td><td>.timer</td><td>Scheduled task (replaces cron)</td><td>backup.timer</td></tr>
+        <tr><td><strong>Mount</strong></td><td>.mount</td><td>Filesystem mount point</td><td>home.mount</td></tr>
+        <tr><td><strong>Path</strong></td><td>.path</td><td>File/directory change watcher</td><td>deploy.path</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Targets Replace Runlevels</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>SysV Runlevel</th><th>Systemd Target</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>poweroff.target</td><td>Shut down</td></tr>
+        <tr><td>1</td><td>rescue.target</td><td>Single-user / rescue mode</td></tr>
+        <tr><td>3</td><td>multi-user.target</td><td>Multi-user, text-only (no GUI (Graphical User Interface))</td></tr>
+        <tr><td>5</td><td>graphical.target</td><td>Multi-user with desktop GUI</td></tr>
+        <tr><td>6</td><td>reboot.target</td><td>Reboot</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Dependencies — Declaring What Needs What</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Directive</th><th>Type</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Requires=</strong></td><td>Hard dependency</td><td>If the required unit fails, this unit fails too</td></tr>
+        <tr><td><strong>Wants=</strong></td><td>Soft dependency</td><td>If the wanted unit fails, this unit still starts</td></tr>
+        <tr><td><strong>After= / Before=</strong></td><td>Ordering only</td><td>Controls sequence, does NOT cause a unit to start</td></tr>
+        <tr><td><strong>WantedBy=</strong></td><td>Install hook</td><td>Which target pulls in this unit at boot</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Anatomy of a Unit File</h3>
+  <div class="card-grid">
+    <div class="card-sm" style="border-top:3px solid var(--accent)">
+      <h4 style="color:var(--accent)">[Unit] — WHO am I?</h4>
+      <p><span class="inline-code">Description=</span><br><span class="inline-code">After=network.target</span><br><span class="inline-code">Requires=postgresql.service</span><br><span class="inline-code">Wants=redis.service</span></p>
+    </div>
+    <div class="card-sm" style="border-top:3px solid var(--blue)">
+      <h4 style="color:var(--blue)">[Service] — HOW do I run?</h4>
+      <p><span class="inline-code">Type=simple</span><br><span class="inline-code">ExecStart=/usr/bin/python3 server.py</span><br><span class="inline-code">ExecReload=/bin/kill -HUP $MAINPID</span><br><span class="inline-code">Restart=on-failure</span></p>
+    </div>
+    <div class="card-sm" style="border-top:3px solid var(--gold)">
+      <h4 style="color:var(--gold)">[Install] — WHEN at boot?</h4>
+      <p><span class="inline-code">WantedBy=multi-user.target</span></p>
+      <p>Running <span class="inline-code">systemctl enable</span> creates a symlink so the service starts at boot.</p>
+    </div>
+  </div>
+
+  <h3>Systemd vs SysV — Command Cheat Sheet</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Systemd Command</th><th>SysV Init Equivalent</th></tr></thead>
+      <tbody>
+        <tr><td><span class="inline-code">systemctl start myapp</span></td><td><span class="inline-code">service myapp start</span></td></tr>
+        <tr><td><span class="inline-code">systemctl stop myapp</span></td><td><span class="inline-code">service myapp stop</span></td></tr>
+        <tr><td><span class="inline-code">systemctl restart myapp</span></td><td><span class="inline-code">service myapp restart</span></td></tr>
+        <tr><td><span class="inline-code">systemctl status myapp</span></td><td><span class="inline-code">service myapp status</span></td></tr>
+        <tr><td><span class="inline-code">systemctl enable myapp</span></td><td><span class="inline-code">update-rc.d myapp defaults</span></td></tr>
+        <tr><td><span class="inline-code">systemctl daemon-reload</span></td><td><em>(no equivalent)</em></td></tr>
+        <tr><td><span class="inline-code">journalctl -u myapp</span></td><td><span class="inline-code">cat /var/log/myapp.log</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Boot Speed: Sequential vs Parallel</h3>
+  <div class="diagram">
+    <div class="diagram-label">SysV Init (~12 seconds) — Sequential</div>
+  S01 network ──► S02 database ──► S03 webapp ──► S04 cron
+  (each waits for the previous one to finish)
+  </div>
+  <div class="diagram" style="border-color:rgba(16,185,129,0.3)">
+    <div class="diagram-label">Systemd (~4 seconds) — Parallel</div>
+  network.target ──┬──► database.service
+                   └──► webapp.service    (simultaneously!)
+  (independent services start at the same time)
+  </div>
+
+  <div class="collapsible">
+    <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+      <span>Code Example — Systemd Service Lifecycle (Bash)</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="collapsible-content">
+      <div class="collapsible-inner">
+        <p><strong>Task:</strong> Creates a systemd unit file, installs it, demonstrates enable/start/status/reload/stop, and shows the SysV command equivalents. Requires root.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="comment">#!/usr/bin/env bash</span>
+<span class="comment"># Create and manage a systemd service (run with sudo)</span>
+
+<span class="comment"># Create a unit file</span>
+<span class="keyword">cat</span> &gt; /etc/systemd/system/demo.service &lt;&lt; <span class="string">'EOF'</span>
+[Unit]
+Description=Demo Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/demo/server.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+<span class="string">EOF</span>
+
+<span class="comment"># Reload systemd to recognize the new unit</span>
+<span class="keyword">systemctl</span> daemon-reload
+
+<span class="comment"># Enable (start at boot) and start the service</span>
+<span class="keyword">systemctl</span> enable demo.service
+<span class="keyword">systemctl</span> start demo.service
+
+<span class="comment"># Check status and recent logs</span>
+<span class="keyword">systemctl</span> status demo.service
+<span class="keyword">journalctl</span> -u demo.service -n 10
+
+<span class="comment"># Reload config via SIGHUP (no restart)</span>
+<span class="keyword">systemctl</span> reload demo.service
+
+<span class="comment"># Stop and disable</span>
+<span class="keyword">systemctl</span> stop demo.service
+<span class="keyword">systemctl</span> disable demo.service</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-label">Key Takeaway</div>
+    <p>Systemd replaced SysV init with parallel boot, declarative unit files, automatic dependency resolution, and built-in process supervision. Master <span class="inline-code">systemctl</span>, <span class="inline-code">journalctl</span>, and unit file anatomy ([Unit], [Service], [Install]). These patterns directly mirror container orchestration in Kubernetes and Docker.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ BONUS ═══════════════════ -->
+<section class="lesson-section fade-in" id="bonus">
+  <span class="section-label bonus">Bonus</span>
+  <h2>rg + fzf + Vim & Reverse Search</h2>
+  <p class="subtitle">Developer productivity tools for navigating real-world codebases.</p>
+
+  <p>Distributed-systems engineers search through <strong>thousands of files</strong> daily. Basic <span class="inline-code">grep</span> and Ctrl+R are too slow. These tools transform your terminal.</p>
+
+  <div class="card-grid">
+    <div class="card-sm">
+      <h4><a href="https://github.com/BurntSushi/ripgrep" target="_blank">rg — ripgrep</a></h4>
+      <p>Line-oriented search written in Rust. 5–10x faster than grep. Respects <span class="inline-code">.gitignore</span>, skips binary files, uses parallelism.</p>
+      <p><span class="inline-code">rg "database_url" --type yaml</span><br>
+         <span class="inline-code">rg "ERROR" -C 2</span> (context lines)<br>
+         <span class="inline-code">rg "pattern" --count</span></p>
+    </div>
+    <div class="card-sm">
+      <h4><a href="https://github.com/junegunn/fzf" target="_blank">fzf — Fuzzy Finder</a></h4>
+      <p>Feed it any list — files, processes, git branches, history. Type a few characters and it instantly narrows thousands of results.</p>
+      <p><span class="inline-code">ps aux | fzf</span> → pick a process<br>
+         <span class="inline-code">fzf</span> → find a file interactively</p>
+    </div>
+    <div class="card-sm">
+      <h4><a href="https://github.com/junegunn/fzf.vim" target="_blank">Vim + fzf.vim</a></h4>
+      <p>The power combo. <span class="inline-code">:Rg pattern</span> searches the project. <span class="inline-code">:Files</span> fuzzy-finds files (like Ctrl+P in VS Code). <span class="inline-code">:Buffers</span> switches buffers.</p>
+    </div>
+  </div>
+
+  <h3>Enhanced Reverse Search (Ctrl+R)</h3>
+  <div class="card-grid">
+    <div class="card-sm" style="border-left:3px solid var(--gold)">
+      <h4 style="color:var(--gold)">Before fzf</h4>
+      <p>Shows <strong>one</strong> matching command at a time. Press Ctrl+R repeatedly to cycle. Clunky and slow.</p>
+    </div>
+    <div class="card-sm" style="border-left:3px solid var(--accent)">
+      <h4 style="color:var(--accent)">After fzf</h4>
+      <p>Shows <strong>all</strong> matching commands simultaneously. Fuzzy search with partial fragments. Scroll, preview, select with Enter. Massive productivity boost.</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-label">Integration Workflow</div>
+  YOUR TERMINAL
+      │
+      ├── Ctrl+R ──► fzf ──► Fuzzy match over bash history ──► Re-run command
+      │
+      ├── vim :Rg ──► rg ──► Fast regex search over project ──► Jump to code line
+      │
+      └── vim :Files ──► fzf ──► Fuzzy match over files ──► Open file instantly
+
+  INSTALL: sudo apt install ripgrep fzf
+  VIM PLUGIN: junegunn/fzf.vim (via vim-plug)
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-label">Key Takeaway</div>
+    <p><span class="inline-code">rg</span> replaces grep with speed and smart defaults. <span class="inline-code">fzf</span> turns any list into an interactive fuzzy-search menu. Together with <span class="inline-code">fzf.vim</span>, they create a search-powered command center. Install both: <span class="inline-code">sudo apt install ripgrep fzf</span>.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ RESOURCES ═══════════════════ -->
+<section class="lesson-section fade-in" id="resources">
+  <h2>Hyperlinks & Resources</h2>
+  <p class="subtitle">All references and further learning materials from this lecture.</p>
+
+  <div class="resource-grid">
+    <a class="resource-card" href="https://pubs.opengroup.org/onlinepubs/9699919799/" target="_blank">
+      <div class="rc-title">POSIX Specification</div>
+      <div class="rc-url">pubs.opengroup.org</div>
+      <div class="rc-desc">Signal names, process behavior, shell semantics</div>
+    </a>
+    <a class="resource-card" href="https://man7.org/linux/man-pages/" target="_blank">
+      <div class="rc-title">Linux man-pages</div>
+      <div class="rc-url">man7.org</div>
+      <div class="rc-desc">Official docs for ps, top, kill, signal, and more</div>
+    </a>
+    <a class="resource-card" href="https://systemd.io/" target="_blank">
+      <div class="rc-title">Systemd Documentation</div>
+      <div class="rc-url">systemd.io</div>
+      <div class="rc-desc">Architecture docs, unit file specs, guides</div>
+    </a>
+    <a class="resource-card" href="https://kubernetes.io/docs/" target="_blank">
+      <div class="rc-title">Kubernetes Docs</div>
+      <div class="rc-url">kubernetes.io</div>
+      <div class="rc-desc">Container orchestration using process-management concepts</div>
+    </a>
+    <a class="resource-card" href="https://github.com/BurntSushi/ripgrep" target="_blank">
+      <div class="rc-title">ripgrep (rg)</div>
+      <div class="rc-url">github.com/BurntSushi</div>
+      <div class="rc-desc">Fast, .gitignore-aware search tool in Rust</div>
+    </a>
+    <a class="resource-card" href="https://github.com/junegunn/fzf" target="_blank">
+      <div class="rc-title">fzf — Fuzzy Finder</div>
+      <div class="rc-url">github.com/junegunn</div>
+      <div class="rc-desc">Command-line fuzzy finder for interactive filtering</div>
+    </a>
+    <a class="resource-card" href="https://github.com/junegunn/fzf.vim" target="_blank">
+      <div class="rc-title">fzf.vim Plugin</div>
+      <div class="rc-url">github.com/junegunn</div>
+      <div class="rc-desc">Integrates fzf + ripgrep into Vim</div>
+    </a>
+    <a class="resource-card" href="https://htop.dev/" target="_blank">
+      <div class="rc-title">htop</div>
+      <div class="rc-url">htop.dev</div>
+      <div class="rc-desc">Interactive process viewer for UNIX systems</div>
+    </a>
+    <a class="resource-card" href="https://www.freedesktop.org/wiki/Software/systemd/" target="_blank">
+      <div class="rc-title">Systemd on Freedesktop</div>
+      <div class="rc-url">freedesktop.org</div>
+      <div class="rc-desc">Tutorials and design rationale</div>
+    </a>
+    <a class="resource-card" href="https://nginx.org/" target="_blank">
+      <div class="rc-title">NGINX</div>
+      <div class="rc-url">nginx.org</div>
+      <div class="rc-desc">Web server that uses SIGHUP for config reload</div>
+    </a>
+    <a class="resource-card" href="https://www.linuxfoundation.org/" target="_blank">
+      <div class="rc-title">The Linux Foundation</div>
+      <div class="rc-url">linuxfoundation.org</div>
+      <div class="rc-desc">Supporting Linux and open-source development</div>
+    </a>
+    <a class="resource-card" href="https://www.virustotal.com/gui/home/url" target="_blank">
+      <div class="rc-title">VirusTotal URL Scanner</div>
+      <div class="rc-url">virustotal.com</div>
+      <div class="rc-desc">Verify external URLs before visiting them</div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══════════════════ DISCLAIMER ═══════════════════ -->
+<section class="disclaimer fade-in">
+  <h3>Disclaimer</h3>
+
+  <h4>Intellectual Property</h4>
+  <p>All material contained in this lecture — including text, diagrams, schematics, code examples, and reference tables — is the intellectual property of <strong>Cyber.SoHo</strong>. Unauthorized reproduction, distribution, or commercial use without explicit written permission is strictly prohibited.</p>
+
+  <h4>Copyright & Non-Affiliation</h4>
+  <p>This educational material is produced independently. The author(s) and <strong>Cyber.SoHo</strong> are <strong>not affiliated with, endorsed by, or sponsored by</strong> any organization, company, product, or project mentioned herein — including but not limited to the Linux Foundation, Systemd, Kubernetes, NGINX, Red Hat, Canonical, Docker, or any other entity. All trademarks are the property of their respective owners and are used solely for educational purposes under fair-use principles.</p>
+
+  <h4>External Links — Safety Notice</h4>
+  <p>This lecture contains hyperlinks to external websites. These links were verified at the time of writing but may change. <strong>Users are strongly advised to verify all external URLs</strong> using a reputable scanner such as <a href="https://www.virustotal.com/gui/home/url" target="_blank">VirusTotal</a>. Cyber.SoHo assumes no responsibility for external content.</p>
+
+  <h4>Liability</h4>
+  <p>This material is provided "as is" for educational purposes only and does not constitute professional advice. In no event shall Cyber.SoHo be liable for any damages arising from the use of this material. Code examples are designed for isolated lab environments and should not be deployed on production systems without proper review.</p>
+
+  <h4>Ethics</h4>
+  <p>This material is intended solely for lawful educational purposes. Users are expected to apply this knowledge ethically, responsibly, and in compliance with all applicable laws and codes of conduct.</p>
+
+  <p style="text-align:center;margin-top:40px;color:var(--text3);font-size:0.85rem">
+    <em>Week 05 — Process Management & Automation | Distributed Systems — Undergraduate Series</em><br>
+    <strong>© Cyber.SoHo — All Rights Reserved</strong>
+  </p>
+</section>
+
+</div><!-- .container -->
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script>
+// Progress bar
+window.addEventListener('scroll',function(){
+  var h=document.documentElement;
+  var pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;
+  document.getElementById('progressBar').style.width=pct+'%';
+  // Back to top
+  var btn=document.getElementById('backToTop');
+  if(h.scrollTop>400)btn.classList.add('visible');
+  else btn.classList.remove('visible');
+  // Sticky nav shadow
+  var nav=document.getElementById('tocNav');
+  if(h.scrollTop>window.innerHeight*0.8)nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+});
+
+// Intersection Observer for fade-in animations
+var observer=new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting)e.target.classList.add('visible');
+  });
+},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(function(el){observer.observe(el)});
+
+// Active nav link on scroll
+var sections=document.querySelectorAll('.lesson-section');
+var navLinks=document.querySelectorAll('.toc-links a');
+window.addEventListener('scroll',function(){
+  var scrollPos=window.scrollY+200;
+  sections.forEach(function(s,i){
+    if(scrollPos>=s.offsetTop&&scrollPos<s.offsetTop+s.offsetHeight){
+      navLinks.forEach(function(l){l.classList.remove('active')});
+      if(navLinks[i])navLinks[i].classList.add('active');
+    }
+  });
+});
+
+// Collapsible toggles
+function toggleCollapsible(btn){
+  btn.classList.toggle('open');
+  var content=btn.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+// Copy code
+function copyCode(btn){
+  var pre=btn.closest('.code-block').querySelector('pre');
+  var text=pre.textContent||pre.innerText;
+  navigator.clipboard.writeText(text).then(function(){
+    btn.textContent='Copied!';
+    setTimeout(function(){btn.textContent='Copy'},2000);
+  });
+}
+</script>
+</body>
+</html>

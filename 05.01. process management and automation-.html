@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Management & Automation: Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .tree-line {
+            border-left: 2px solid #cbd5e1;
+            margin-left: 0.5rem;
+            padding-left: 1rem;
+        }
+        .tree-node::before {
+            content: "├─";
+            color: #cbd5e1;
+            margin-right: 0.5rem;
+        }
+        .tree-node:last-child::before {
+            content: "└─";
+        }
+        
+        body {
+            background-color: #fafaf9;
+            color: #1c1917;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .nav-active {
+            border-bottom: 2px solid #0f766e;
+            color: #0f766e;
+            font-weight: 600;
+        }
+        
+        .hidden-section {
+            display: none;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+<!-- Chosen Palette: Warm Neutrals with Teal/Amber/Rose Accents -->
+<!-- Application Structure Plan: A centralized, tab-based dashboard architecture. This structure replaces the linear, 47-slide format with 5 thematic modules (Concepts, Signals, Monitoring, Jobs, Systemd). This allows users to non-linearly explore the specific Linux system domains they need. Interactive widgets (like the Signal Simulator and Job Control State Machine) are embedded directly within their relevant textual contexts to reinforce learning through immediate application. -->
+<!-- Visualization & Content Choices: 
+1. Process States -> Goal: Inform/Proportions -> Viz: Chart.js Doughnut -> Interaction: Hover tooltips -> Justification: Shows the overwhelming ratio of sleeping vs running processes in a healthy system. -> Library: Chart.js (NO SVG).
+2. Boot Comparison (SysV vs Systemd) -> Goal: Compare/Change -> Viz: Chart.js Horizontal Bar -> Interaction: Hover tooltips -> Justification: Visually quantifies the speed benefit of parallel execution over sequential execution. -> Library: Chart.js (NO SVG).
+3. Process Tree -> Goal: Organize/Hierarchies -> Viz: Structured HTML/CSS -> Interaction: Hover highlights -> Justification: Directly maps to the report's tree logic without heavy libraries. -> Method: HTML/Tailwind.
+4. Signal Simulator -> Goal: Change/Interact -> Viz: Interactive Terminal Mockup -> Interaction: Clickable signal buttons (TERM, KILL, HUP) -> Justification: Allows safe experimentation with destructive system commands. -> Method: Vanilla JS. 
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">⚙️</span>
+                    <h1 class="font-bold text-xl text-stone-800 tracking-tight">Cyber.SoHo OS Management</h1>
+                </div>
+            </div>
+            <nav class="flex space-x-8 overflow-x-auto pb-2" id="main-nav">
+                <button data-target="concepts" class="nav-btn nav-active whitespace-nowrap pb-2 text-sm font-medium text-stone-600 hover:text-teal-700 transition-colors">1. Process Anatomy</button>
+                <button data-target="signals" class="nav-btn whitespace-nowrap pb-2 text-sm font-medium text-stone-600 hover:text-teal-700 transition-colors">2. Signals</button>
+                <button data-target="monitoring" class="nav-btn whitespace-nowrap pb-2 text-sm font-medium text-stone-600 hover:text-teal-700 transition-colors">3. Observation & Jobs</button>
+                <button data-target="systemd" class="nav-btn whitespace-nowrap pb-2 text-sm font-medium text-stone-600 hover:text-teal-700 transition-colors">4. Systemd Arch</button>
+                <button data-target="tools" class="nav-btn whitespace-nowrap pb-2 text-sm font-medium text-stone-600 hover:text-teal-700 transition-colors">5. Power Tools</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <section id="concepts" class="content-section animate-fade-in">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">Process Concepts & The Family Tree</h2>
+                <p class="text-lg text-stone-600 leading-relaxed">
+                    This section breaks down the foundational building blocks of an operating system. Every application is a process, moving through distinct lifecycle states and forming a hierarchical tree. Understanding this structure is critical for diagnosing hangs and preventing resource exhaustion in distributed microservices.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold mb-4 border-b pb-2">The Process Hierarchy</h3>
+                    <p class="text-sm text-stone-500 mb-4">Every process except PID 1 has a parent (PPID). The OS uses this tree to manage and clean up resources.</p>
+                    <div class="font-mono text-sm bg-stone-50 p-4 rounded-lg border border-stone-200 overflow-x-auto">
+                        <div class="font-bold text-teal-700">PID 1 (systemd)</div>
+                        <div class="tree-line">
+                            <div class="tree-node py-1">
+                                <span class="font-semibold">PID 482 (sshd)</span>
+                                <div class="tree-line">
+                                    <div class="tree-node py-1">PID 1200 (bash)</div>
+                                    <div class="tree-line">
+                                        <div class="tree-node py-1 text-amber-700 bg-amber-50 px-2 rounded">PID 1350 (python server.py)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tree-node py-1">
+                                <span class="font-semibold">PID 530 (nginx master)</span>
+                                <div class="tree-line">
+                                    <div class="tree-node py-1">PID 531 (nginx worker)</div>
+                                    <div class="tree-node py-1">PID 532 (nginx worker)</div>
+                                </div>
+                            </div>
+                            <div class="tree-node py-1">
+                                <span class="font-semibold">PID 610 (postgres)</span>
+                                <div class="tree-line">
+                                    <div class="tree-node py-1">PID 611 (postgres writer)</div>
+                                    <div class="tree-node py-1 text-rose-600 font-bold bg-rose-50 px-2 rounded" title="Zombie Process">PID 612 (postgres worker) [Z]</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r text-sm">
+                        <strong class="text-amber-800">The Zombie Problem:</strong> Process 612 is a zombie (Z). It finished, but its parent hasn't read its exit status. It uses no memory, but consumes a slot in the process table. Exhausting this table causes a system-wide outage.
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col">
+                    <h3 class="text-xl font-semibold mb-2 border-b pb-2">Snapshot of Process States</h3>
+                    <p class="text-sm text-stone-500 mb-4">A typical system has hundreds of processes, but very few are actively using the CPU at any exact moment. Interact with the chart to see definitions.</p>
+                    
+                    <div class="flex-grow flex items-center justify-center w-full">
+                        <div class="chart-container">
+                            <canvas id="statesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="signals" class="content-section hidden-section animate-fade-in">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">Signals & Inter-Process Communication</h2>
+                <p class="text-lg text-stone-600 leading-relaxed">
+                    Signals are the kernel's primitive messaging system. They are predefined integers sent to processes to trigger specific behaviors. In distributed systems, mastering these signals—especially the difference between graceful shutdown and forced termination—prevents data corruption and orphaned connections.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-amber-400 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xl font-bold">SIGTERM <span class="text-stone-400 text-sm font-normal">(15)</span></h3>
+                        <span class="text-2xl">👋</span>
+                    </div>
+                    <p class="font-semibold text-amber-700 mb-2">"Please shut down gracefully."</p>
+                    <ul class="text-sm text-stone-600 space-y-1 list-disc pl-4">
+                        <li>The default `kill` signal.</li>
+                        <li>Process <strong>can catch</strong> and run cleanup.</li>
+                        <li>Saves state, closes DB connections.</li>
+                        <li>Used by Kubernetes for rolling updates.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-rose-600 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xl font-bold">SIGKILL <span class="text-stone-400 text-sm font-normal">(9)</span></h3>
+                        <span class="text-2xl">💀</span>
+                    </div>
+                    <p class="font-semibold text-rose-700 mb-2">"Terminate immediately."</p>
+                    <ul class="text-sm text-stone-600 space-y-1 list-disc pl-4">
+                        <li>Process <strong>cannot catch</strong> or ignore.</li>
+                        <li>Kernel immediately drops the process.</li>
+                        <li>No cleanup possible.</li>
+                        <li>Causes locked resources in distributed DBs.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-teal-500 hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xl font-bold">SIGHUP <span class="text-stone-400 text-sm font-normal">(1)</span></h3>
+                        <span class="text-2xl">🔄</span>
+                    </div>
+                    <p class="font-semibold text-teal-700 mb-2">"Re-read configuration."</p>
+                    <ul class="text-sm text-stone-600 space-y-1 list-disc pl-4">
+                        <li>Process <strong>can catch</strong> this signal.</li>
+                        <li>Zero-downtime config updates.</li>
+                        <li>Daimons (like NGINX) reload without stopping.</li>
+                        <li>Originally meant terminal disconnected.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-stone-900 rounded-xl overflow-hidden shadow-lg border border-stone-700">
+                <div class="bg-stone-800 px-4 py-2 flex items-center border-b border-stone-700">
+                    <div class="flex space-x-2 mr-4">
+                        <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <div class="text-xs text-stone-400 font-mono">Signal Simulator Interface</div>
+                </div>
+                <div class="p-6 flex flex-col md:flex-row gap-8">
+                    <div class="flex-1">
+                        <h4 class="text-stone-300 font-mono text-sm mb-4">Send a signal to the target process:</h4>
+                        <div class="flex flex-col space-y-3">
+                            <button id="btn-term" class="bg-amber-600 hover:bg-amber-500 text-white font-mono py-2 px-4 rounded transition-colors text-left flex justify-between">
+                                <span>kill -15 PID</span> <span>(SIGTERM)</span>
+                            </button>
+                            <button id="btn-kill" class="bg-rose-700 hover:bg-rose-600 text-white font-mono py-2 px-4 rounded transition-colors text-left flex justify-between">
+                                <span>kill -9 PID</span> <span>(SIGKILL)</span>
+                            </button>
+                            <button id="btn-hup" class="bg-teal-600 hover:bg-teal-500 text-white font-mono py-2 px-4 rounded transition-colors text-left flex justify-between">
+                                <span>kill -1 PID</span> <span>(SIGHUP)</span>
+                            </button>
+                            <button id="btn-reset" class="bg-stone-700 hover:bg-stone-600 text-white font-mono py-2 px-4 rounded transition-colors text-center mt-4 border border-stone-500">
+                                <span>Restart Process</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-stone-950 rounded-lg p-4 font-mono text-sm border border-stone-800 relative min-h-[200px]">
+                        <div class="absolute top-2 right-2 text-xs text-stone-500">Target PID: 8080</div>
+                        <div class="text-green-400 mb-2">$ ./mission_critical_service</div>
+                        <div id="sim-output" class="text-stone-300 space-y-1">
+                            <div class="text-teal-400">[INFO] Starting service...</div>
+                            <div class="text-teal-400">[INFO] Loaded config v1.0</div>
+                            <div class="text-teal-400">[INFO] Listening on port 443</div>
+                            <div id="sim-active-indicator" class="text-green-500 animate-pulse mt-2">Active processing loop...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="monitoring" class="content-section hidden-section animate-fade-in">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">Observation & Job Control</h2>
+                <p class="text-lg text-stone-600 leading-relaxed">
+                    Observability is the vital-signs monitoring of an OS. Without tools like ps and top, higher-level dashboards (Grafana, Datadog) cannot function. Additionally, mastering Job Control allows operators to safely multitask long-running database migrations on remote servers without losing work upon disconnection.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center"><span class="mr-2">🔍</span> The Monitoring Toolkit</h3>
+                    <div class="space-y-4">
+                        <div class="p-3 border rounded hover:bg-stone-50 transition-colors">
+                            <div class="font-bold text-teal-800 mb-1">ps <span class="font-normal text-stone-500 text-sm">- The Snapshot Camera</span></div>
+                            <p class="text-sm text-stone-600">Static, one-time photo of processes. Best for scripts and piping data. <code>ps aux</code></p>
+                        </div>
+                        <div class="p-3 border rounded hover:bg-stone-50 transition-colors">
+                            <div class="font-bold text-teal-800 mb-1">top / htop <span class="font-normal text-stone-500 text-sm">- Live Dashboards</span></div>
+                            <p class="text-sm text-stone-600">Continuous real-time views. <code>htop</code> adds mouse support, color-coded RAM/CPU bars, and tree views.</p>
+                        </div>
+                        <div class="p-3 border rounded hover:bg-stone-50 transition-colors">
+                            <div class="font-bold text-teal-800 mb-1">pidof / pgrep <span class="font-normal text-stone-500 text-sm">- Quick Lookups</span></div>
+                            <p class="text-sm text-stone-600">Targeted searching. <code>pgrep</code> is the Swiss Army knife, allowing regex and user filters.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center"><span class="mr-2">🎛️</span> Job Control State Machine</h3>
+                    <p class="text-sm text-stone-600 mb-6">Interact with the state machine to understand how to move a long-running process between the foreground and background of your SSH terminal.</p>
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="flex justify-between w-full max-w-sm mb-4">
+                            <div id="job-fg" class="p-3 bg-teal-100 border-2 border-teal-500 text-teal-900 rounded font-bold text-center w-32 shadow-sm transition-all">FOREGROUND<br><span class="text-xs font-normal">(Blocking Terminal)</span></div>
+                            <div id="job-bg" class="p-3 bg-stone-100 border-2 border-stone-300 text-stone-500 rounded font-bold text-center w-32 transition-all">BACKGROUND<br><span class="text-xs font-normal">(Terminal Free)</span></div>
+                        </div>
+                        
+                        <div class="flex flex-col space-y-2 w-full max-w-sm mt-4">
+                            <button id="btn-ctrlz" class="bg-stone-800 text-white py-2 px-4 rounded text-sm font-mono hover:bg-stone-700">1. Press Ctrl+Z (STOP)</button>
+                            <button id="btn-bg" class="bg-stone-800 text-white py-2 px-4 rounded text-sm font-mono hover:bg-stone-700 opacity-50 cursor-not-allowed" disabled>2. Type 'bg' (RESUME IN BG)</button>
+                            <button id="btn-fg" class="bg-stone-800 text-white py-2 px-4 rounded text-sm font-mono hover:bg-stone-700 opacity-50 cursor-not-allowed" disabled>3. Type 'fg' (BRING TO FG)</button>
+                        </div>
+
+                        <div class="mt-6 w-full max-w-sm bg-rose-50 border border-rose-200 p-3 rounded">
+                            <h4 class="font-bold text-rose-800 text-sm mb-1">The SIGHUP Threat</h4>
+                            <p class="text-xs text-rose-600">If you disconnect from SSH, background jobs die. Prefix commands with <code>nohup command &</code> to make them immune to disconnection.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="systemd" class="content-section hidden-section animate-fade-in">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">Systemd Architecture & Boot Process</h2>
+                <p class="text-lg text-stone-600 leading-relaxed">
+                    Modern Linux relies on Systemd, which replaced the antiquated, sequential SysV Init. Systemd brings declarative configurations (Unit files), automatic dependency resolution, built-in process supervision (automatic restarts), and crucial parallel startup capabilities.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold mb-2">Boot Time Comparison</h3>
+                    <p class="text-sm text-stone-500 mb-4">Systemd analyzes dependencies to start services simultaneously, drastically reducing server boot times compared to sequential scripts.</p>
+                    <div class="chart-container">
+                        <canvas id="bootChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="flex flex-col space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Systemd Units</h3>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="flex flex-col"><span class="font-mono text-teal-700 font-bold">.service</span><span class="text-stone-600">A daemon/process</span></div>
+                            <div class="flex flex-col"><span class="font-mono text-teal-700 font-bold">.target</span><span class="text-stone-600">Runlevel checkpoint</span></div>
+                            <div class="flex flex-col"><span class="font-mono text-teal-700 font-bold">.timer</span><span class="text-stone-600">Cron replacement</span></div>
+                            <div class="flex flex-col"><span class="font-mono text-teal-700 font-bold">.socket</span><span class="text-stone-600">IPC network socket</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex-grow">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Dependency Management</h3>
+                        <p class="text-sm text-stone-600 mb-4">Systemd resolves a dependency graph using directives in unit files:</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <span class="bg-rose-100 text-rose-800 font-mono text-xs px-2 py-1 rounded mr-3 mt-0.5">Requires=</span>
+                                <span class="text-sm text-stone-700">Hard dependency. If required unit fails, this unit fails.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-amber-100 text-amber-800 font-mono text-xs px-2 py-1 rounded mr-3 mt-0.5">Wants=</span>
+                                <span class="text-sm text-stone-700">Soft dependency. Service starts even if wanted unit fails.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-stone-200 text-stone-800 font-mono text-xs px-2 py-1 rounded mr-3 mt-0.5">After=</span>
+                                <span class="text-sm text-stone-700">Ordering only. Does not cause the unit to start, just dictates sequence.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tools" class="content-section hidden-section animate-fade-in">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-stone-800 mb-4">Power Tools: Search & Navigation</h2>
+                <p class="text-lg text-stone-600 leading-relaxed">
+                    Distributed systems engineers navigate thousands of files and logs daily. Upgrading basic terminal tools like grep to modern equivalents creates a massive productivity boost.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                    <div class="bg-stone-800 text-white p-4">
+                        <h3 class="font-mono font-bold text-lg flex items-center"><span class="text-amber-400 mr-2">⚡</span> rg (ripgrep)</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-stone-600 mb-4">A line-oriented search tool written in Rust that recursively searches directories for a regex pattern while respecting your gitignore.</p>
+                        <div class="bg-stone-100 p-4 rounded font-mono text-sm space-y-2 text-stone-800">
+                            <div><span class="text-stone-400"># 5-10x faster than traditional grep</span></div>
+                            <div>$ rg "database_url" --type yaml</div>
+                            <div>$ rg "ERROR" -C 2 <span class="text-stone-400 text-xs">// Show context</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                    <div class="bg-stone-800 text-white p-4">
+                        <h3 class="font-mono font-bold text-lg flex items-center"><span class="text-teal-400 mr-2">🎯</span> fzf (fuzzy finder)</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-stone-600 mb-4">A general-purpose command-line fuzzy finder. It turns any list (history, files, processes) into an interactive, real-time filtered menu.</p>
+                        <div class="bg-stone-100 p-4 rounded font-mono text-sm space-y-2 text-stone-800">
+                            <div><span class="text-stone-400"># Upgrades reverse search (Ctrl+R)</span></div>
+                            <div>$ ps aux | fzf</div>
+                            <div><span class="text-stone-400 text-xs">// Combine with Vim via fzf.vim plugin</span></div>
+                            <div>:Rg pattern</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Data Storage
+        const appState = {
+            currentJobState: 'FOREGROUND',
+            signalServiceStatus: 'running'
+        };
+
+        // DOM Elements
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const sections = document.querySelectorAll('.content-section');
+
+        // Functional Navigation Handling
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update nav styles
+                navButtons.forEach(b => b.classList.remove('nav-active'));
+                e.target.classList.add('nav-active');
+
+                // Toggle sections
+                const targetId = e.target.getAttribute('data-target');
+                sections.forEach(sec => {
+                    if(sec.id === targetId) {
+                        sec.classList.remove('hidden-section');
+                    } else {
+                        sec.classList.add('hidden-section');
+                    }
+                });
+            });
+        });
+
+        // Initialize Charts safely
+        document.addEventListener('DOMContentLoaded', () => {
+            initStatesChart();
+            initBootChart();
+            initSignalSimulator();
+            initJobControlSimulator();
+        });
+
+        // Chart 1: Process States Doughnut
+        function initStatesChart() {
+            const ctx = document.getElementById('statesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sleeping (S/D)', 'Running (R)', 'Stopped (T)', 'Zombie (Z)'],
+                    datasets: [{
+                        data: [85, 10, 2, 3],
+                        backgroundColor: [
+                            '#cbd5e1', // Slate 300
+                            '#0f766e', // Teal 700
+                            '#f59e0b', // Amber 500
+                            '#e11d48'  // Rose 600
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { family: 'system-ui' },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const details = [
+                                        'Waiting for I/O (can be interrupted)',
+                                        'Actively using CPU cycles',
+                                        'Paused by signal/debugger',
+                                        'Finished, awaiting parent reap'
+                                    ];
+                                    return ` ${context.raw}% : ${details[context.dataIndex]}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chart 2: Systemd Boot Comparison Horizontal Bar
+        function initBootChart() {
+            const ctx = document.getElementById('bootChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Network', 'Database', 'WebApp', 'Cron Jobs'],
+                    datasets: [
+                        {
+                            label: 'SysV (Sequential) Time Offset',
+                            data: [[0, 3], [3, 7], [7, 10], [10, 12]], // [start, end]
+                            backgroundColor: '#d6d3d1', // Stone 300
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.8
+                        },
+                        {
+                            label: 'Systemd (Parallel) Time Offset',
+                            data: [[0, 2], [2, 4], [2, 4], [4, 5]], // DB and WebApp run parallel from t=2 to t=4
+                            backgroundColor: '#0f766e', // Teal 700
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.8
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const duration = context.raw[1] - context.raw[0];
+                                    return `${context.dataset.label}: Runs from ${context.raw[0]}s to ${context.raw[1]}s (Duration: ${duration}s)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Seconds after boot' },
+                            stacked: false,
+                            max: 13
+                        },
+                        y: {
+                            stacked: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Interaction: Signal Simulator
+        function initSignalSimulator() {
+            const output = document.getElementById('sim-output');
+            const indicator = document.getElementById('sim-active-indicator');
+            let configVersion = 1.0;
+
+            const updateLog = (text, colorClass) => {
+                const div = document.createElement('div');
+                div.className = colorClass;
+                div.textContent = text;
+                output.insertBefore(div, indicator);
+                
+                // Keep log small
+                if(output.children.length > 8) {
+                    output.removeChild(output.children[0]);
+                }
+            };
+
+            document.getElementById('btn-term').addEventListener('click', () => {
+                if(appState.signalServiceStatus !== 'running') return;
+                appState.signalServiceStatus = 'stopping';
+                updateLog('[SIGTERM] Received request to terminate.', 'text-amber-400');
+                updateLog('[INFO] Saving state to disk...', 'text-stone-400');
+                indicator.className = 'hidden';
+                
+                setTimeout(() => {
+                    updateLog('[INFO] Exited cleanly (Code 0).', 'text-stone-500');
+                    appState.signalServiceStatus = 'stopped';
+                }, 1000);
+            });
+
+            document.getElementById('btn-kill').addEventListener('click', () => {
+                if(appState.signalServiceStatus === 'stopped') return;
+                appState.signalServiceStatus = 'stopped';
+                indicator.className = 'hidden';
+                updateLog('[SIGKILL] Process terminated immediately.', 'text-rose-500 bg-rose-950 px-1');
+                updateLog('[ERROR] Locks not released. State corrupted.', 'text-rose-600');
+            });
+
+            document.getElementById('btn-hup').addEventListener('click', () => {
+                if(appState.signalServiceStatus !== 'running') return;
+                configVersion += 0.1;
+                updateLog('[SIGHUP] Reloading configuration...', 'text-teal-300');
+                updateLog(`[INFO] Loaded config v${configVersion.toFixed(1)} without dropping connections.`, 'text-teal-400 font-bold');
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                output.innerHTML = '';
+                configVersion = 1.0;
+                appState.signalServiceStatus = 'running';
+                
+                updateLog('[INFO] Starting service...', 'text-teal-400');
+                updateLog(`[INFO] Loaded config v${configVersion.toFixed(1)}`, 'text-teal-400');
+                
+                indicator.className = 'text-green-500 animate-pulse mt-2';
+                output.appendChild(indicator);
+            });
+        }
+
+        // Interaction: Job Control Simulator
+        function initJobControlSimulator() {
+            const btnZ = document.getElementById('btn-ctrlz');
+            const btnBg = document.getElementById('btn-bg');
+            const btnFg = document.getElementById('btn-fg');
+            
+            const boxFg = document.getElementById('job-fg');
+            const boxBg = document.getElementById('job-bg');
+
+            const updateUI = () => {
+                // Reset styles
+                boxFg.className = 'p-3 rounded font-bold text-center w-32 transition-all border-2 border-stone-300 bg-stone-100 text-stone-500';
+                boxBg.className = 'p-3 rounded font-bold text-center w-32 transition-all border-2 border-stone-300 bg-stone-100 text-stone-500';
+                
+                btnZ.disabled = true; btnZ.classList.add('opacity-50', 'cursor-not-allowed');
+                btnBg.disabled = true; btnBg.classList.add('opacity-50', 'cursor-not-allowed');
+                btnFg.disabled = true; btnFg.classList.add('opacity-50', 'cursor-not-allowed');
+
+                if (appState.currentJobState === 'FOREGROUND') {
+                    boxFg.className = 'p-3 rounded font-bold text-center w-32 shadow-sm transition-all border-2 border-teal-500 bg-teal-100 text-teal-900 scale-105';
+                    boxFg.innerHTML = 'FOREGROUND<br><span class="text-xs font-normal">(Running)</span>';
+                    btnZ.disabled = false; btnZ.classList.remove('opacity-50', 'cursor-not-allowed');
+                } 
+                else if (appState.currentJobState === 'STOPPED') {
+                    boxFg.className = 'p-3 rounded font-bold text-center w-32 shadow-sm transition-all border-2 border-amber-500 bg-amber-100 text-amber-900 scale-105';
+                    boxFg.innerHTML = 'STOPPED<br><span class="text-xs font-normal">(Paused in FG)</span>';
+                    btnBg.disabled = false; btnBg.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+                else if (appState.currentJobState === 'BACKGROUND') {
+                    boxBg.className = 'p-3 rounded font-bold text-center w-32 shadow-sm transition-all border-2 border-teal-500 bg-teal-100 text-teal-900 scale-105';
+                    boxBg.innerHTML = 'BACKGROUND<br><span class="text-xs font-normal">(Running)</span>';
+                    btnFg.disabled = false; btnFg.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            };
+
+            btnZ.addEventListener('click', () => { appState.currentJobState = 'STOPPED'; updateUI(); });
+            btnBg.addEventListener('click', () => { appState.currentJobState = 'BACKGROUND'; updateUI(); });
+            btnFg.addEventListener('click', () => { appState.currentJobState = 'FOREGROUND'; updateUI(); });
+            
+            // Initial call
+            updateUI();
+        }
+
+    </script>
+</body>
+</html>
+
+
+
