@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 06 — Service Discovery & Load Balancing Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sand:#f4efe6;--cream:#faf8f3;--paper:#fffdf8;--ink:#1a1612;--ink-soft:#3d3630;
+  --rust:#b85042;--rust-glow:rgba(184,80,66,.1);--sage:#6b8f71;--sage-glow:rgba(107,143,113,.1);
+  --ochre:#c49234;--ochre-glow:rgba(196,146,52,.12);--slate:#4a5568;--slate-light:#8896a7;
+  --border:#d5cfc4;--code-bg:#1e1e2a;--code-border:#2e2e3e;
+  --r:10px;--mono:'IBM Plex Mono',monospace;--serif:'Source Serif 4',Georgia,serif;--sans:'Outfit',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--sand);color:var(--ink);line-height:1.75;font-size:16px}
+::selection{background:var(--rust);color:var(--paper)}
+
+/* ── TEXTURE ── */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px}
+
+/* ── PROGRESS ── */
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--rust),var(--ochre),var(--sage));z-index:1000;width:0;transition:width .1s}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(244,239,230,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 2rem}
+nav .brand{font-family:var(--serif);font-weight:700;font-size:1rem;color:var(--rust)}
+nav .brand span{color:var(--slate-light);font-weight:400;font-size:.82rem;margin-left:.5rem}
+nav ul{display:flex;gap:.15rem;list-style:none;margin-left:auto}
+nav a{color:var(--slate);text-decoration:none;font-size:.78rem;font-weight:500;padding:.35rem .65rem;border-radius:6px;transition:.2s}
+nav a:hover{color:var(--rust);background:var(--rust-glow)}
+
+/* ── HERO ── */
+.hero{min-height:80vh;display:flex;flex-direction:column;justify-content:center;padding:7rem 2rem 4rem;max-width:900px;margin:0 auto}
+.hero-tag{font-size:.72rem;font-weight:700;color:var(--rust);letter-spacing:4px;text-transform:uppercase;margin-bottom:1.5rem}
+.hero h1{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;line-height:1.15;margin-bottom:1.2rem;color:var(--ink)}
+.hero p{font-size:1.05rem;color:var(--ink-soft);max-width:600px;margin-bottom:2rem}
+.hero-pills{display:flex;gap:.6rem;flex-wrap:wrap}
+.pill{padding:.3rem .9rem;border-radius:20px;font-size:.75rem;font-weight:600;border:1px solid}
+.pill.rust{border-color:var(--rust);color:var(--rust);background:var(--rust-glow)}
+.pill.sage{border-color:var(--sage);color:var(--sage);background:var(--sage-glow)}
+.pill.ochre{border-color:var(--ochre);color:var(--ochre);background:var(--ochre-glow)}
+
+/* ── LAYOUT ── */
+.wrap{max-width:900px;margin:0 auto;padding:0 2rem}
+section{padding:3rem 0}
+.divider{border-top:1px solid var(--border);margin:3rem 0}
+
+/* ── SECTION HEADS ── */
+.sec-num{font-family:var(--serif);font-size:3.5rem;font-weight:700;color:var(--rust);opacity:.25;line-height:1}
+.sec-title{font-family:var(--serif);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;color:var(--ink);margin:.3rem 0}
+.sec-sub{color:var(--slate-light);font-size:.95rem}
+
+h3{font-family:var(--serif);font-size:1.2rem;color:var(--ink);margin:2rem 0 .8rem;padding-left:.9rem;border-left:3px solid var(--rust)}
+h4{font-size:1rem;font-weight:600;margin:1.5rem 0 .5rem;color:var(--ink-soft)}
+p+p{margin-top:.8rem}
+
+/* ── CARDS ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.2rem;margin:1.5rem 0}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;transition:.25s}
+.card:hover{border-color:var(--rust);box-shadow:0 4px 20px rgba(184,80,66,.08);transform:translateY(-2px)}
+.card-icon{font-size:1.6rem;margin-bottom:.6rem}
+.card h4{margin:0 0 .4rem;font-size:1rem}
+.card p{font-size:.88rem;color:var(--ink-soft);line-height:1.55}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;margin:1.2rem 0;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+thead th{background:var(--ink);color:var(--sand);padding:.75rem 1rem;text-align:left;font-size:.75rem;letter-spacing:.5px;text-transform:uppercase}
+td{padding:.65rem 1rem;border-bottom:1px solid var(--border);color:var(--ink-soft)}
+tr:hover td{color:var(--ink);background:rgba(184,80,66,.03)}
+
+/* ── CODE ── */
+.code-block{background:var(--code-bg);border:1px solid var(--code-border);border-radius:var(--r);margin:1.2rem 0;overflow:hidden}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:.5rem 1rem;background:rgba(255,255,255,.04);border-bottom:1px solid var(--code-border)}
+.code-lang{font-size:.7rem;color:var(--ochre);font-weight:600;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)}
+.code-copy{background:none;border:1px solid var(--code-border);color:var(--slate-light);padding:.25rem .7rem;border-radius:5px;font-size:.72rem;cursor:pointer;transition:.2s;font-family:var(--sans)}
+.code-copy:hover{color:var(--ochre);border-color:var(--ochre)}
+pre{padding:1rem;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.7;color:#c9d1d9}
+.cm{color:#6a737d}.kw{color:#ff7b72}.st{color:#a5d6ff}.fn{color:#d2a8ff}.nu{color:#79c0ff}
+
+/* ── CHECKPOINT ── */
+.checkpoint{background:var(--sage-glow);border:1px solid rgba(107,143,113,.3);border-radius:var(--r);padding:1.2rem 1.5rem;margin:1.5rem 0}
+.checkpoint::before{content:'✓ CHECKPOINT';display:block;font-size:.7rem;font-weight:700;color:var(--sage);letter-spacing:2px;margin-bottom:.4rem}
+
+/* ── TAKEAWAY ── */
+.takeaway{background:var(--ochre-glow);border-left:4px solid var(--ochre);border-radius:0 var(--r) var(--r) 0;padding:1.5rem 1.8rem;margin:2rem 0}
+.takeaway::before{content:'KEY TAKEAWAY';display:block;font-size:.68rem;font-weight:700;color:var(--ochre);letter-spacing:2.5px;margin-bottom:.5rem}
+.takeaway p{font-family:var(--serif);font-size:1rem;color:var(--ink);line-height:1.65}
+
+/* ── WARN ── */
+.warn{background:var(--rust-glow);border:1px solid rgba(184,80,66,.25);border-radius:var(--r);padding:1.2rem 1.5rem;margin:1.5rem 0}
+.warn::before{content:'⚠ IMPORTANT';display:block;font-size:.68rem;font-weight:700;color:var(--rust);letter-spacing:2px;margin-bottom:.4rem}
+
+/* ── COLLAPSE ── */
+.collapse{margin:1.2rem 0}
+.collapse-btn{width:100%;background:var(--paper);border:1px solid var(--border);color:var(--ink);padding:.85rem 1.2rem;border-radius:var(--r);font-size:.92rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:.2s;font-family:var(--sans)}
+.collapse-btn:hover{border-color:var(--rust);background:var(--rust-glow)}
+.collapse-btn .arr{color:var(--rust);transition:transform .25s}
+.collapse-btn.open .arr{transform:rotate(90deg)}
+.collapse-body{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.collapse-body.open{max-height:8000px}
+.collapse-inner{padding:1.2rem;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);background:var(--cream)}
+
+/* ── ARCH DIAGRAM ── */
+.arch{background:var(--code-bg);border-radius:var(--r);padding:1.5rem;margin:1.5rem 0;overflow-x:auto;font-family:var(--mono);font-size:.78rem;line-height:1.5;color:#a5b4c4}
+
+/* ── CHECKLIST ── */
+.checklist{margin:1.5rem 0}
+.checklist label{display:flex;align-items:flex-start;gap:.7rem;padding:.55rem .8rem;border-radius:6px;cursor:pointer;font-size:.88rem;transition:.15s}
+.checklist label:hover{background:var(--rust-glow)}
+.checklist input[type=checkbox]{accent-color:var(--rust);margin-top:3px;width:16px;height:16px;flex-shrink:0}
+.checklist .path{font-family:var(--mono);font-size:.78rem;color:var(--sage)}
+
+/* ── LINKS GRID ── */
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.8rem;margin:1.5rem 0}
+.lnk{background:var(--paper);border:1px solid var(--border);border-radius:var(--r);padding:1rem;text-decoration:none;transition:.25s;display:flex;align-items:center;gap:.8rem}
+.lnk:hover{border-color:var(--rust);transform:translateY(-1px)}
+.lnk .ico{width:36px;height:36px;border-radius:8px;background:var(--rust-glow);display:flex;align-items:center;justify-content:center;color:var(--rust);font-weight:700;font-size:.9rem;flex-shrink:0}
+.lnk h5{font-size:.88rem;color:var(--ink);margin-bottom:.1rem}
+.lnk p{font-size:.72rem;color:var(--slate-light)}
+
+/* ── FOOTER ── */
+footer{background:var(--ink);color:var(--slate-light);padding:3rem 2rem;margin-top:3rem;font-size:.82rem;line-height:1.6}
+footer .inner{max-width:900px;margin:0 auto}
+footer h4{color:var(--ochre);font-size:.82rem;margin:1.5rem 0 .4rem;letter-spacing:1px;text-transform:uppercase}
+footer h4:first-child{margin-top:0}
+footer a{color:var(--sage)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){nav ul{display:none}.hero{padding:5rem 1.5rem 3rem}.wrap{padding:0 1.5rem}}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(18px);transition:all .5s ease}
+.reveal.vis{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav>
+  <div class="brand">Module 06 <span>Service Discovery & Load Balancing</span></div>
+  <ul>
+    <li><a href="#partA">Part A</a></li>
+    <li><a href="#partB">Part B</a></li>
+    <li><a href="#partC">Part C</a></li>
+    <li><a href="#submit">Submit</a></li>
+    <li><a href="#links">Links</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<header class="hero">
+  <div class="hero-tag">Distributed Systems — Project Task 5</div>
+  <h1>Service Discovery &amp; Load Balancing Lab</h1>
+  <p>Deploy HAProxy, write health-check scripts, configure Nginx, run multiple service instances behind a load balancer, integrate DNS-based discovery, and test real failover scenarios.</p>
+  <div class="hero-pills">
+    <span class="pill rust">4 Hours</span>
+    <span class="pill sage">Ponderation 1-2-1</span>
+    <span class="pill ochre">InfraScale Project</span>
+  </div>
+</header>
+
+<!-- ═══════════════ PART A ═══════════════ -->
+<div class="wrap" id="partA">
+  <div class="divider"></div>
+  <div class="sec-num reveal">A</div>
+  <h2 class="sec-title reveal">Conceptual Grounding</h2>
+  <p class="sec-sub reveal">1 hour — Understand the architecture before you build it</p>
+
+  <section>
+    <h3 class="reveal">The Four Problems of Multi-Instance Services</h3>
+    <div class="card-grid reveal">
+      <div class="card"><div class="card-icon">🔍</div><h4>Discovery</h4><p>How does a client know which instances exist and where they live on the network?</p></div>
+      <div class="card"><div class="card-icon">⚖️</div><h4>Distribution</h4><p>How does traffic spread fairly so no single instance is overwhelmed?</p></div>
+      <div class="card"><div class="card-icon">🩺</div><h4>Detection</h4><p>How does the system know when an instance has crashed or become unhealthy?</p></div>
+      <div class="card"><div class="card-icon">🔄</div><h4>Recovery</h4><p>What happens automatically when a failure is detected?</p></div>
+    </div>
+
+    <h3 class="reveal">Architecture You Will Build</h3>
+    <div class="arch reveal">
+CLIENT REQUEST → DNS (BIND9) → resolves "app.infrascale.local"
+                      │
+                      ▼
+               HAProxy (vm-lb:80)     ← Layer 7 load balancer
+               │       │       │        round-robin / leastconn
+               ▼       ▼       ▼        health checks every 3s
+          Nginx:80  Nginx:80  Nginx:80  ← reverse proxy per node
+             │         │         │
+          App:8080  App:8080  App:8080  ← application instances
+          (vm-1)    (vm-2)    (vm-3)</div>
+
+    <h3 class="reveal">Key Terminology</h3>
+    <div class="tbl-wrap reveal">
+      <table>
+        <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Load Balancer (LB)</strong></td><td>Distributes incoming traffic across back-end servers.</td></tr>
+          <tr><td><strong>Reverse Proxy</strong></td><td>Sits in front of app servers, forwarding requests. Client never talks to the app directly.</td></tr>
+          <tr><td><strong>Health Check</strong></td><td>Automated periodic test — is the server alive and ready?</td></tr>
+          <tr><td><strong>Failover</strong></td><td>Automatic traffic redirection from a failed server to healthy ones.</td></tr>
+          <tr><td><strong>Round-Robin</strong></td><td>Cycles through servers: S1 → S2 → S3 → S1…</td></tr>
+          <tr><td><strong>Least-Conn</strong></td><td>Routes to the server with fewest active connections.</td></tr>
+          <tr><td><strong>TTL (Time To Live)</strong></td><td>Seconds a DNS record is cached before re-querying.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="reveal">Why HAProxy + Nginx Together?</h3>
+    <p class="reveal"><strong><a href="https://www.haproxy.org/" target="_blank" style="color:var(--rust)">HAProxy</a></strong> excels at high-throughput TCP (Transmission Control Protocol) / HTTP load balancing with health checking. <strong><a href="https://nginx.org/" target="_blank" style="color:var(--rust)">Nginx</a></strong> excels as a reverse proxy with caching, SSL (Secure Sockets Layer) / TLS (Transport Layer Security) termination, and compression. Together: HAProxy distributes, Nginx handles per-node request management.</p>
+
+    <div class="warn reveal">
+      HAProxy and Nginx are <strong>open suggestions</strong>. You may substitute with <a href="https://traefik.io/" target="_blank">Traefik</a>, <a href="https://www.envoyproxy.io/" target="_blank">Envoy</a>, <a href="https://caddyserver.com/" target="_blank">Caddy</a>, or write your own. <strong>Research thoroughly and be creative.</strong>
+    </div>
+
+    <h3 class="reveal">Health Check Depth Levels</h3>
+    <div class="tbl-wrap reveal">
+      <table>
+        <thead><tr><th>Level</th><th>What It Checks</th><th>Depth</th></tr></thead>
+        <tbody>
+          <tr><td><strong>TCP</strong></td><td>Can I open a connection to the port?</td><td>Shallowest</td></tr>
+          <tr><td><strong>HTTP</strong></td><td>Does GET /health return 200?</td><td>Medium</td></tr>
+          <tr><td><strong>Application</strong></td><td>DB connected? Disk OK? Deps alive?</td><td>Deepest</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="takeaway reveal">
+      <p>Before touching a terminal, sketch the architecture on paper. Label every component with its hostname, IP (Internet Protocol) address, and port. This sketch is your map for the next three hours.</p>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════ PART B ═══════════════ -->
+<div class="wrap" id="partB">
+  <div class="divider"></div>
+  <div class="sec-num reveal">B</div>
+  <h2 class="sec-title reveal">Guided Lab Exercises</h2>
+  <p class="sec-sub reveal">2 hours — Build the load-balanced, health-monitored service tier</p>
+
+  <section>
+    <!-- B.1 -->
+    <h3 class="reveal">B.1 — Prepare 3 Service Instances (25 min)</h3>
+    <p class="reveal">Verify your app runs on vm-1, deploy it to vm-2 and vm-3, add a <code>/health</code> endpoint to all.</p>
+
+    <div class="collapse reveal">
+      <button class="collapse-btn" onclick="toggle(this)"><span>Step-by-step: Deploy and verify instances</span><span class="arr">▶</span></button>
+      <div class="collapse-body"><div class="collapse-inner">
+        <div class="code-block"><div class="code-head"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="cm"># Verify app on vm-1</span>
+systemctl status my-web-app.service
+curl -s -o /dev/null -w <span class="st">"%{http_code}"</span> http://localhost:8080/
+
+<span class="cm"># Deploy on vm-2</span>
+ssh student@192.168.56.12
+podman pull registry.infrascale.local:5000/my-web-app:latest
+podman run -d --name my-web-app --restart=always -p 8080:8080 \
+  registry.infrascale.local:5000/my-web-app:latest
+
+<span class="cm"># Test all three</span>
+<span class="kw">for</span> ip <span class="kw">in</span> 192.168.56.11 192.168.56.12 192.168.56.13; <span class="kw">do</span>
+  echo -n <span class="st">"$ip: "</span>; curl -s -o /dev/null -w <span class="st">"%{http_code}"</span> http://$ip:8080/health; echo
+<span class="kw">done</span></pre></div>
+        <p>Flask health endpoint:</p>
+        <div class="code-block"><div class="code-head"><span class="code-lang">Python</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="cm"># Returns JSON with node identity so you see which instance answered.</span>
+@app.route(<span class="st">'/health'</span>)
+<span class="kw">def</span> <span class="fn">health_check</span>():
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"ok"</span>, <span class="st">"node"</span>: os.environ.get(<span class="st">"HOSTNAME"</span>, <span class="st">"unknown"</span>)}, <span class="nu">200</span></pre></div>
+      </div></div>
+    </div>
+    <div class="checkpoint reveal">All three IPs return <code>200</code> from their <code>/health</code> endpoint.</div>
+
+    <!-- B.2 -->
+    <h3 class="reveal">B.2 — Deploy HAProxy as Load Balancer (30 min)</h3>
+    <p class="reveal">Install HAProxy on <code>vm-lb</code>, configure round-robin with HTTP health checks, enable the stats dashboard.</p>
+
+    <div class="collapse reveal">
+      <button class="collapse-btn" onclick="toggle(this)"><span>Step-by-step: HAProxy configuration</span><span class="arr">▶</span></button>
+      <div class="collapse-body"><div class="collapse-inner">
+        <div class="code-block"><div class="code-head"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="cm"># Install HAProxy</span>
+sudo dnf install -y haproxy
+haproxy -v
+
+<span class="cm"># Back up original, then edit</span>
+sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
+sudo nano /etc/haproxy/haproxy.cfg</pre></div>
+
+        <div class="code-block"><div class="code-head"><span class="code-lang">HAProxy Config</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="cm"># Global settings for the HAProxy process</span>
+<span class="kw">global</span>
+    log 127.0.0.1 local2
+    chroot /var/lib/haproxy
+    maxconn 4000
+    user haproxy
+    group haproxy
+    daemon
+
+<span class="cm"># Default timeouts and options</span>
+<span class="kw">defaults</span>
+    mode http
+    log global
+    option httplog
+    option dontlognull
+    option http-server-close
+    option forwardfor except 127.0.0.0/8
+    timeout connect 10s
+    timeout client 60s
+    timeout server 60s
+    timeout check 5s
+    retries 3
+
+<span class="cm"># Stats dashboard on port 8404</span>
+<span class="kw">listen</span> stats
+    bind *:8404
+    stats enable
+    stats uri /stats
+    stats refresh 5s
+    stats auth admin:infrascale
+
+<span class="cm"># Receive client traffic on port 80</span>
+<span class="kw">frontend</span> http_front
+    bind *:80
+    default_backend app_backend
+
+<span class="cm"># Pool of back-end servers with health checks</span>
+<span class="kw">backend</span> app_backend
+    balance roundrobin
+    option httpchk GET /health
+    server vm-1 192.168.56.11:8080 check inter 3s fall 3 rise 2
+    server vm-2 192.168.56.12:8080 check inter 3s fall 3 rise 2
+    server vm-3 192.168.56.13:8080 check inter 3s fall 3 rise 2</pre></div>
+
+        <div class="code-block"><div class="code-head"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="cm"># Validate config, then start</span>
+sudo haproxy -c -f /etc/haproxy/haproxy.cfg
+sudo systemctl enable --now haproxy
+
+<span class="cm"># Test round-robin distribution</span>
+<span class="kw">for</span> i <span class="kw">in</span> $(seq 1 10); <span class="kw">do</span>
+  echo -n <span class="st">"Request $i: "</span>; curl -s http://192.168.56.10/health; echo
+<span class="kw">done</span></pre></div>
+      </div></div>
+    </div>
+    <div class="checkpoint reveal">Stats dashboard at <code>:8404/stats</code> shows all 3 backends <strong>UP</strong>. Screenshot saved.</div>
+
+    <!-- B.3 -->
+    <h3 class="reveal">B.3 — Write Health Check Scripts (20 min)</h3>
+    <p class="reveal">Create a deep check script verifying HTTP, disk space, and process status. Schedule with systemd timer.</p>
+
+    <div class="collapse reveal">
+      <button class="collapse-btn" onclick="toggle(this)"><span>Step-by-step: Health check script + systemd timer</span><span class="arr">▶</span></button>
+      <div class="collapse-body"><div class="collapse-inner">
+        <div class="code-block"><div class="code-head"><span class="code-lang">Bash — deep-health-check.sh</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre>#!/usr/bin/env bash
+<span class="kw">set</span> -eu
+APP_URL=<span class="st">"http://localhost:8080/health"</span>
+MIN_DISK_KB=<span class="nu">512000</span>
+LOG=<span class="st">"/var/log/health-check.log"</span>
+TS=$(<span class="fn">date</span> <span class="st">'+%Y-%m-%d %H:%M:%S'</span>)
+
+<span class="cm"># CHECK 1: HTTP response</span>
+HTTP=$(curl -sf -o /dev/null -w <span class="st">"%{http_code}"</span> --max-time 5 <span class="st">"$APP_URL"</span> 2>/dev/null || echo <span class="st">"000"</span>)
+[ <span class="st">"$HTTP"</span> != <span class="st">"200"</span> ] && { echo <span class="st">"$TS FAIL: HTTP $HTTP"</span> >> <span class="st">"$LOG"</span>; <span class="kw">exit</span> 1; }
+
+<span class="cm"># CHECK 2: Disk space</span>
+AVAIL=$(df / | awk <span class="st">'NR==2{print $4}'</span>)
+[ <span class="st">"$AVAIL"</span> -lt <span class="st">"$MIN_DISK_KB"</span> ] && { echo <span class="st">"$TS FAIL: Disk low"</span> >> <span class="st">"$LOG"</span>; <span class="kw">exit</span> 1; }
+
+<span class="cm"># CHECK 3: Process running</span>
+<span class="kw">if</span> ! pgrep -x <span class="st">"my-web-app"</span> >/dev/null 2>&1; <span class="kw">then</span>
+  podman ps --filter <span class="st">"name=my-web-app"</span> --filter <span class="st">"status=running"</span> -q | grep -q . || \
+    { echo <span class="st">"$TS FAIL: Process missing"</span> >> <span class="st">"$LOG"</span>; <span class="kw">exit</span> 1; }
+<span class="kw">fi</span>
+
+echo <span class="st">"$TS OK"</span> >> <span class="st">"$LOG"</span>; <span class="kw">exit</span> 0</pre></div>
+        <p>Schedule every 30 seconds with a systemd oneshot service + timer (see full exercise doc for unit files).</p>
+      </div></div>
+    </div>
+    <div class="checkpoint reveal"><code>journalctl -u deep-health-check.service -n 5</code> shows recent OK entries.</div>
+
+    <!-- B.4 -->
+    <h3 class="reveal">B.4 — Configure Nginx Reverse Proxy (25 min)</h3>
+    <p class="reveal">Install Nginx per node, proxy port 80 → app port 8080, add error pages, then update HAProxy to use port 80.</p>
+
+    <div class="collapse reveal">
+      <button class="collapse-btn" onclick="toggle(this)"><span>Step-by-step: Nginx reverse proxy config</span><span class="arr">▶</span></button>
+      <div class="collapse-body"><div class="collapse-inner">
+        <div class="code-block"><div class="code-head"><span class="code-lang">Nginx Config</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="kw">upstream</span> app_local {
+    <span class="kw">server</span> 127.0.0.1:8080;
+}
+<span class="kw">server</span> {
+    listen 80;
+    server_name app.infrascale.local;
+
+    <span class="kw">location</span> / {
+        proxy_pass http://app_local;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+    }
+
+    error_page 502 503 504 /custom_50x.html;
+    <span class="kw">location</span> = /custom_50x.html { root /usr/share/nginx/html; internal; }
+}</pre></div>
+        <p>Then update HAProxy backends from <code>:8080</code> to <code>:80</code> and reload.</p>
+      </div></div>
+    </div>
+    <div class="checkpoint reveal">10-request test still rotates through all nodes, now via Nginx on port 80.</div>
+
+    <!-- B.5 -->
+    <h3 class="reveal">B.5 — Integrate with DNS (20 min)</h3>
+    <p class="reveal">Update BIND9 zones, set short TTL (Time To Live), practice adding/removing nodes dynamically.</p>
+
+    <div class="collapse reveal">
+      <button class="collapse-btn" onclick="toggle(this)"><span>Step-by-step: DNS zone updates</span><span class="arr">▶</span></button>
+      <div class="collapse-body"><div class="collapse-inner">
+        <div class="code-block"><div class="code-head"><span class="code-lang">DNS Zone</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre><span class="cm">; 30-second TTL for lab (rapid propagation)</span>
+$TTL 30
+@ IN SOA ns1.infrascale.local. admin.infrascale.local. (
+        2025031101 3600 900 604800 30)
+@       IN NS  ns1.infrascale.local.
+ns1     IN A   192.168.56.10
+app     IN A   192.168.56.10   <span class="cm">; points to HAProxy</span>
+vm-1    IN A   192.168.56.11
+vm-2    IN A   192.168.56.12
+vm-3    IN A   192.168.56.13
+backend IN A   192.168.56.11   <span class="cm">; multi-A-record pool</span>
+backend IN A   192.168.56.12
+backend IN A   192.168.56.13</pre></div>
+        <div class="code-block"><div class="code-head"><span class="code-lang">Bash</span><button class="code-copy" onclick="copyCode(this)">Copy</button></div>
+<pre>sudo named-checkzone infrascale.local /var/named/infrascale.local.zone
+sudo rndc reload
+dig @192.168.56.10 backend.infrascale.local +short</pre></div>
+      </div></div>
+    </div>
+    <div class="checkpoint reveal"><code>dig backend.infrascale.local</code> returns the correct IPs after add/remove operations.</div>
+  </section>
+</div>
+
+<!-- ═══════════════ PART C ═══════════════ -->
+<div class="wrap" id="partC">
+  <div class="divider"></div>
+  <div class="sec-num reveal">C</div>
+  <h2 class="sec-title reveal">Independent Challenges</h2>
+  <p class="sec-sub reveal">1 hour — Test, break, and extend</p>
+
+  <section>
+    <h3 class="reveal">C.1 — Failover Scenarios (25 min)</h3>
+    <div class="card-grid reveal">
+      <div class="card"><div class="card-icon">💀</div><h4>Scenario 1: Kill App</h4><p>Stop the container on vm-2. Wait 10s. Send 10 requests. Verify vm-2 is skipped. Restart. Verify recovery.</p></div>
+      <div class="card"><div class="card-icon">🔌</div><h4>Scenario 2: Crash Nginx</h4><p>Stop Nginx on vm-1. Observe HAProxy stats. Verify traffic goes to vm-2 & vm-3. Restart.</p></div>
+      <div class="card"><div class="card-icon">🌐</div><h4>Scenario 3: Network Split</h4><p>Block health-check traffic to vm-3 with a firewall rule. Observe. Unblock. Document recovery.</p></div>
+    </div>
+    <p class="reveal">For each: record what you did, detection time, redistribution behaviour, and recovery time in <code>docs/failover-runbook.md</code>.</p>
+
+    <h3 class="reveal">C.2 — Switch Algorithm (15 min)</h3>
+    <p class="reveal">Change to <code>leastconn</code>, reload, use <code>ab -n 1000 -c 50</code> to generate load. Compare with round-robin. Answer: when does leastconn outperform round-robin?</p>
+
+    <h3 class="reveal">C.3 — Build Something Original (20 min)</h3>
+    <div class="warn reveal">
+      All tools in this lab are <strong>open suggestions</strong>. Use this time to research, experiment, and create. Write a Python load balancer, try Traefik instead of HAProxy, build an auto-discovery script, or create a Grafana dashboard. <strong>Document everything in <code>challenge/README.md</code>.</strong>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════ SUBMIT ═══════════════ -->
+<div class="wrap" id="submit">
+  <div class="divider"></div>
+  <div class="sec-num reveal">✓</div>
+  <h2 class="sec-title reveal">Submission Checklist</h2>
+
+  <section>
+    <div class="checklist reveal">
+      <label><input type="checkbox"><span>HAProxy configuration <span class="path">configs/haproxy.cfg</span></span></label>
+      <label><input type="checkbox"><span>Health-check script <span class="path">scripts/deep-health-check.sh</span></span></label>
+      <label><input type="checkbox"><span>Systemd service + timer <span class="path">configs/deep-health-check.{service,timer}</span></span></label>
+      <label><input type="checkbox"><span>Nginx reverse-proxy config <span class="path">configs/infrascale-proxy.conf</span></span></label>
+      <label><input type="checkbox"><span>Custom error page <span class="path">configs/custom_50x.html</span></span></label>
+      <label><input type="checkbox"><span>DNS zone file <span class="path">configs/infrascale.local.zone</span></span></label>
+      <label><input type="checkbox"><span>Failover runbook <span class="path">docs/failover-runbook.md</span></span></label>
+      <label><input type="checkbox"><span>HAProxy stats screenshot <span class="path">screenshots/haproxy-stats.png</span></span></label>
+      <label><input type="checkbox"><span>Creative challenge work <span class="path">challenge/</span></span></label>
+      <label><input type="checkbox"><span>README with architecture diagram <span class="path">README.md</span></span></label>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════════ LINKS ═══════════════ -->
+<div class="wrap" id="links">
+  <div class="divider"></div>
+  <h2 class="sec-title reveal">Resources & Links</h2>
+  <div class="links reveal">
+    <a class="lnk" href="https://www.haproxy.org/" target="_blank"><div class="ico">H</div><div><h5>HAProxy</h5><p>TCP/HTTP load balancer</p></div></a>
+    <a class="lnk" href="https://nginx.org/" target="_blank"><div class="ico">N</div><div><h5>Nginx</h5><p>Reverse proxy & web server</p></div></a>
+    <a class="lnk" href="https://www.isc.org/bind/" target="_blank"><div class="ico">B</div><div><h5>BIND9 (ISC)</h5><p>DNS server software</p></div></a>
+    <a class="lnk" href="https://traefik.io/" target="_blank"><div class="ico">T</div><div><h5>Traefik</h5><p>Modern reverse proxy</p></div></a>
+    <a class="lnk" href="https://www.envoyproxy.io/" target="_blank"><div class="ico">E</div><div><h5>Envoy Proxy</h5><p>Cloud-native service proxy</p></div></a>
+    <a class="lnk" href="https://caddyserver.com/" target="_blank"><div class="ico">C</div><div><h5>Caddy</h5><p>Automatic HTTPS server</p></div></a>
+    <a class="lnk" href="https://httpd.apache.org/docs/2.4/programs/ab.html" target="_blank"><div class="ico">ab</div><div><h5>Apache Bench</h5><p>HTTP benchmarking tool</p></div></a>
+    <a class="lnk" href="https://grafana.com/" target="_blank"><div class="ico">G</div><div><h5>Grafana</h5><p>Monitoring dashboards</p></div></a>
+    <a class="lnk" href="https://docs.redhat.com/" target="_blank"><div class="ico">RH</div><div><h5>Red Hat Docs</h5><p>RHEL documentation</p></div></a>
+    <a class="lnk" href="https://www.virustotal.com/gui/home/url" target="_blank"><div class="ico">VT</div><div><h5>VirusTotal</h5><p>Scan URLs for threats</p></div></a>
+  </div>
+</div>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <div class="inner">
+    <h4>Ethical Use & Academic Integrity</h4>
+    <p>These tools mirror production systems. Only operate within the lab environment. Configuring DNS, proxies, and load balancers on public networks without authorisation is illegal. Submit your own work.</p>
+    <h4>Open Tools & Creative Research</h4>
+    <p>All tools proposed are <strong>open suggestions</strong> that may be replaced with any suitable alternative. Research thoroughly, be creative, and build your own tools where feasible.</p>
+    <h4>External Links</h4>
+    <p>Verify all URLs using <a href="https://www.virustotal.com/gui/home/url" target="_blank">VirusTotal</a> before visiting.</p>
+    <h4>Intellectual Property</h4>
+    <p>© Cyber.SoHo. All rights reserved. Produced independently. <strong>Not affiliated with any referenced organisation.</strong> All trademarks are property of their respective owners.</p>
+    <h4>Liability</h4>
+    <p>Provided "as is" for educational purposes. Code examples are not production-ready. Cyber.SoHo shall not be liable for any damages arising from use.</p>
+  </div>
+</footer>
+
+<script>
+// Progress bar
+window.addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-window.innerHeight;document.getElementById('progress').style.width=(window.scrollY/h*100)+'%'});
+
+// Scroll reveal
+const obs=new IntersectionObserver(e=>{e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('vis');obs.unobserve(el.target)}})},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// Collapse
+function toggle(btn){btn.classList.toggle('open');btn.nextElementSibling.classList.toggle('open')}
+
+// Copy code
+function copyCode(btn){const pre=btn.closest('.code-block').querySelector('pre');navigator.clipboard.writeText(pre.textContent).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',1500)})}
+</script>
+</body>
+</html>

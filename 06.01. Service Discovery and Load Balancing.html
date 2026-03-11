@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems: Process Management & Automation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals with Indigo Accents -->
+    <!-- Application Structure Plan: The SPA uses a sidebar navigation for quick access and a scrolling main content area. Content is chunked into the 5 core thematic sections from the report. Interactive tabs are used for comparing Load Balancing algorithms and Health Check models to reduce cognitive load and prevent endless scrolling. A Chart.js visualization is used to vividly demonstrate the exponential decrease in downtime across "The Nines". This structure prioritizes logical flow and modular learning, perfect for a course study guide. -->
+    <!-- Visualization & Content Choices: 1. The Big Picture -> Interactive Cards -> Goal: Inform -> Clean grid layout. 2. Service Discovery -> CSS flexbox diagrams -> Goal: Compare -> Shows flow without SVG. 3. Load Balancing -> Tabbed Interface -> Goal: Compare -> Allows user to focus on one algorithm at a time. 4. High Availability -> Chart.js Bar Chart -> Goal: Inform/Visualize -> Shows dramatic scale of downtime using canvas (No SVG/Mermaid). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            max-height: 400px;
+        }
+        .tab-active { border-bottom: 2px solid #4f46e5; color: #4f46e5; font-weight: 600; }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #78716c; }
+        .tab-inactive:hover { color: #44403c; border-bottom: 2px solid #d6d3d1; }
+        .content-hidden { display: none; }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 flex flex-col md:flex-row min-h-screen">
+
+    <nav class="w-full md:w-64 bg-stone-900 text-stone-100 flex-shrink-0 sticky top-0 md:h-screen overflow-y-auto">
+        <div class="p-6">
+            <h1 class="text-xl font-bold tracking-tight text-white mb-2">Cyber.SoHo</h1>
+            <p class="text-xs text-stone-400 uppercase tracking-wider mb-8">Distributed Systems</p>
+            <ul class="space-y-3 text-sm">
+                <li><a href="#intro" class="hover:text-indigo-400 transition-colors">Course Context</a></li>
+                <li><a href="#discovery" class="hover:text-indigo-400 transition-colors">1. Service Discovery</a></li>
+                <li><a href="#loadbalancing" class="hover:text-indigo-400 transition-colors">2. Load Balancing</a></li>
+                <li><a href="#proxies" class="hover:text-indigo-400 transition-colors">3. Reverse Proxies</a></li>
+                <li><a href="#health" class="hover:text-indigo-400 transition-colors">4. Health Checks</a></li>
+                <li><a href="#ha" class="hover:text-indigo-400 transition-colors">5. High Availability</a></li>
+                <li><a href="#resources" class="hover:text-indigo-400 transition-colors">Resources & Glossary</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-6 md:p-12 overflow-y-auto">
+        <div class="max-w-5xl mx-auto space-y-16">
+
+            <section id="intro" class="bg-white rounded-xl shadow-sm border border-stone-200 p-8">
+                <p class="text-indigo-600 font-semibold tracking-wide text-sm mb-2">WEEK 05</p>
+                <h2 class="text-3xl md:text-4xl font-bold text-stone-900 mb-6">Service Discovery & Load Balancing</h2>
+                <p class="text-lg text-stone-600 mb-8 leading-relaxed">
+                    This module explores the invisible infrastructure that routes user requests at scale. When a user taps "Order Now", these mechanisms ensure the request reaches a healthy, available server efficiently.
+                </p>
+                
+                <div class="bg-stone-50 p-6 rounded-lg border border-stone-100">
+                    <h3 class="text-xl font-semibold mb-4 text-stone-800">The Big Picture</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded shadow-sm border border-stone-200">
+                            <div class="text-indigo-500 font-bold mb-1">Where?</div>
+                            <div class="text-sm">Where should the request go? <br><span class="font-semibold">Service Discovery</span></div>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border border-stone-200">
+                            <div class="text-indigo-500 font-bold mb-1">Which?</div>
+                            <div class="text-sm">Which server is least busy? <br><span class="font-semibold">Load Balancing</span></div>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border border-stone-200">
+                            <div class="text-indigo-500 font-bold mb-1">What?</div>
+                            <div class="text-sm">What sits between you and servers? <br><span class="font-semibold">Reverse Proxies</span></div>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border border-stone-200">
+                            <div class="text-indigo-500 font-bold mb-1">Is?</div>
+                            <div class="text-sm">Is that server still alive? <br><span class="font-semibold">Health Checks</span></div>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border border-stone-200 md:col-span-2 lg:col-span-1">
+                            <div class="text-indigo-500 font-bold mb-1">How?</div>
+                            <div class="text-sm">How does the system stay up 24/7? <br><span class="font-semibold">High Availability</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="discovery" class="space-y-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">1. Service Discovery Patterns</h2>
+                    <p class="text-stone-600 leading-relaxed">
+                        Service discovery is the automated "phone book" of distributed systems. It allows services to learn network locations dynamically without hard-coded IPs, solving issues caused by scaling, instances shutting down, and IP changes.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold mb-3">Client-Side Discovery</h3>
+                        <p class="text-sm text-stone-600 mb-4 h-16">The calling service queries a registry directly, gets a list of healthy instances, and picks one to connect to.</p>
+                        <div class="flex items-center justify-between bg-stone-100 p-4 rounded border border-stone-200 font-mono text-xs text-center">
+                            <div class="bg-indigo-100 p-2 rounded text-indigo-800 border border-indigo-200">Client</div>
+                            <div>&#8596;<br>Queries</div>
+                            <div class="bg-amber-100 p-2 rounded text-amber-800 border border-amber-200">Registry</div>
+                            <div>&#8594;<br>Connects</div>
+                            <div class="bg-emerald-100 p-2 rounded text-emerald-800 border border-emerald-200">Service</div>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-4"><span class="font-semibold">Analogy:</span> Checking a restaurant app and picking an open spot yourself.</p>
+                        <p class="text-xs text-stone-500 mt-1"><span class="font-semibold">Players:</span> Consul, ZooKeeper, Eureka.</p>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold mb-3">Server-Side Discovery</h3>
+                        <p class="text-sm text-stone-600 mb-4 h-16">The client sends requests to an intermediary. The intermediary consults the registry and routes the request.</p>
+                        <div class="flex items-center justify-between bg-stone-100 p-4 rounded border border-stone-200 font-mono text-xs text-center">
+                            <div class="bg-indigo-100 p-2 rounded text-indigo-800 border border-indigo-200">Client</div>
+                            <div>&#8594;<br>Sends</div>
+                            <div class="bg-blue-100 p-2 rounded text-blue-800 border border-blue-200">Load Balancer</div>
+                            <div>&#8596;<br>Checks Registry & Routes</div>
+                            <div class="bg-emerald-100 p-2 rounded text-emerald-800 border border-emerald-200">Service</div>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-4"><span class="font-semibold">Analogy:</span> Asking a concierge to book an available restaurant for you.</p>
+                        <p class="text-xs text-stone-500 mt-1"><span class="font-semibold">Players:</span> AWS ELB, Kubernetes.</p>
+                    </div>
+                </div>
+
+                <div class="bg-stone-800 text-stone-200 p-6 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-semibold text-white mb-3">The Service Registry (Highly Available DB)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="border-b border-stone-600 text-stone-400">
+                                    <th class="py-2 pr-4">Service Name</th>
+                                    <th class="py-2 pr-4">Instance ID</th>
+                                    <th class="py-2 pr-4">Address</th>
+                                    <th class="py-2 pr-4">Port</th>
+                                    <th class="py-2">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-mono">
+                                <tr>
+                                    <td class="py-2 text-indigo-300">payment-service</td>
+                                    <td class="py-2">ps-001</td>
+                                    <td class="py-2">10.0.1.12</td>
+                                    <td class="py-2">8080</td>
+                                    <td class="py-2 text-emerald-400">healthy</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4 text-xs text-stone-400 border-t border-stone-600 pt-4 flex gap-4">
+                        <span>1. Boot &#8594; Register</span>
+                        <span>2. Run &#8594; Heartbeat</span>
+                        <span>3. Stop &#8594; Deregister</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="loadbalancing" class="space-y-6 pt-8 border-t border-stone-200">
+                <div>
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">2. Load Balancing Algorithms</h2>
+                    <p class="text-stone-600 leading-relaxed">
+                        Distributing traffic so no single machine becomes a bottleneck. Explore the algorithms below to understand their strengths and weaknesses.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                    <div class="flex border-b border-stone-200 bg-stone-50 overflow-x-auto" id="lb-tabs">
+                        <button class="px-6 py-4 text-sm tab-active whitespace-nowrap" data-target="lb-rr">Round-Robin</button>
+                        <button class="px-6 py-4 text-sm tab-inactive whitespace-nowrap" data-target="lb-wrr">Weighted RR</button>
+                        <button class="px-6 py-4 text-sm tab-inactive whitespace-nowrap" data-target="lb-lc">Least-Conn</button>
+                        <button class="px-6 py-4 text-sm tab-inactive whitespace-nowrap" data-target="lb-ip">IP Hash</button>
+                        <button class="px-6 py-4 text-sm tab-inactive whitespace-nowrap" data-target="lb-rnd">Random</button>
+                    </div>
+
+                    <div class="p-8">
+                        <div id="lb-rr" class="lb-content">
+                            <h3 class="text-2xl font-bold text-indigo-700 mb-2">Round-Robin</h3>
+                            <p class="text-stone-700 mb-4">Hands requests to servers in a fixed rotating order (S1 &#8594; S2 &#8594; S3 &#8594; S1). Every server gets an equal share of the total traffic.</p>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-emerald-50 text-emerald-900 p-4 rounded border border-emerald-100"><span class="font-bold">Best When:</span> Servers are equal in power, and requests take roughly the same time to process.</div>
+                                <div class="bg-rose-50 text-rose-900 p-4 rounded border border-rose-100"><span class="font-bold">Weakness:</span> Completely ignores actual server load. A busy server will still receive new requests.</div>
+                            </div>
+                        </div>
+
+                        <div id="lb-wrr" class="lb-content content-hidden">
+                            <h3 class="text-2xl font-bold text-indigo-700 mb-2">Weighted Round-Robin</h3>
+                            <p class="text-stone-700 mb-4">More powerful servers are assigned a higher weight. A server with weight 2 receives twice as many requests as a server with weight 1.</p>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-emerald-50 text-emerald-900 p-4 rounded border border-emerald-100"><span class="font-bold">Best When:</span> You have a server pool with mixed hardware capacities.</div>
+                                <div class="bg-rose-50 text-rose-900 p-4 rounded border border-rose-100"><span class="font-bold">Weakness:</span> Weights are static and require manual tuning. Still ignores real-time connection state.</div>
+                            </div>
+                        </div>
+
+                        <div id="lb-lc" class="lb-content content-hidden">
+                            <h3 class="text-2xl font-bold text-indigo-700 mb-2">Least-Connections</h3>
+                            <p class="text-stone-700 mb-4">Checks active connections on each server and sends the next request to the server with the fewest active connections. It adapts dynamically.</p>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-emerald-50 text-emerald-900 p-4 rounded border border-emerald-100"><span class="font-bold">Best When:</span> Requests have highly variable durations, preventing slow servers from piling up tasks.</div>
+                                <div class="bg-rose-50 text-rose-900 p-4 rounded border border-rose-100"><span class="font-bold">Weakness:</span> Requires slightly more tracking overhead at the load balancer level.</div>
+                            </div>
+                        </div>
+
+                        <div id="lb-ip" class="lb-content content-hidden">
+                            <h3 class="text-2xl font-bold text-indigo-700 mb-2">IP Hash</h3>
+                            <p class="text-stone-700 mb-4">The client's IP address is mathematically hashed to determine the target server. Ensures the same client always hits the same server.</p>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-emerald-50 text-emerald-900 p-4 rounded border border-emerald-100"><span class="font-bold">Best When:</span> Session persistence (stickiness) is strictly required by the application.</div>
+                                <div class="bg-rose-50 text-rose-900 p-4 rounded border border-rose-100"><span class="font-bold">Weakness:</span> Can lead to highly uneven server loads if client IP distribution is skewed.</div>
+                            </div>
+                        </div>
+
+                        <div id="lb-rnd" class="lb-content content-hidden">
+                            <h3 class="text-2xl font-bold text-indigo-700 mb-2">Random</h3>
+                            <p class="text-stone-700 mb-4">Picks a server entirely at random. Surprisingly effective at scale due to the law of large numbers.</p>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-emerald-50 text-emerald-900 p-4 rounded border border-emerald-100"><span class="font-bold">Best When:</span> You have very large, homogeneous pools of servers.</div>
+                                <div class="bg-rose-50 text-rose-900 p-4 rounded border border-rose-100"><span class="font-bold">Weakness:</span> Unpredictable and highly risky with small server pools.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="proxies" class="space-y-6 pt-8 border-t border-stone-200">
+                <div>
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">3. Reverse Proxies</h2>
+                    <p class="text-stone-600 leading-relaxed">
+                        A reverse proxy acts as the reception desk for your servers. Clients talk to the proxy; the proxy routes requests internally. Key technologies include <span class="font-semibold text-indigo-600">Nginx</span> and <span class="font-semibold text-indigo-600">HAProxy</span>.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                            <h3 class="text-lg font-bold mb-4">Forward vs. Reverse Proxy</h3>
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-stone-100 text-stone-700 border-b border-stone-200">
+                                        <th class="p-3">Feature</th>
+                                        <th class="p-3">Forward Proxy</th>
+                                        <th class="p-3">Reverse Proxy</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-stone-100">
+                                        <td class="p-3 font-medium">Sits in front of</td>
+                                        <td class="p-3 text-stone-600">Clients</td>
+                                        <td class="p-3 text-indigo-700 font-semibold">Servers</td>
+                                    </tr>
+                                    <tr class="border-b border-stone-100">
+                                        <td class="p-3 font-medium">Primary Purpose</td>
+                                        <td class="p-3 text-stone-600">Hides client identity</td>
+                                        <td class="p-3 text-indigo-700 font-semibold">Hides server identity</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 font-medium">Examples</td>
+                                        <td class="p-3 text-stone-600">VPN, Web Filters</td>
+                                        <td class="p-3 text-indigo-700 font-semibold">Nginx, HAProxy</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-indigo-50 p-5 rounded-lg border border-indigo-100">
+                                <h4 class="font-bold text-indigo-900 mb-2">Nginx (Engine-X)</h4>
+                                <ul class="text-sm text-indigo-800 space-y-1 list-disc pl-4">
+                                    <li>Created 2004 (Igor Sysoev)</li>
+                                    <li>Solved C10K problem</li>
+                                    <li>Event-driven, asynchronous</li>
+                                    <li>Excels at web serving</li>
+                                </ul>
+                            </div>
+                            <div class="bg-sky-50 p-5 rounded-lg border border-sky-100">
+                                <h4 class="font-bold text-sky-900 mb-2">HAProxy</h4>
+                                <ul class="text-sm text-sky-800 space-y-1 list-disc pl-4">
+                                    <li>Created 2000 (Willy Tarreau)</li>
+                                    <li>Dedicated TCP/HTTP LB</li>
+                                    <li>Extreme throughput</li>
+                                    <li>Fine-grained health checks</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-900 text-stone-300 p-6 rounded-xl shadow-sm flex flex-col justify-center">
+                        <h3 class="text-sm uppercase tracking-widest text-stone-500 mb-4">Nginx Config Example</h3>
+                        <pre class="font-mono text-xs overflow-x-auto text-emerald-400">
+<span class="text-stone-400">upstream backend_pool {</span>
+    server 10.0.1.1:8080;
+    server 10.0.1.2:8080;
+    server 10.0.1.3:8080;
+<span class="text-stone-400">}</span>
+
+<span class="text-stone-400">server {</span>
+    listen 80;
+    <span class="text-stone-400">location / {</span>
+        proxy_pass http://backend_pool;
+    <span class="text-stone-400">}</span>
+<span class="text-stone-400">}</span>
+                        </pre>
+                        <p class="text-xs text-stone-500 mt-4 italic">Note: Nginx defaults to Round-Robin routing across the upstream pool.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="health" class="space-y-6 pt-8 border-t border-stone-200">
+                <div>
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">4. Health Checks & Failover</h2>
+                    <p class="text-stone-600 leading-relaxed">
+                        Health checks are the immune system of distributed systems. They prevent the load balancer from sending traffic to dead servers. Failover dictates how the system responds when a failure is detected.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Health Check Models</h3>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-bold text-stone-800 mb-1">Active (Push Model)</h4>
+                            <p class="text-sm text-stone-600 mb-2">Load balancer explicitly probes servers at intervals.</p>
+                            <ul class="text-xs space-y-1 text-stone-500 bg-stone-50 p-3 rounded">
+                                <li><span class="font-bold text-indigo-600">TCP:</span> Network level ping</li>
+                                <li><span class="font-bold text-indigo-600">HTTP:</span> GET /health surface check</li>
+                                <li><span class="font-bold text-indigo-600">App-Level:</span> Deep check (DB, disk)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-bold text-stone-800 mb-1">Passive (Pull Model)</h4>
+                            <p class="text-sm text-stone-600">Monitors real traffic. If a server returns many 500 errors, it gets marked unhealthy. No extra probing traffic.</p>
+                        </div>
+
+                        <div>
+                            <h4 class="font-bold text-stone-800 mb-1">Heartbeat Mechanism</h4>
+                            <p class="text-sm text-stone-600">Servers send "I am alive" messages to a coordinator (e.g., ZooKeeper). Missing heartbeats imply death.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Failover Flavors</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="p-4 border border-indigo-100 rounded-lg bg-indigo-50">
+                                <h4 class="font-bold text-indigo-900 mb-2">Active-Passive</h4>
+                                <div class="flex gap-2 mb-3">
+                                    <div class="bg-indigo-500 text-white text-xs px-3 py-1 rounded">Active Server</div>
+                                    <div class="bg-stone-300 text-stone-600 text-xs px-3 py-1 rounded">Standby Server</div>
+                                </div>
+                                <p class="text-sm text-indigo-800 mb-2">One handles all traffic. The other sits idle waiting for failure.</p>
+                                <p class="text-xs"><span class="font-bold text-emerald-600">Pro:</span> Simple. <span class="font-bold text-rose-600">Con:</span> Wastes capacity.</p>
+                            </div>
+
+                            <div class="p-4 border border-sky-100 rounded-lg bg-sky-50">
+                                <h4 class="font-bold text-sky-900 mb-2">Active-Active</h4>
+                                <div class="flex gap-2 mb-3">
+                                    <div class="bg-sky-500 text-white text-xs px-3 py-1 rounded">Active Server</div>
+                                    <div class="bg-sky-500 text-white text-xs px-3 py-1 rounded">Active Server</div>
+                                </div>
+                                <p class="text-sm text-sky-800 mb-2">Both handle traffic simultaneously. One fails, the other absorbs the share.</p>
+                                <p class="text-xs"><span class="font-bold text-emerald-600">Pro:</span> Efficient. <span class="font-bold text-rose-600">Con:</span> Requires state sync.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ha" class="space-y-6 pt-8 border-t border-stone-200">
+                <div>
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">5. High Availability Concepts</h2>
+                    <p class="text-stone-600 leading-relaxed">
+                        Designing systems to remain operational for an extremely high percentage of time. HA assumes everything will eventually fail, and engineers the system to survive it.
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Visualizing "The Nines"</h3>
+                    <p class="text-sm text-stone-500 text-center mb-6">Annual allowable downtime shrinks exponentially as availability requirements increase.</p>
+                    <div class="chart-container">
+                        <canvas id="ninesChart"></canvas>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-semibold mb-4">Core Strategies for High Availability</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 bg-white border border-stone-200 rounded shadow-sm hover:shadow-md transition-shadow">
+                        <h4 class="font-bold text-indigo-700">1. Redundancy</h4>
+                        <p class="text-sm text-stone-600 mt-2">Eliminate Single Points of Failure (SPOF). Have at least two of everything (servers, DBs, power supplies).</p>
+                    </div>
+                    <div class="p-4 bg-white border border-stone-200 rounded shadow-sm hover:shadow-md transition-shadow">
+                        <h4 class="font-bold text-indigo-700">2. Replication</h4>
+                        <p class="text-sm text-stone-600 mt-2">Keep identical copies of data on multiple machines to survive disk failures.</p>
+                    </div>
+                    <div class="p-4 bg-white border border-stone-200 rounded shadow-sm hover:shadow-md transition-shadow">
+                        <h4 class="font-bold text-indigo-700">3. Geographic Dist.</h4>
+                        <p class="text-sm text-stone-600 mt-2">Spread servers across multiple data centers (multi-region) to survive localized disasters.</p>
+                    </div>
+                    <div class="p-4 bg-white border border-stone-200 rounded shadow-sm hover:shadow-md transition-shadow">
+                        <h4 class="font-bold text-indigo-700">4. Automated Failover</h4>
+                        <p class="text-sm text-stone-600 mt-2">Detection and recovery must be automatic. Humans are too slow for five-nines.</p>
+                    </div>
+                    <div class="p-4 bg-white border border-stone-200 rounded shadow-sm hover:shadow-md transition-shadow">
+                        <h4 class="font-bold text-indigo-700">5. Graceful Degradation</h4>
+                        <p class="text-sm text-stone-600 mt-2">If a subsystem fails, the rest continues with reduced functionality rather than total crashing.</p>
+                    </div>
+                    <div class="p-4 bg-white border border-stone-200 rounded shadow-sm hover:shadow-md transition-shadow">
+                        <h4 class="font-bold text-indigo-700">6. Load Balancing</h4>
+                        <p class="text-sm text-stone-600 mt-2">Distributes traffic to prevent bottlenecks, improving both performance and resilience.</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-stone-100 p-6 rounded-lg border border-stone-200">
+                    <h3 class="text-lg font-bold text-stone-900 mb-2">The CAP Theorem (Briefly)</h3>
+                    <p class="text-sm text-stone-700 mb-3">A distributed system can guarantee at most two out of three:</p>
+                    <ul class="flex flex-wrap gap-4 text-sm font-semibold text-indigo-800">
+                        <li class="bg-indigo-100 px-3 py-1 rounded">Consistency</li>
+                        <li class="bg-indigo-100 px-3 py-1 rounded">Availability</li>
+                        <li class="bg-indigo-100 px-3 py-1 rounded">Partition Tolerance</li>
+                    </ul>
+                    <p class="text-sm text-stone-600 mt-3">Because network partitions are unavoidable, systems must choose between Consistency and Availability during an outage. HA systems typically choose <strong>AP</strong> (Availability + Partition Tolerance).</p>
+                </div>
+            </section>
+
+            <section id="resources" class="pt-8 border-t border-stone-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                    <div>
+                        <h3 class="font-bold text-lg text-stone-800 mb-4">Abbreviations</h3>
+                        <dl class="space-y-2 text-stone-600">
+                            <div class="grid grid-cols-3"><dt class="font-semibold">HA</dt><dd class="col-span-2">High Availability</dd></div>
+                            <div class="grid grid-cols-3"><dt class="font-semibold">SPOF</dt><dd class="col-span-2">Single Point of Failure</dd></div>
+                            <div class="grid grid-cols-3"><dt class="font-semibold">CAP</dt><dd class="col-span-2">Consistency, Availability, Partition Tolerance</dd></div>
+                            <div class="grid grid-cols-3"><dt class="font-semibold">K8s</dt><dd class="col-span-2">Kubernetes</dd></div>
+                            <div class="grid grid-cols-3"><dt class="font-semibold">DNS</dt><dd class="col-span-2">Domain Name System</dd></div>
+                        </dl>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-stone-800 mb-4">Key Resources</h3>
+                        <ul class="space-y-2 text-indigo-600 font-medium">
+                            <li><a href="https://www.consul.io/" target="_blank" rel="noopener" class="hover:underline">HashiCorp Consul</a></li>
+                            <li><a href="https://github.com/Netflix/eureka" target="_blank" rel="noopener" class="hover:underline">Netflix Eureka</a></li>
+                            <li><a href="https://kubernetes.io/" target="_blank" rel="noopener" class="hover:underline">Kubernetes</a></li>
+                            <li><a href="https://nginx.org/" target="_blank" rel="noopener" class="hover:underline">Nginx</a> &amp; <a href="https://www.haproxy.org/" target="_blank" rel="noopener" class="hover:underline">HAProxy</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-12 text-center text-xs text-stone-400">
+                    &copy; Cyber.SoHo &mdash; Educational use only.
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('#lb-tabs button');
+            const contents = document.querySelectorAll('.lb-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.classList.remove('tab-active');
+                        t.classList.add('tab-inactive');
+                    });
+                    
+                    contents.forEach(c => c.classList.add('content-hidden'));
+
+                    tab.classList.remove('tab-inactive');
+                    tab.classList.add('tab-active');
+                    const targetId = tab.getAttribute('data-target');
+                    document.getElementById(targetId).classList.remove('content-hidden');
+                });
+            });
+
+            const ctx = document.getElementById('ninesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Two Nines (99%)', 'Three Nines (99.9%)', 'Four Nines (99.99%)', 'Five Nines (99.999%)'],
+                    datasets: [{
+                        label: 'Annual Downtime (Minutes)',
+                        data: [5256, 525.6, 52.6, 5.26],
+                        backgroundColor: [
+                            'rgba(244, 63, 94, 0.7)', 
+                            'rgba(245, 158, 11, 0.7)', 
+                            'rgba(16, 185, 129, 0.7)', 
+                            'rgba(79, 70, 229, 0.9)'   
+                        ],
+                        borderColor: [
+                            'rgb(244, 63, 94)',
+                            'rgb(245, 158, 11)',
+                            'rgb(16, 185, 129)',
+                            'rgb(79, 70, 229)'
+                        ],
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let val = context.raw;
+                                    if (val > 1440) {
+                                        return `${val} mins (~${(val/1440).toFixed(2)} days)`;
+                                    } else if (val > 60) {
+                                        return `${val} mins (~${(val/60).toFixed(2)} hours)`;
+                                    }
+                                    return `${val} minutes`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'logarithmic',
+                            title: {
+                                display: true,
+                                text: 'Minutes / Year (Log Scale)',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    if (value === 1 || value === 10 || value === 100 || value === 1000 || value === 10000) {
+                                        return value;
+                                    }
+                                    return null;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

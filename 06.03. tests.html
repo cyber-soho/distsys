@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Discovery & Load Balancing Study App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the 3D flip effect */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .flip-card-inner {
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        /* Custom scrollbar for better appearance */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Service Discovery & Load Balancing</h1>
+            <p class="text-slate-500">Master distributed systems concepts with flashcards and applied quizzes.</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="flex justify-center mb-8">
+            <div class="bg-slate-200 p-1 rounded-xl inline-flex shadow-sm">
+                <button id="btn-flashcards" class="tab-btn active px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 bg-white text-blue-600 shadow-sm" onclick="switchTab('flashcards')">
+                    Flashcards
+                </button>
+                <button id="btn-quiz" class="tab-btn px-6 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all duration-200" onclick="switchTab('quiz')">
+                    Application Quiz
+                </button>
+            </div>
+        </div>
+
+        <!-- Flashcards Section -->
+        <section id="tab-flashcards" class="tab-content block">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-slate-800">Study Cards (25)</h2>
+                <button onclick="flipAll()" class="text-sm bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 px-3 rounded-lg transition-colors">Flip All</button>
+            </div>
+            <div id="flashcards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Flashcards injected via JS -->
+            </div>
+        </section>
+
+        <!-- Quiz Section -->
+        <section id="tab-quiz" class="tab-content hidden max-w-3xl mx-auto">
+            <div class="mb-6 flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-slate-800">Knowledge Check (10 Questions)</h2>
+                <span id="quiz-score" class="text-sm font-medium bg-blue-100 text-blue-800 py-1 px-3 rounded-full">Score: 0 / 10</span>
+            </div>
+            <div id="quiz-container" class="space-y-8">
+                <!-- Quiz questions injected via JS -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // --- Data ---
+
+        const flashcardsData = [
+            { front: "Service Discovery", back: "The mechanism through which a service automatically learns the network locations (IP addresses and ports) of other services it depends on." },
+            { front: "Client-Side Discovery Pattern", back: "The calling service queries a service registry directly to get a list of healthy instances and picks one to connect to." },
+            { front: "Server-Side Discovery Pattern", back: "The calling service sends requests to an intermediary (like a load balancer) which consults the registry and routes the request." },
+            { front: "Service Registry", back: "A highly available database storing live instance information, such as IP addresses, ports, and health status." },
+            { front: "Service Registry Heartbeat", back: "Periodic signals sent by a running instance to the registry to indicate it is still alive and healthy." },
+            { front: "Primary weakness of DNS-Based Discovery", back: "DNS caching can delay updates when instance IP addresses change, leading to routed traffic to dead instances." },
+            { front: "Load Balancing", back: "Distributing network traffic across multiple servers so no single machine becomes a bottleneck." },
+            { front: "Round-Robin Load Balancing", back: "Hands requests to servers in a fixed rotating order, giving every server an equal share of traffic regardless of load." },
+            { front: "Weighted Round-Robin", back: "A load balancing algorithm where more powerful servers are assigned a higher weight to receive proportionally more requests." },
+            { front: "Least-Connections Load Balancing", back: "Sends the next request to the server with the fewest active connections, adapting to variable request durations." },
+            { front: "IP Hash Load Balancing", back: "Hashes the client's IP address to determine the target server, ensuring session persistence (sticky sessions)." },
+            { front: "Reverse Proxy", back: "An intermediary that sits in front of backend servers, handling load balancing, SSL termination, caching, and hiding server identities." },
+            { front: "Primary difference between Forward and Reverse Proxies", back: "A forward proxy hides the client's identity from the internet, while a reverse proxy hides the server's identity from the client." },
+            { front: "Nginx", back: "An event-driven, asynchronous reverse proxy and web server created to solve the C10K problem." },
+            { front: "Active Health Checks (Push Model)", back: "The load balancer explicitly probes each server at regular intervals to verify its health." },
+            { front: "Passive Health Checks (Pull Model)", back: "Monitors real traffic and marks a server unhealthy if it returns many errors (like HTTP 500s) or exhibits high latency." },
+            { front: "Active-Passive Failover", back: "One server handles all traffic while a standby server waits idle to take over if the active one fails." },
+            { front: "Active-Active Failover", back: "Multiple servers handle traffic simultaneously; if one fails, the others absorb its share." },
+            { front: "High Availability (HA)", back: "Designing systems to remain operational for an extremely high percentage of time by engineering them to survive failures." },
+            { front: "\"Five Nines\" Availability (99.999%)", back: "An availability target that translates to approximately 5.26 minutes of allowable downtime per year." },
+            { front: "Single Point of Failure (SPOF)", back: "A component of a system that, if it fails, causes the entire system to stop working." },
+            { front: "Redundancy in High Availability", back: "Eliminating Single Points of Failure by having at least two of everything, such as servers, databases, and power supplies." },
+            { front: "Geographic Distribution (Multi-Region)", back: "Spreading servers across multiple data centers to survive localized disasters like power outages or earthquakes." },
+            { front: "Graceful Degradation", back: "When a subsystem fails, the rest of the system continues operating with reduced functionality instead of crashing completely." },
+            { front: "CAP Theorem", back: "States that a distributed system can guarantee at most two out of three: Consistency, Availability, and Partition Tolerance." }
+        ];
+
+        const quizData = [
+            {
+                question: "A microservices architecture has extremely high internal network traffic. The engineering team wants services to communicate directly with each other to save the latency of an extra network hop, but they still need to handle instances spinning up and down dynamically. Which pattern should they implement?",
+                hint: "Consider which pattern gives the calling application its own copy of the 'phone book' so it can make the connection itself.",
+                options: [
+                    { text: "Client-Side Discovery", isCorrect: true, rationale: "The calling service queries the registry and connects directly to the target instance, eliminating the need for a middleman while supporting dynamic IP changes." },
+                    { text: "Server-Side Discovery", isCorrect: false, rationale: "This approach routes traffic through an intermediary like an API gateway or load balancer, which inherently adds an extra network hop to the request." },
+                    { text: "DNS-Based Discovery", isCorrect: false, rationale: "While it allows direct connection, the heavy reliance on caching means it struggles to keep up with the rapid, dynamic changes of ephemeral instances." },
+                    { text: "Reverse Proxying", isCorrect: false, rationale: "Acting as a gatekeeper between networks, this introduces a centralized chokepoint and an additional network hop, defeating the latency goal." }
+                ]
+            },
+            {
+                question: "A legacy application uses a standard DNS A-record pointing to three web servers. One server suffers a catastrophic hardware failure. The operations team immediately removes the dead server's IP address from the DNS configuration, but users continue to report connection timeouts for several minutes. What is the most likely cause?",
+                hint: "Think about how your web browser avoids looking up the IP address of google.com every single time you open a new tab.",
+                options: [
+                    { text: "Client operating systems and ISPs are caching the old DNS record.", isCorrect: true, rationale: "Local networks and devices remember previous address resolutions for a set period to improve performance, causing them to route traffic to the dead IP until the cache expires." },
+                    { text: "The load balancer needs to be restarted to flush its active connections.", isCorrect: false, rationale: "Standard DNS resolution routes clients directly to the IPs; if a load balancer were managing the traffic, the DNS update wouldn't be the primary mechanism for routing around the failure." },
+                    { text: "The remaining two servers are overwhelmed by the sudden traffic spike.", isCorrect: false, rationale: "While possible, the specific symptom of 'connection timeouts' immediately after a DNS change usually points to traffic still attempting to hit the unresponsive, removed IP." },
+                    { text: "The service registry failed to deregister the instance.", isCorrect: false, rationale: "A standard DNS setup does not utilize an automated service registry with lifecycle hooks like registration and heartbeat monitoring." }
+                ]
+            },
+            {
+                question: "An API handles video processing tasks. Some requests are tiny GIFs that take 10 milliseconds to process, while others are 4K videos that take 5 minutes. If traffic is distributed evenly, some servers end up stuck processing multiple 4K videos at once while others sit idle. Which load balancing algorithm solves this problem?",
+                hint: "You need an algorithm that can adapt dynamically to how busy a server is at the exact moment a new request arrives.",
+                options: [
+                    { text: "Least-Connections", isCorrect: true, rationale: "By monitoring active tasks, it actively avoids sending new requests to servers that are bogged down with long-running video processing, sending them to the idle servers instead." },
+                    { text: "Round-Robin", isCorrect: false, rationale: "This algorithm blindly hands out requests in a fixed order, guaranteeing that eventually, one server will unluckily receive back-to-back long-running requests." },
+                    { text: "Weighted Round-Robin", isCorrect: false, rationale: "Assigning static capacities does not account for the real-time variable duration of the incoming requests, meaning a 'heavy' server can still get bogged down." },
+                    { text: "IP Hash", isCorrect: false, rationale: "Locking a user to a specific server ensures session stickiness but does absolutely nothing to balance out the varying workloads of the individual video processing tasks." }
+                ]
+            },
+            {
+                question: "An older e-commerce application stores a user's shopping cart contents entirely in the local memory (RAM) of the specific server that handled their first request. If the user's next click is routed to a different server, their cart appears empty. Which load balancer configuration provides a temporary fix without rewriting the application code?",
+                hint: "Consider the concept of 'sticky sessions' and how a load balancer might consistently identify the same client across multiple requests.",
+                options: [
+                    { text: "IP Hash", isCorrect: true, rationale: "Using a mathematical formula on the user's address guarantees that all subsequent requests from that user are mathematically locked to the exact same server containing their cart data." },
+                    { text: "Least-Connections", isCorrect: false, rationale: "Routing based on current server load means the user's second click will likely go to whichever server happens to be emptiest, losing access to their session data." },
+                    { text: "Random", isCorrect: false, rationale: "Leaving the destination to chance means the user will almost certainly be routed to a server that lacks their shopping cart data." },
+                    { text: "Active Health Checks", isCorrect: false, rationale: "Probing servers for availability ensures traffic doesn't hit a dead server, but it does not influence which healthy server a specific user is pinned to." }
+                ]
+            },
+            {
+                question: "A startup wants to expose several internal microservices to the public internet. They want a single entry point to terminate HTTPS traffic, apply gzip compression, and hide the internal IP addresses of their backend containers. What should they deploy at the edge of their network?",
+                hint: "You are looking for a component that sits between the internet and your servers, functioning similarly to Nginx or HAProxy.",
+                options: [
+                    { text: "Reverse Proxy", isCorrect: true, rationale: "Acting as the 'reception desk' for the infrastructure, it intercepts incoming public traffic, handles the TLS/SSL decryption, and securely forwards the request internally." },
+                    { text: "Forward Proxy", isCorrect: false, rationale: "This technology is used to hide the identity of internal clients browsing out to the internet, not to protect internal servers from incoming public traffic." },
+                    { text: "Service Registry", isCorrect: false, rationale: "This acts as an internal database of available instances for routing purposes, but it does not terminate HTTPS connections or compress traffic." },
+                    { text: "Passive Health Checker", isCorrect: false, rationale: "Monitoring error rates is a critical observability function, but it cannot decrypt HTTPS traffic or act as a network gateway." }
+                ]
+            },
+            {
+                question: "A database-heavy reporting service is extremely fragile. The operations team needs to know if the service is failing, but sending an automated HTTP GET request to its /health endpoint every 2 seconds actually causes the service to crash from the extra load. What is the best alternative to detect failures?",
+                hint: "How can the load balancer determine if the service is throwing errors just by observing the traffic that is already passing through it?",
+                options: [
+                    { text: "Implement Passive Health Checks", isCorrect: true, rationale: "By monitoring the real user traffic flowing through the load balancer, failures can be detected via increased 500 error rates without adding a single extra ping of overhead." },
+                    { text: "Implement a Heartbeat Mechanism", isCorrect: false, rationale: "Having the fragile service actively generate and send periodic 'I am alive' messages to a coordinator still adds computational overhead to the struggling application." },
+                    { text: "Switch to TCP Active Checks", isCorrect: false, rationale: "While lighter than an HTTP check, opening and closing a network connection every two seconds still consumes socket resources and adds load to the fragile server." },
+                    { text: "Use Graceful Degradation", isCorrect: false, rationale: "Designing the system to fall back to limited functionality is a great response to an outage, but it is not a mechanism for detecting that the outage has occurred." }
+                ]
+            },
+            {
+                question: "A financial firm has two data centers. They want to ensure maximum hardware utilization, so servers in both data centers handle live customer traffic simultaneously. If one data center loses power, the other immediately absorbs 100% of the global traffic. What failover architecture is this?",
+                hint: "Consider the operational state of the secondary servers before the power outage occurs.",
+                options: [
+                    { text: "Active-Active", isCorrect: true, rationale: "Both environments are simultaneously serving live requests, providing high efficiency at the cost of requiring complex real-time state synchronization." },
+                    { text: "Active-Passive", isCorrect: false, rationale: "In this model, the second data center would sit completely idle, serving zero traffic and wasting hardware capacity until a disaster actually strikes." },
+                    { text: "Geographic Distribution", isCorrect: false, rationale: "While placing servers in different locations enables disaster survival, it describes the physical layout, not the specific traffic routing mechanism used during normal operations." },
+                    { text: "Single Point of Failure", isCorrect: false, rationale: "Having two distinct data centers capable of absorbing all traffic is the exact opposite of relying on a single critical component." }
+                ]
+            },
+            {
+                question: "During a massive Black Friday traffic spike, a retail website's personalized 'Recommendation Engine' microservice runs out of memory and crashes. Instead of displaying a broken page, the website's frontend automatically catches the timeout and displays a hard-coded list of the 'Top 10 Global Bestsellers' instead. Which High Availability strategy does this demonstrate?",
+                hint: "The system chose to bend rather than break, offering a lesser experience rather than an error screen.",
+                options: [
+                    { text: "Graceful Degradation", isCorrect: true, rationale: "The system accepted the failure of a non-critical subsystem and dynamically reduced its feature set to keep the core user experience intact." },
+                    { text: "Automated Failover", isCorrect: false, rationale: "Routing traffic to a backup server implies the recommendation feature would continue working normally; here, the feature itself was abandoned for a simpler fallback." },
+                    { text: "Replication", isCorrect: false, rationale: "Copying identical data across multiple disks protects against storage loss, but it does not define how a frontend handles a downstream service crash." },
+                    { text: "Redundancy", isCorrect: false, rationale: "Having backup instances of the service would prevent the feature from dropping offline entirely, whereas this scenario explicitly handles the state where the feature is completely unavailable." }
+                ]
+            },
+            {
+                question: "A global banking application experiences a transatlantic network cable cut. The data centers in New York and London can no longer communicate. To avoid blocking customers from their money, the bank configures the system to accept transactions in both locations, accepting the risk that a user's balance might temporarily show different numbers in Europe vs the US until the network heals. According to the CAP Theorem, which two properties is the bank prioritizing?",
+                hint: "The network is broken, yet the system is still answering every user's request. What guarantee had to be temporarily abandoned to make this possible?",
+                options: [
+                    { text: "Availability and Partition Tolerance", isCorrect: true, rationale: "The system survives the network split (Partition Tolerance) and ensures every request gets a response (Availability), purposely sacrificing strict synchronization (Consistency)." },
+                    { text: "Consistency and Availability", isCorrect: false, rationale: "Eric Brewer's theorem dictates that when a network split occurs, a distributed system fundamentally cannot guarantee both of these traits simultaneously." },
+                    { text: "Consistency and Partition Tolerance", isCorrect: false, rationale: "Prioritizing strict data accuracy across the split network would require the system to reject transactions (sacrificing Availability) until the connection was restored." },
+                    { text: "Redundancy and Replication", isCorrect: false, rationale: "While these are core HA strategies used to build the system, they are not the formal properties defined by the CAP theorem regarding distributed state." }
+                ]
+            },
+            {
+                question: "A primary database server suffers a catastrophic physical drive failure, destroying the disk. However, the application experiences zero data loss because a standby database server in the same rack took over immediately with an exact, up-to-the-second copy of the data. Which HA strategy ensured the data survived?",
+                hint: "Think about the specific mechanism that creates and maintains an identical copy of information across multiple disks.",
+                options: [
+                    { text: "Replication", isCorrect: true, rationale: "Continuously copying data changes to a separate machine ensures that the destruction of one physical storage medium does not result in permanent data loss." },
+                    { text: "Geographic Distribution", isCorrect: false, rationale: "Because the standby server was located in the exact same rack, this setup does not protect against localized threats like a data center fire or power loss." },
+                    { text: "Load Balancing", isCorrect: false, rationale: "Distributing incoming read/write queries across multiple active servers improves performance, but it is not the mechanism that duplicates the underlying storage data." },
+                    { text: "Service Discovery", isCorrect: false, rationale: "Automating how the application finds the database helps establish the connection, but it does nothing to protect the actual bytes written to the hard drive." }
+                ]
+            }
+        ];
+
+        // --- Logic ---
+
+        let correctAnswersCount = 0;
+        let answeredQuestions = new Set();
+
+        function init() {
+            renderFlashcards();
+            renderQuiz();
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+            const activeBtn = document.getElementById(`btn-${tabName}`);
+            activeBtn.classList.remove('text-slate-600');
+            activeBtn.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+                content.classList.remove('block');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('block');
+        }
+
+        // Flashcards Logic
+        function renderFlashcards() {
+            const container = document.getElementById('flashcards-container');
+            container.innerHTML = '';
+
+            flashcardsData.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'group perspective-1000 h-64 w-full cursor-pointer';
+                cardEl.onclick = () => cardEl.classList.toggle('flipped');
+
+                cardEl.innerHTML = `
+                    <div class="flip-card-inner relative w-full h-full text-center transform-style-3d shadow-md hover:shadow-lg rounded-xl transition-shadow duration-300">
+                        <!-- Front -->
+                        <div class="absolute w-full h-full backface-hidden bg-white border border-slate-200 rounded-xl flex items-center justify-center p-6 text-lg font-medium text-slate-800">
+                            <span class="absolute top-3 left-4 text-xs font-bold text-slate-400">#${index + 1}</span>
+                            ${card.front}
+                        </div>
+                        <!-- Back -->
+                        <div class="absolute w-full h-full backface-hidden bg-blue-50 border border-blue-100 rounded-xl rotate-y-180 flex items-center justify-center p-6 text-base text-blue-900 shadow-inner overflow-y-auto">
+                            ${card.back}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(cardEl);
+            });
+        }
+
+        function flipAll() {
+            const cards = document.querySelectorAll('#flashcards-container > div');
+            const allFlipped = Array.from(cards).every(card => card.classList.contains('flipped'));
+            
+            cards.forEach(card => {
+                if (allFlipped) {
+                    card.classList.remove('flipped');
+                } else {
+                    card.classList.add('flipped');
+                }
+            });
+        }
+
+        // Quiz Logic
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+
+            quizData.forEach((q, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-white border border-slate-200 p-6 rounded-xl shadow-sm';
+                qDiv.id = `question-${qIndex}`;
+                
+                // Shuffle options
+                const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+                let optionsHTML = '';
+                shuffledOptions.forEach((opt, oIndex) => {
+                    optionsHTML += `
+                        <button id="opt-${qIndex}-${oIndex}" class="w-full text-left p-4 mb-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" onclick="handleAnswer(${qIndex}, ${oIndex}, ${opt.isCorrect})">
+                            <div class="font-medium text-slate-700">${opt.text}</div>
+                            <div id="rat-${qIndex}-${oIndex}" class="hidden mt-2 text-sm">
+                                ${opt.rationale}
+                            </div>
+                        </button>
+                    `;
+                });
+
+                qDiv.innerHTML = `
+                    <div class="mb-4">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Question ${qIndex + 1} of 10</span>
+                        <h3 class="text-lg font-semibold text-slate-800 mt-1">${q.question}</h3>
+                    </div>
+                    
+                    <button class="text-sm text-blue-600 hover:text-blue-800 mb-4 font-medium flex items-center gap-1" onclick="toggleHint('hint-${qIndex}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Show Hint
+                    </button>
+                    <div id="hint-${qIndex}" class="hidden mb-4 p-3 bg-blue-50 border border-blue-100 text-blue-800 text-sm rounded-lg">
+                        <strong>Hint:</strong> ${q.hint}
+                    </div>
+
+                    <div class="options-container">
+                        ${optionsHTML}
+                    </div>
+                `;
+                container.appendChild(qDiv);
+            });
+        }
+
+        function toggleHint(hintId) {
+            const hintEl = document.getElementById(hintId);
+            hintEl.classList.toggle('hidden');
+        }
+
+        function handleAnswer(qIndex, oIndex, isCorrect) {
+            if (answeredQuestions.has(qIndex)) return; // Prevent multiple answers
+            answeredQuestions.add(qIndex);
+
+            const qDiv = document.getElementById(`question-${qIndex}`);
+            const buttons = qDiv.querySelectorAll('button[id^="opt-"]');
+            
+            // Update Score
+            if (isCorrect) {
+                correctAnswersCount++;
+                document.getElementById('quiz-score').innerText = `Score: ${correctAnswersCount} / 10`;
+            }
+
+            // Reveal all rationales and style buttons
+            buttons.forEach((btn, index) => {
+                btn.disabled = true; // disable further clicks
+                btn.classList.remove('hover:bg-slate-50', 'border-slate-200');
+                
+                const rationaleDiv = document.getElementById(`rat-${qIndex}-${index}`);
+                rationaleDiv.classList.remove('hidden');
+
+                // We need to re-find if THIS specific button was the correct one in the shuffled array
+                // The easiest way is to re-evaluate the isCorrect logic passed in, but since we map clicks,
+                // we'll apply styles based on whether it was clicked and if it was correct.
+                
+                const isThisBtnCorrect = btn.getAttribute('onclick').includes('true');
+
+                if (isThisBtnCorrect) {
+                    btn.classList.add('bg-green-50', 'border-green-500', 'text-green-900');
+                    rationaleDiv.classList.add('text-green-700');
+                } else if (index === oIndex && !isCorrect) {
+                    // Clicked but wrong
+                    btn.classList.add('bg-red-50', 'border-red-500', 'text-red-900');
+                    rationaleDiv.classList.add('text-red-700');
+                } else {
+                    // Not clicked and wrong
+                    btn.classList.add('opacity-50', 'bg-slate-50');
+                    rationaleDiv.classList.add('text-slate-500');
+                }
+            });
+        }
+
+        // Initialize App
+        init();
+
+    </script>
+</body>
+</html>
