@@ -1,0 +1,3036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distributed Systems — Mid-Term Exam Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --surface-2: #F0EFE9;
+  --surface-3: #E8E6DE;
+  --border: #DDD9CE;
+  --border-light: #EAE8E0;
+  --primary: #0F1F3D;
+  --primary-mid: #1A3560;
+  --blue: #1D4ED8;
+  --blue-light: #EFF6FF;
+  --blue-mid: #BFDBFE;
+  --amber: #B45309;
+  --amber-light: #FFFBEB;
+  --amber-mid: #FDE68A;
+  --green: #166534;
+  --green-light: #F0FDF4;
+  --green-mid: #BBF7D0;
+  --teal: #0F766E;
+  --teal-light: #F0FDFA;
+  --purple: #6D28D9;
+  --purple-light: #F5F3FF;
+  --rose: #9F1239;
+  --rose-light: #FFF1F2;
+  --orange: #C2410C;
+  --orange-light: #FFF7ED;
+  --text: #111827;
+  --text-2: #374151;
+  --text-3: #6B7280;
+  --text-4: #9CA3AF;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -1px rgba(0,0,0,.05);
+  --shadow-md: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.04);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,.08), 0 10px 10px -5px rgba(0,0,0,.03);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
+  --sidebar-w: 260px;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── PROGRESS BAR ───────────────────────────────────────── */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--amber));
+  width: 0%; z-index: 1000;
+  transition: width .1s linear;
+  box-shadow: 0 0 8px rgba(29,78,216,.4);
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+#layout { display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR ────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--primary);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.15) transparent;
+  flex-shrink: 0;
+}
+#sidebar::-webkit-scrollbar { width: 4px; }
+#sidebar::-webkit-scrollbar-track { background: transparent; }
+#sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+
+.sidebar-brand {
+  padding: 24px 20px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-brand h2 {
+  font-family: var(--font-serif);
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+.sidebar-brand p {
+  color: rgba(255,255,255,.45);
+  font-size: .72rem;
+  margin-top: 4px;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.sidebar-stats {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.stat-pill {
+  background: rgba(255,255,255,.06);
+  border-radius: 6px;
+  padding: 6px 8px;
+  text-align: center;
+}
+.stat-pill .val {
+  display: block;
+  color: #fff;
+  font-weight: 700;
+  font-size: .95rem;
+  line-height: 1;
+}
+.stat-pill .lbl {
+  display: block;
+  color: rgba(255,255,255,.4);
+  font-size: .64rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-top: 2px;
+}
+
+.sidebar-nav { padding: 12px 0 24px; }
+.nav-section-label {
+  color: rgba(255,255,255,.3);
+  font-size: .65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 10px 20px 4px;
+  font-weight: 600;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  color: rgba(255,255,255,.65);
+  text-decoration: none;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  border-left-color: rgba(255,255,255,.3);
+}
+.nav-item.active {
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  border-left-color: #FDE68A;
+}
+.nav-item .nav-icon { font-size: .9rem; flex-shrink: 0; width: 18px; text-align: center; }
+.nav-sub {
+  padding: 3px 20px 3px 48px;
+  color: rgba(255,255,255,.4);
+  font-size: .75rem;
+  cursor: pointer;
+  transition: color .15s;
+  text-decoration: none;
+  display: block;
+  line-height: 1.9;
+}
+.nav-sub:hover { color: rgba(255,255,255,.75); }
+
+/* progress tracking */
+.progress-track {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  margin-top: auto;
+}
+.progress-track p {
+  color: rgba(255,255,255,.35);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 6px;
+}
+.track-bar {
+  height: 4px;
+  background: rgba(255,255,255,.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.track-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FDE68A, #FCD34D);
+  border-radius: 2px;
+  width: 0%;
+  transition: width .3s ease;
+}
+.track-label {
+  color: rgba(255,255,255,.4);
+  font-size: .72rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* ── MAIN ───────────────────────────────────────────────── */
+#main { flex: 1; min-width: 0; }
+
+/* ── HERO ───────────────────────────────────────────────── */
+.hero {
+  background: var(--primary);
+  padding: 64px 56px 48px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 70% 50%, rgba(29,78,216,.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -40px; top: -40px;
+  width: 320px; height: 320px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.04);
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(253,230,138,.12);
+  border: 1px solid rgba(253,230,138,.2);
+  border-radius: 100px;
+  padding: 4px 14px;
+  color: #FDE68A;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: var(--font-serif);
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.15;
+  font-weight: 700;
+  margin-bottom: 12px;
+  position: relative;
+}
+.hero h1 span { color: #FDE68A; }
+.hero-sub {
+  color: rgba(255,255,255,.55);
+  font-size: 1rem;
+  max-width: 580px;
+  position: relative;
+  margin-bottom: 32px;
+}
+.hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  position: relative;
+}
+.chip {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 100px;
+  padding: 6px 16px;
+  color: rgba(255,255,255,.75);
+  font-size: .8rem;
+  font-weight: 500;
+}
+.chip strong { color: #fff; margin-right: 4px; }
+
+/* ── SESSION PLAN ───────────────────────────────────────── */
+.session-plan {
+  background: var(--blue-light);
+  border: 1px solid var(--blue-mid);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  margin: 40px 56px 0;
+}
+.session-plan h3 {
+  font-family: var(--font-serif);
+  color: var(--blue);
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.plan-item {
+  background: #fff;
+  border: 1px solid var(--blue-mid);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.plan-item .time {
+  color: var(--blue);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.plan-item .task {
+  color: var(--text);
+  font-size: .85rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── SECTION WRAPPER ────────────────────────────────────── */
+.section-wrapper {
+  padding: 48px 56px;
+  border-bottom: 1px solid var(--border-light);
+}
+.section-wrapper:last-child { border-bottom: none; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.section-num {
+  font-family: var(--font-serif);
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--border);
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+}
+.section-titles h2 {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+}
+.section-titles p {
+  color: var(--text-3);
+  font-size: .875rem;
+  margin-top: 3px;
+}
+
+/* ── MODULE TABS ────────────────────────────────────────── */
+.module-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+.module-tabs::-webkit-scrollbar { display: none; }
+.mod-tab {
+  padding: 11px 18px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: all .15s;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mod-tab:hover { color: var(--text); background: var(--surface-2); }
+.mod-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: var(--surface); }
+.mod-tab .tab-num {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: currentColor;
+  color: #fff;
+  font-size: .65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: .9;
+}
+
+.module-panel { display: none; padding: 32px 0 8px; }
+.module-panel.active { display: block; }
+
+.mod-heading {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mod-tag {
+  font-family: var(--font-sans);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+.mod-intro {
+  color: var(--text-2);
+  font-size: .93rem;
+  margin-bottom: 24px;
+  max-width: 720px;
+  line-height: 1.75;
+}
+
+.mod-section { margin-bottom: 28px; }
+.mod-section-title {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mod-section-title::before {
+  content: '';
+  width: 14px; height: 2px;
+  background: currentColor;
+  display: inline-block;
+}
+
+.mod-content p {
+  color: var(--text-2);
+  font-size: .9rem;
+  line-height: 1.75;
+  margin-bottom: 10px;
+}
+.mod-content ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.mod-content ul li {
+  padding: 8px 12px 8px 36px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: .875rem;
+  line-height: 1.65;
+  position: relative;
+  transition: border-color .15s;
+}
+.mod-content ul li::before {
+  content: '›';
+  position: absolute;
+  left: 14px;
+  color: var(--blue);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.mod-content ul li:hover { border-color: var(--blue-mid); }
+
+.mod-content .link-ref {
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(29,78,216,.3);
+  transition: border-color .15s;
+}
+.mod-content .link-ref:hover { border-bottom-color: var(--blue); }
+
+.keyword { font-weight: 600; color: var(--primary); }
+.abbr-note { color: var(--text-3); font-size: .85em; }
+
+.info-box {
+  background: var(--blue-light);
+  border: 1px solid var(--blue-mid);
+  border-left: 4px solid var(--blue);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin: 12px 0;
+  font-size: .875rem;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+.info-box strong { color: var(--blue); }
+
+/* table in mod content */
+.mod-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+  margin: 12px 0 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.mod-table th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 16px;
+  text-align: left;
+  letter-spacing: .03em;
+}
+.mod-table td {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-2);
+  vertical-align: top;
+}
+.mod-table tr:last-child td { border-bottom: none; }
+.mod-table tr:nth-child(even) td { background: var(--bg); }
+.mod-table td code, .mod-table th code {
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  background: rgba(0,0,0,.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── CASE STUDIES ───────────────────────────────────────── */
+.cs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cs-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s;
+}
+.cs-card:hover { box-shadow: var(--shadow-md); }
+
+.cs-header {
+  padding: 18px 24px;
+  background: var(--primary);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cs-num {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  padding: 3px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cs-title {
+  font-family: var(--font-serif);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  flex: 1;
+}
+.cs-chapter {
+  font-size: .7rem;
+  color: rgba(255,255,255,.5);
+  font-style: italic;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.cs-scenario {
+  padding: 20px 24px;
+  background: var(--amber-light);
+  border-bottom: 1px solid var(--amber-mid);
+  color: var(--text-2);
+  font-size: .88rem;
+  line-height: 1.75;
+}
+.cs-scenario-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-footer {
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+}
+
+.cs-answer {
+  padding: 0 24px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .45s ease, padding .3s;
+  background: var(--green-light);
+  border-top: 0px solid var(--green-mid);
+}
+.cs-answer.open {
+  max-height: 2000px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--green-mid);
+}
+.cs-answer-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cs-answer-body {
+  color: var(--text-2);
+  font-size: .875rem;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+/* ── MCQ / MSQ CARDS ─────────────────────────────────────── */
+.q-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s;
+}
+.q-card:hover { box-shadow: var(--shadow); }
+
+.q-header {
+  padding: 14px 20px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+.q-num {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: .04em;
+}
+.q-chapter-badge {
+  font-size: .68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  letter-spacing: .04em;
+}
+
+.q-body { padding: 18px 20px 14px; }
+.q-text {
+  font-weight: 600;
+  color: var(--text);
+  font-size: .93rem;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.msq-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--orange-light);
+  color: var(--orange);
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+  letter-spacing: .02em;
+}
+
+.q-options {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+.q-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: all .15s;
+  font-size: .875rem;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.q-opt:hover { background: var(--surface-2); border-color: var(--border); }
+.q-opt.answered { pointer-events: none; cursor: default; }
+.opt-letter {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  color: var(--text-3);
+  font-size: .7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.q-opt.correct {
+  background: var(--green-light);
+  border-color: var(--green-mid);
+  color: var(--text);
+}
+.q-opt.correct .opt-letter {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.q-opt.incorrect {
+  opacity: .45;
+}
+.q-opt.selected {
+  background: var(--blue-light);
+  border-color: var(--blue-mid);
+  color: var(--text);
+}
+.q-opt.selected .opt-letter {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.q-opt.wrong-pick {
+  background: var(--rose-light);
+  border-color: #FECDD3;
+  color: var(--text);
+}
+.q-opt.wrong-pick .opt-letter {
+  background: var(--rose);
+  border-color: var(--rose);
+  color: #fff;
+}
+.q-feedback {
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 100px;
+  letter-spacing: .01em;
+}
+.q-feedback.correct-fb {
+  color: var(--green);
+  background: var(--green-light);
+  border: 1px solid var(--green-mid);
+}
+.q-feedback.wrong-fb {
+  color: var(--rose);
+  background: var(--rose-light);
+  border: 1px solid #FECDD3;
+}
+.btn-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1.5px solid var(--blue);
+  background: var(--blue-light);
+  color: var(--blue);
+  font-family: var(--font-sans);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: .02em;
+}
+.btn-check:hover { background: var(--blue); color: #fff; }
+.btn-check:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
+
+.q-footer {
+  padding: 10px 20px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.q-answer {
+  margin: 0 20px 16px;
+  background: var(--green-light);
+  border: 1px solid var(--green-mid);
+  border-radius: var(--radius-sm);
+  padding: 0 16px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease, padding .3s;
+}
+.q-answer.open {
+  max-height: 1000px;
+  padding: 14px 16px;
+}
+.q-answer-label {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.q-answer-val {
+  font-weight: 700;
+  color: var(--green);
+  font-size: .875rem;
+  margin-bottom: 6px;
+}
+.q-answer-exp {
+  color: var(--text-2);
+  font-size: .85rem;
+  line-height: 1.7;
+}
+
+/* ── ESSAY CARDS ─────────────────────────────────────────── */
+.essay-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.essay-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.essay-header {
+  padding: 18px 24px 14px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: background .15s;
+}
+.essay-header:hover { background: var(--surface-2); }
+.essay-num-badge {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.essay-meta { flex: 1; }
+.essay-chapter {
+  font-size: .7rem;
+  color: var(--text-3);
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+}
+.essay-question {
+  font-weight: 600;
+  color: var(--text);
+  font-size: .92rem;
+  line-height: 1.55;
+}
+.essay-chevron {
+  color: var(--text-4);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: transform .3s;
+  margin-top: 4px;
+}
+.essay-header.open .essay-chevron { transform: rotate(180deg); }
+
+.essay-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .45s ease;
+  border-top: 0px solid var(--border-light);
+}
+.essay-answer.open {
+  max-height: 3000px;
+  border-top: 1px solid var(--border-light);
+}
+.essay-answer-inner {
+  padding: 20px 24px 20px 70px;
+  background: var(--purple-light);
+  border-top: none;
+}
+.essay-answer-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.essay-answer-text {
+  color: var(--text-2);
+  font-size: .88rem;
+  line-height: 1.85;
+  white-space: pre-line;
+}
+
+/* ── REVEAL BUTTON ───────────────────────────────────────── */
+.btn-reveal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font-sans);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: .02em;
+}
+.btn-reveal:hover {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-light);
+}
+.btn-reveal.shown {
+  border-color: var(--green-mid);
+  color: var(--green);
+  background: var(--green-light);
+}
+.btn-reveal .btn-icon { font-size: .85rem; transition: transform .2s; }
+.btn-reveal:hover .btn-icon { transform: scale(1.2); }
+
+.btn-reveal-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 100px;
+  border: 1.5px solid var(--blue);
+  background: var(--blue-light);
+  color: var(--blue);
+  font-family: var(--font-sans);
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 24px;
+}
+.btn-reveal-all:hover { background: var(--blue); color: #fff; }
+
+/* ── FOOTER / REFERENCE LINKS ──────────────────────────── */
+.ref-section {
+  background: var(--primary);
+  padding: 48px 56px;
+  color: rgba(255,255,255,.7);
+}
+.ref-section h2 {
+  font-family: var(--font-serif);
+  color: #fff;
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+.ref-section p { font-size: .875rem; margin-bottom: 28px; color: rgba(255,255,255,.5); }
+.ref-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.ref-item {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  transition: background .15s;
+}
+.ref-item:hover { background: rgba(255,255,255,.1); }
+.ref-item a {
+  color: #93C5FD;
+  text-decoration: none;
+  font-size: .82rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 2px;
+}
+.ref-item a:hover { color: #FDE68A; }
+.ref-item span {
+  color: rgba(255,255,255,.35);
+  font-size: .72rem;
+}
+
+/* ── FOOTER BAR ─────────────────────────────────────────── */
+.footer-bar {
+  background: #07111F;
+  padding: 20px 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer-bar p {
+  color: rgba(255,255,255,.3);
+  font-size: .78rem;
+}
+
+/* ── UTILITIES ──────────────────────────────────────────── */
+code {
+  font-family: var(--font-mono);
+  font-size: .82em;
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--rose);
+}
+.pre-block {
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  background: #0F1F3D;
+  color: #E2E8F0;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  line-height: 1.65;
+  margin: 10px 0;
+}
+
+a { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--primary); }
+
+/* module color themes */
+.mod-m1 { --mc: #1D4ED8; --mc-l: #EFF6FF; --mc-m: #BFDBFE; }
+.mod-m2 { --mc: #7C3AED; --mc-l: #F5F3FF; --mc-m: #DDD6FE; }
+.mod-m3 { --mc: #15803D; --mc-l: #F0FDF4; --mc-m: #BBF7D0; }
+.mod-m4 { --mc: #C2410C; --mc-l: #FFF7ED; --mc-m: #FED7AA; }
+.mod-m5 { --mc: #1E40AF; --mc-l: #EFF6FF; --mc-m: #BFDBFE; }
+.mod-m6 { --mc: #0F766E; --mc-l: #F0FDFA; --mc-m: #99F6E4; }
+
+.chapter-mod1 { background: #EFF6FF; color: #1D4ED8; }
+.chapter-mod2 { background: #F5F3FF; color: #7C3AED; }
+.chapter-mod3 { background: #F0FDF4; color: #15803D; }
+.chapter-mod4 { background: #FFF7ED; color: #C2410C; }
+.chapter-mod5 { background: #EFF6FF; color: #1E40AF; }
+.chapter-mod6 { background: #F0FDFA; color: #0F766E; }
+
+/* scroll animation */
+.fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── MOBILE ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  #sidebar { display: none; }
+  .hero, .section-wrapper, .ref-section { padding: 32px 24px; }
+  .session-plan { margin: 24px 24px 0; }
+  .footer-bar { padding: 16px 24px; flex-direction: column; gap: 8px; align-items: flex-start; }
+}
+
+/* Print */
+@media print {
+  #sidebar, #progress-bar { display: none; }
+  #main { width: 100%; }
+  .q-answer, .cs-answer, .essay-answer { max-height: none !important; padding: 14px !important; }
+  .btn-reveal, .btn-reveal-all { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="layout">
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-brand">
+    <h2>Distributed Systems</h2>
+    <p>Mid-Term Exam Review · 3 Hours</p>
+  </div>
+  <div class="sidebar-stats">
+    <div class="stat-pill"><span class="val">6</span><span class="lbl">Modules</span></div>
+    <div class="stat-pill"><span class="val">10</span><span class="lbl">Cases</span></div>
+    <div class="stat-pill"><span class="val">45</span><span class="lbl">MCQs</span></div>
+    <div class="stat-pill"><span class="val">35</span><span class="lbl">MSQs</span></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Navigation</div>
+    <a class="nav-item active" href="#hero" onclick="setActive(this)">
+      <span class="nav-icon">🏠</span> Overview
+    </a>
+    <a class="nav-item" href="#part1" onclick="setActive(this)">
+      <span class="nav-icon">📚</span> Part 1 · Module Review
+    </a>
+    <a class="nav-sub" href="#mod1">Module 1: Fundamentals</a>
+    <a class="nav-sub" href="#mod2">Module 2: Naming Services</a>
+    <a class="nav-sub" href="#mod3">Module 3: Linux SysAdmin</a>
+    <a class="nav-sub" href="#mod4">Module 4: Containerization</a>
+    <a class="nav-sub" href="#mod5">Module 5: Process Mgmt</a>
+    <a class="nav-sub" href="#mod6">Module 6: Service Discovery</a>
+    <a class="nav-item" href="#part2" onclick="setActive(this)">
+      <span class="nav-icon">🔍</span> Part 2 · Case Studies
+    </a>
+    <a class="nav-item" href="#part3" onclick="setActive(this)">
+      <span class="nav-icon">✅</span> Part 3 · MCQ Practice
+    </a>
+    <a class="nav-item" href="#part4" onclick="setActive(this)">
+      <span class="nav-icon">☑️</span> Part 4 · MSQ Practice
+    </a>
+    <a class="nav-item" href="#part5" onclick="setActive(this)">
+      <span class="nav-icon">✍️</span> Part 5 · Essay Questions
+    </a>
+    <a class="nav-item" href="#refs" onclick="setActive(this)">
+      <span class="nav-icon">🔗</span> Reference Links
+    </a>
+  </div>
+  <div class="progress-track">
+    <p>Answers Revealed</p>
+    <div class="track-bar"><div class="track-fill" id="trackFill"></div></div>
+    <span class="track-label" id="trackLabel">0 / 110</span>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="main">
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-eyebrow">⏱ 3-Hour Structured Review Session</div>
+  <h1>Distributed Systems<br><span>Mid-Term Exam Review</span></h1>
+  <p class="hero-sub">A comprehensive, interactive review covering all six modules — from distributed fundamentals through containerization, process management, and service discovery. Every question includes an explanation.</p>
+  <div class="hero-chips">
+    <div class="chip"><strong>45</strong> Multiple-Choice Questions</div>
+    <div class="chip"><strong>35</strong> Multiple-Selection Questions</div>
+    <div class="chip"><strong>20</strong> Short Essay Questions</div>
+    <div class="chip"><strong>10</strong> Case Studies</div>
+    <div class="chip"><strong>6</strong> Module Summaries</div>
+    <div class="chip">Academic Term 2025 – 2026</div>
+  </div>
+</section>
+
+<div class="session-plan">
+  <h3>📋 Recommended 3-Hour Session Plan</h3>
+  <div class="plan-grid">
+    <div class="plan-item"><div class="time">0 – 30 min</div><div class="task">Read all six Module Summaries (Part 1)</div></div>
+    <div class="plan-item"><div class="time">31 – 60 min</div><div class="task">Work through 10 Case Studies (Part 2)</div></div>
+    <div class="plan-item"><div class="time">61 – 105 min</div><div class="task">MCQ Practice — 45 questions, ~1 min each</div></div>
+    <div class="plan-item"><div class="time">106 – 140 min</div><div class="task">MSQ Practice — 35 questions, ~1 min each</div></div>
+    <div class="plan-item"><div class="time">141 – 175 min</div><div class="task">Essay Questions — 20 questions, ~2 min each</div></div>
+    <div class="plan-item"><div class="time">176 – 180 min</div><div class="task">Reflection — flag weak spots, revisit modules</div></div>
+  </div>
+</div>
+
+<!-- PART 1: MODULE REVIEW -->
+<section class="section-wrapper" id="part1">
+  <div class="section-header">
+    <div class="section-num">01</div>
+    <div class="section-titles">
+      <h2>Comprehensive Module Review</h2>
+      <p>All six course modules — key concepts, vocabulary, and skills. Click a tab to explore each module.</p>
+    </div>
+  </div>
+  <div class="module-tabs" id="moduleTabs">
+    <div class="mod-tab active" onclick="switchTab(0)" data-tab="0">
+      <span class="tab-num" style="background:#1D4ED8">1</span> Fundamentals
+    </div>
+    <div class="mod-tab" onclick="switchTab(1)" data-tab="1">
+      <span class="tab-num" style="background:#7C3AED">2</span> Naming Services
+    </div>
+    <div class="mod-tab" onclick="switchTab(2)" data-tab="2">
+      <span class="tab-num" style="background:#15803D">3</span> Linux SysAdmin
+    </div>
+    <div class="mod-tab" onclick="switchTab(3)" data-tab="3">
+      <span class="tab-num" style="background:#C2410C">4</span> Containerization
+    </div>
+    <div class="mod-tab" onclick="switchTab(4)" data-tab="4">
+      <span class="tab-num" style="background:#1E40AF">5</span> Process Mgmt
+    </div>
+    <div class="mod-tab" onclick="switchTab(5)" data-tab="5">
+      <span class="tab-num" style="background:#0F766E">6</span> Service Discovery
+    </div>
+  </div>
+  <div id="modulePanels"></div>
+</section>
+
+<!-- PART 2: CASE STUDIES -->
+<section class="section-wrapper" id="part2">
+  <div class="section-header">
+    <div class="section-num">02</div>
+    <div class="section-titles">
+      <h2>10 Case Studies</h2>
+      <p>Real-world scenarios drawn from course material. Read the scenario, formulate your answer, then reveal the model response.</p>
+    </div>
+  </div>
+  <div class="cs-grid" id="caseStudies"></div>
+</section>
+
+<!-- PART 3: MCQs -->
+<section class="section-wrapper" id="part3">
+  <div class="section-header">
+    <div class="section-num">03</div>
+    <div class="section-titles">
+      <h2>45 Multiple-Choice Questions</h2>
+      <p>Each question has exactly one correct answer. The chapter reference and a full explanation follow each question.</p>
+    </div>
+  </div>
+  <button class="btn-reveal-all" onclick="revealAll('mcq')">👁 Reveal All MCQ Answers</button>
+  <div class="q-list" id="mcqList"></div>
+</section>
+
+<!-- PART 4: MSQs -->
+<section class="section-wrapper" id="part4">
+  <div class="section-header">
+    <div class="section-num">04</div>
+    <div class="section-titles">
+      <h2>35 Multiple-Selection Questions</h2>
+      <p>Each question may have two or more correct answers. Select <em>all</em> that apply for full marks.</p>
+    </div>
+  </div>
+  <button class="btn-reveal-all" onclick="revealAll('msq')">👁 Reveal All MSQ Answers</button>
+  <div class="q-list" id="msqList"></div>
+</section>
+
+<!-- PART 5: ESSAYS -->
+<section class="section-wrapper" id="part5">
+  <div class="section-header">
+    <div class="section-num">05</div>
+    <div class="section-titles">
+      <h2>20 Short Essay Questions</h2>
+      <p>Target 100–200 words per answer. Model answers show the key points examiners will look for. Click any question to expand the answer.</p>
+    </div>
+  </div>
+  <div class="essay-list" id="essayList"></div>
+</section>
+
+<!-- REFERENCE LINKS -->
+<div class="ref-section" id="refs">
+  <h2>🔗 Official Reference Links</h2>
+  <p>All organizations, standards, and tools referenced in this review — links to official websites.</p>
+  <div class="ref-grid" id="refGrid"></div>
+</div>
+
+<div class="footer-bar">
+  <p>Distributed Systems · Mid-Term Exam Review · Academic Term 2025–2026</p>
+  <p>Study Aid — For Educational Use Only</p>
+</div>
+
+</div><!-- end #main -->
+</div><!-- end #layout -->
+
+<script>
+
+// ─── MODULE DATA ──────────────────────────────────────────────────
+const modules = [
+  {
+    id:'mod1', title:'Module 1 — Fundamentals & Linux Environment Setup',
+    color:'#1D4ED8', colorLight:'#EFF6FF', colorMid:'#BFDBFE', cls:'mod-m1',
+    intro:'A distributed system is a collection of independent computers that appears to users as a single coherent system. These machines communicate exclusively through message passing over a network — they share neither memory nor a common clock. Understanding this architecture is the foundation for everything else in the course.',
+    sections:[
+      {
+        title:'What Is a Distributed System?',
+        content:`A distributed system is defined by three properties: its nodes operate <span class="keyword">concurrently</span>, it has <span class="keyword">no global clock</span>, and its components can <span class="keyword">fail independently</span>.<br><br>
+Leslie Lamport's classic definition captures the hazard: <em>"A distributed system is one in which the failure of a computer you didn't even know existed can render your own computer unusable."</em><br><br>
+Key insight: in distributed computing, <strong>failure is normal, not exceptional</strong>. Systems must be designed for it.`,
+        bullets:[
+          '<span class="keyword">Concurrency</span> — Multiple components execute simultaneously. Example: uploading a photo triggers image compression, feed updates, and metadata storage on separate servers at the same time.',
+          '<span class="keyword">Lack of a Global Clock</span> — Each node has its own hardware clock that drifts independently. There is no master clock. Event ordering requires special mechanisms like NTP (Network Time Protocol) or logical (Lamport) clocks.',
+          '<span class="keyword">Independent Failures</span> — Any single component can crash without bringing down the rest. Netflix continues streaming even when individual servers in its fleet fail.'
+        ]
+      },
+      {
+        title:'Architectural Models',
+        bullets:[
+          '<span class="keyword">Client–Server</span> — A passive server waits for requests; clients initiate communication. Web browsing is the archetype. Simple, centralised, easy to manage.',
+          '<span class="keyword">Peer-to-Peer (P2P)</span> — Every node is both client and server. BitTorrent and blockchain networks use this model. Highly resilient; no single point of failure.',
+          '<span class="keyword">Three-Tier Architecture</span> — Presentation layer (browser/app), logic layer (application server), and data layer (database) are separated for independent scaling. Most web applications use this.',
+        ]
+      },
+      {
+        title:'Transparency Types (ISO Standard)',
+        content:'Transparency hides the complexity of distribution from users and applications. The <a class="link-ref" href="https://www.iso.org" target="_blank">ISO (International Organization for Standardization)</a> recognises eight types:',
+        table:{
+          headers:['Type','What It Hides'],
+          rows:[
+            ['Access','Differences in data representation and how resources are accessed'],
+            ['Location','Where a resource is physically located'],
+            ['Migration','That a resource has been moved to a different location'],
+            ['Replication','That multiple copies of a resource exist'],
+            ['Concurrency','That multiple users are sharing a resource'],
+            ['Failure','That a resource has failed and been recovered'],
+            ['Performance','Optimisations being made to improve performance'],
+            ['Scaling','The system growing to accommodate increased load'],
+          ]
+        }
+      },
+      {
+        title:'Linux as the Foundation of Distributed Infrastructure',
+        content:'Linux powers over 90% of public cloud infrastructure — including AWS (Amazon Web Services), GCP (Google Cloud Platform), and Microsoft Azure. All serious distributed-systems engineers need Linux fluency.',
+        bullets:[
+          'The <span class="keyword">FHS (Filesystem Hierarchy Standard)</span> — see <a class="link-ref" href="https://refspecs.linuxfoundation.org/fhs.shtml" target="_blank">refspecs.linuxfoundation.org</a> — defines the directory layout: <code>/etc</code> (configuration), <code>/var</code> (logs/runtime data), <code>/opt</code> (third-party software), <code>/proc</code> (live kernel data), <code>/bin</code> (essential binaries).',
+          'Essential shell commands: <code>ls</code>, <code>cd</code>, <code>cp</code>, <code>mv</code>, <code>rm</code>, <code>grep</code>, <code>find</code>, <code>cat</code>, <code>echo</code>, <code>chmod</code>, <code>chown</code>, <code>ps</code>, <code>top</code>, <code>ssh</code>.',
+          'Piping (<code>|</code>) and redirection (<code>&gt;</code>, <code>&gt;&gt;</code>, <code>&lt;</code>) allow chaining commands into powerful one-liners without writing scripts.',
+        ]
+      }
+    ]
+  },
+  {
+    id:'mod2', title:'Module 2 — Name and Directory Services',
+    color:'#7C3AED', colorLight:'#F5F3FF', colorMid:'#DDD6FE', cls:'mod-m2',
+    intro:'In any distributed system, every resource — a server, a file, a service, a user — must have a name. Names decouple the identity of a resource from its physical location, so a resource can move without any client needing to update a hard-coded address.',
+    sections:[
+      {
+        title:'Three Categories of Names',
+        bullets:[
+          '<span class="keyword">Human-Friendly Names</span> — Designed for human memory: <code>www.amazon.com</code>, <code>alice@university.edu</code>, <code>MyLaptop</code>. Easy to remember, encode meaning.',
+          '<span class="keyword">Machine-Friendly Identifiers</span> — Optimised for fast lookup: IP (Internet Protocol) addresses (<code>192.168.1.1</code>), MAC (Media Access Control) addresses (<code>00:1A:2B:3C:4D:5E</code>), UUIDs (Universally Unique Identifiers).',
+          '<span class="keyword">Pure Identifiers</span> — Stable references that do not change even if the resource moves: Social Security Numbers, student ID numbers, ISBN (International Standard Book Number) codes for books.',
+        ]
+      },
+      {
+        title:'Properties of a Good Naming System',
+        bullets:[
+          '<span class="keyword">Uniqueness</span> — No two resources share the same name in the same namespace. Imagine the chaos if two websites could both be "google.com".',
+          '<span class="keyword">Scalability</span> — The system must work with millions or billions of names without slowing down.',
+          '<span class="keyword">Persistence</span> — Names should remain stable over time. A bookmarked URL should still work next year.',
+          '<span class="keyword">Efficiency</span> — Name resolution should complete in milliseconds.',
+          '<span class="keyword">Human Readability</span> — At least one layer of naming should be easy for humans to use.',
+        ]
+      },
+      {
+        title:'DNS (Domain Name System) Deep Dive',
+        content:'DNS translates human-friendly names like <code>www.netflix.com</code> into IP addresses machines can route to. It is hierarchical: root servers → TLD (Top-Level Domain) servers → authoritative name servers. Managed by <a class="link-ref" href="https://www.icann.org" target="_blank">ICANN (Internet Corporation for Assigned Names and Numbers)</a>.',
+        table:{
+          headers:['Record Type','Purpose','Example'],
+          rows:[
+            ['A','Maps hostname → IPv4 address','www.example.com → 93.184.216.34'],
+            ['AAAA','Maps hostname → IPv6 address','www.example.com → 2606:2800:220:1:248:1893:25c8:1946'],
+            ['CNAME','Canonical Name — alias for another name','blog.example.com → www.example.com'],
+            ['MX','Mail Exchange — specifies mail servers','example.com → mail.example.com (priority 10)'],
+            ['TXT','Arbitrary text — SPF, DKIM email verification','example.com → "v=spf1 include:..."'],
+            ['NS','Name Server — delegates a zone','example.com → ns1.example.com'],
+            ['PTR','Reverse lookup — IP → hostname','34.216.184.93 → www.example.com'],
+          ]
+        },
+        bullets:[
+          '<span class="keyword">TTL (Time To Live)</span> — How long resolvers may cache a DNS answer (in seconds). Short TTLs allow faster failover; long TTLs reduce query load.',
+          '<span class="keyword">Recursive Resolution</span> — Client hands the query to a resolver; the resolver does all the iterative work and returns the final answer. Your computer uses this.',
+          '<span class="keyword">Iterative Resolution</span> — Each server returns a referral to the next server in the chain; the client follows each referral itself. Used between DNS servers internally.',
+        ]
+      },
+      {
+        title:'LDAP (Lightweight Directory Access Protocol)',
+        content:'LDAP — see <a class="link-ref" href="https://ldap.com" target="_blank">ldap.com</a> and <a class="link-ref" href="https://www.openldap.org" target="_blank">OpenLDAP</a> — is an open, vendor-neutral protocol for accessing directory services. It organises entries in a tree called the DIT (Directory Information Tree). Microsoft Active Directory — see <a class="link-ref" href="https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview" target="_blank">Microsoft AD Docs</a> — is built on LDAP.',
+        bullets:[
+          'Each entry has a <span class="keyword">DN (Distinguished Name)</span> that uniquely identifies it: <code>cn=Alice,ou=Users,dc=company,dc=com</code>',
+          'Used in enterprises to centralise authentication: one LDAP entry provisions access to all servers; deleting it revokes access everywhere.',
+          'Linux servers use <code>nsswitch.conf</code> + <code>pam_ldap</code> or <code>sssd</code> (System Security Services Daemon) to authenticate users against the LDAP directory.',
+        ]
+      }
+    ]
+  },
+  {
+    id:'mod3', title:'Module 3 — Linux System Administration Essentials',
+    color:'#15803D', colorLight:'#F0FDF4', colorMid:'#BBF7D0', cls:'mod-m3',
+    intro:'Linux powers virtually all distributed infrastructure. These five command-line pillars — user management, file permissions, package management, disk management, and networking tools — are the toolkit every distributed-systems engineer must master.',
+    sections:[
+      {
+        title:'User & Group Management',
+        content:'The <span class="keyword">Principle of Least Privilege</span>: every process runs with only the minimum permissions required. The root account (UID — User Identifier — 0) is the superuser; use <code>sudo</code> (Superuser Do) for auditable administrative work.',
+        table:{
+          headers:['File','Contents'],
+          rows:[
+            ['/etc/passwd','Usernames, UIDs, GIDs (Group Identifiers), home directories, login shells — world-readable'],
+            ['/etc/shadow','Hashed passwords — readable only by root'],
+            ['/etc/group','Group names, GIDs, and user membership lists'],
+          ]
+        },
+        bullets:[
+          'Key commands: <code>useradd</code>, <code>usermod -aG</code> (add to group), <code>userdel</code>, <code>groupadd</code>, <code>passwd</code>, <code>id</code>, <code>whoami</code>, <code>su</code>, <code>sudo</code>',
+          'Service accounts: no home directory, shell set to <code>/usr/sbin/nologin</code>, no interactive password, permissions scoped only to what the service needs. Example: <code>www-data</code> for web servers.',
+        ]
+      },
+      {
+        title:'File Permissions & ACLs (Access Control Lists)',
+        content:'Every file carries a 9-bit permission string: three triads for owner (u), group (g), and others (o). Each triad contains read (r=4), write (w=2), and execute (x=1) bits.',
+        bullets:[
+          '<code>chmod 755 file</code> → owner: rwx (7), group: r-x (5), others: r-x (5)',
+          '<code>chown user:group file</code> — changes file ownership',
+          'POSIX ACLs extend the model: <code>setfacl -m u:alice:rwx dir</code> grants Alice access without changing the primary owner',
+          '<span class="keyword">SUID (Set User ID)</span> — executable runs as its owner (not the caller). <span class="keyword">SGID (Set Group ID)</span> — new files in a directory inherit the directory\'s group. <span class="keyword">Sticky Bit</span> — users can only delete their own files in the directory (used on <code>/tmp</code>).',
+        ]
+      },
+      {
+        title:'Package Management',
+        bullets:[
+          '<span class="keyword">apt (Advanced Package Tool)</span> — Debian-based distros (Ubuntu, Debian): <code>apt update</code>, <code>apt install nginx</code>, <code>apt upgrade</code>, <code>apt remove nginx</code>',
+          '<span class="keyword">dnf (Dandified YUM — Yellowdog Updater Modified)</span> — Red Hat-based distros (RHEL — Red Hat Enterprise Linux, Fedora, CentOS): <code>dnf install nginx</code>, <code>dnf upgrade</code>, <code>dnf remove nginx</code>',
+          'Both tools resolve and install dependencies automatically. Repository configuration: apt uses <code>/etc/apt/sources.list</code>; dnf uses <code>/etc/yum.repos.d/</code>.',
+        ]
+      },
+      {
+        title:'Disk Management & LVM (Logical Volume Manager)',
+        content:'LVM abstracts physical disks into a three-level hierarchy: PVs (Physical Volumes) → VGs (Volume Groups) → LVs (Logical Volumes). Online resizing, snapshots, and spanning multiple disks are all possible without downtime.',
+        bullets:[
+          '<code>lsblk</code> — Lists block devices in a tree view (disk → partitions)',
+          '<code>fdisk / gdisk</code> — Partitions a disk (MBR — Master Boot Record / GPT — GUID Partition Table)',
+          '<code>pvcreate / vgcreate / lvcreate</code> — Create LVM hierarchy',
+          '<code>lvextend + resize2fs / xfs_growfs</code> — Extend a logical volume and filesystem online, no reboot needed',
+          '<code>mkfs.ext4 / mkfs.xfs</code> — Format a partition with a filesystem',
+          '<code>mount / umount</code> — Attach and detach filesystems',
+        ]
+      },
+      {
+        title:'Networking Tools',
+        bullets:[
+          '<code>ip addr / ip link</code> — Modern replacement for deprecated ifconfig; displays and configures network interfaces',
+          '<code>ss -tlnp</code> — Shows all listening TCP ports with process names. (<code>netstat -tulnp</code> is the legacy equivalent)',
+          '<code>firewalld</code> — Zone-based dynamic firewall manager (higher-level abstraction over iptables/nftables)',
+          '<code>iptables</code> — Direct kernel netfilter rule management (lower-level, precise control)',
+          '<code>traceroute / tracepath</code> — Shows the hop-by-hop path a packet takes across a network',
+        ]
+      }
+    ]
+  },
+  {
+    id:'mod4', title:'Module 4 — Containerization',
+    color:'#C2410C', colorLight:'#FFF7ED', colorMid:'#FED7AA', cls:'mod-m4',
+    intro:'Containerization solved the "it works on my machine" problem by packaging an application together with its complete runtime environment into a single portable unit that runs identically everywhere. Containers are built on two Linux kernel primitives: namespaces and cgroups.',
+    sections:[
+      {
+        title:'Kernel Primitives: Namespaces & Cgroups (Control Groups)',
+        content:'At their core, containers are Linux processes wrapped in two kernel features. Google engineers developed cgroups in 2006; they were merged into the Linux kernel in version 2.6.24. See <a class="link-ref" href="https://www.docker.com" target="_blank">Docker</a> for the dominant container runtime.',
+        table:{
+          headers:['Namespace / Cgroup','Question It Answers','What It Controls'],
+          rows:[
+            ['PID Namespace','What processes can I see?','Container sees only its own process tree; believes it is PID 1'],
+            ['NET Namespace','What network do I have?','Each container gets its own IP address, ports, routing table'],
+            ['MNT Namespace','What filesystem do I see?','Each container has its own directory tree'],
+            ['UTS Namespace','What is my hostname?','Each container can have its own hostname'],
+            ['IPC Namespace','What IPC resources do I have?','Isolates shared memory segments and message queues'],
+            ['USER Namespace','Who am I?','Maps container root (UID 0) to unprivileged host user'],
+            ['Cgroups (Control Groups)','How much can I use?','CPU quota, memory limit, disk I/O throttle, PID count'],
+          ]
+        }
+      },
+      {
+        title:'Container Images & Layering',
+        bullets:[
+          'A <span class="keyword">Dockerfile</span> is a plain-text script: <code>FROM</code>, <code>RUN</code>, <code>COPY</code>, <code>ENV</code>, <code>EXPOSE</code>, <code>CMD</code> / <code>ENTRYPOINT</code>. Docker reads it top-to-bottom and creates one read-only layer per instruction.',
+          'Images are stacked read-only layers. Each layer stores only the delta from the layer below it. Running containers share base layers on disk, saving significant space.',
+          'A thin writable layer is placed on top when a container starts. Deleting the container removes only this writable layer; the image layers are untouched.',
+          'Docker caches each layer. Placing infrequently changed instructions (apt install) before frequently changed ones (COPY app code) maximises cache reuse and speeds builds.',
+        ]
+      },
+      {
+        title:'Container Registries',
+        bullets:[
+          '<a class="link-ref" href="https://hub.docker.com" target="_blank">Docker Hub</a> — The default public registry. Hosts millions of official and community images.',
+          'Private registries: <strong>AWS ECR (Elastic Container Registry)</strong>, <strong>Google Artifact Registry</strong>, self-hosted <a class="link-ref" href="https://goharbor.io" target="_blank">Harbor</a>.',
+          'Enterprise registries enforce authentication, image signing, vulnerability scanning (e.g., <a class="link-ref" href="https://trivy.dev" target="_blank">Trivy</a>), and tag immutability.',
+          '<code>docker pull image:tag</code> — Fetch an image. <code>docker push image:tag</code> — Upload an image.',
+        ]
+      },
+      {
+        title:'Containers vs. VMs (Virtual Machines)',
+        table:{
+          headers:['Property','Container','Virtual Machine (VM)'],
+          rows:[
+            ['Kernel','Shares host kernel','Runs its own full OS kernel'],
+            ['Startup time','Milliseconds','Seconds to minutes'],
+            ['Memory overhead','Megabytes (just the app)','Hundreds of MB to GB'],
+            ['Isolation strength','Process-level (namespace boundary)','Hardware-level (hypervisor boundary)'],
+            ['Portability','High (image = complete environment)','Lower (hypervisor-specific)'],
+            ['Security boundary','Kernel exploit affects all containers','Stronger: each VM has its own kernel'],
+          ]
+        }
+      },
+      {
+        title:'Container Orchestration',
+        content:'When running hundreds of containers across many machines, you need an orchestration platform.',
+        bullets:[
+          '<a class="link-ref" href="https://kubernetes.io" target="_blank">Kubernetes (K8s)</a> — The dominant standard. Handles scheduling, self-healing, scaling, rolling updates, and service discovery. Backed by <a class="link-ref" href="https://etcd.io" target="_blank">etcd</a> as its registry.',
+          'Docker Swarm — A simpler orchestrator built into Docker itself. Lower complexity, fewer features.',
+        ]
+      }
+    ]
+  },
+  {
+    id:'mod5', title:'Module 5 — Process Management & Automation',
+    color:'#1E40AF', colorLight:'#EFF6FF', colorMid:'#BFDBFE', cls:'mod-m5',
+    intro:'Every application on every server runs as a process. Understanding how processes are born, managed, signaled, monitored, and automated with systemd is the engine-room knowledge that every distributed-systems engineer needs.',
+    sections:[
+      {
+        title:'Process Concepts: PID, PPID, States',
+        content:'A <span class="keyword">process</span> is an active instance of a program in execution. Every process has a unique <span class="keyword">PID (Process Identifier)</span>. Every process (except PID 1) was created by a parent process whose ID is the <span class="keyword">PPID (Parent Process Identifier)</span>. PID 1 is systemd — the ancestor of every user-space process.',
+        table:{
+          headers:['State','Symbol','Meaning'],
+          rows:[
+            ['Running','R','Actively using CPU or waiting in the scheduler\'s run queue'],
+            ['Sleeping (Interruptible)','S','Waiting for an event (disk read, network packet) — can be woken by a signal'],
+            ['Sleeping (Uninterruptible)','D','Waiting on I/O (Input/Output) that cannot be interrupted — typical of disk operations'],
+            ['Stopped','T','Paused by SIGSTOP or a debugger'],
+            ['Zombie','Z','Finished but parent has not called wait() — occupies a process table slot'],
+          ]
+        },
+        bullets:[
+          '<span class="keyword">Zombie accumulation</span> is a real production hazard: if a parent never calls <code>wait()</code>, zombie entries fill the process table and the kernel cannot create new processes.',
+        ]
+      },
+      {
+        title:'Signals',
+        table:{
+          headers:['Signal','Number','Default Action','Common Use'],
+          rows:[
+            ['SIGTERM','15','Terminate','Polite shutdown request — process can catch and clean up'],
+            ['SIGKILL','9','Kill immediately','Unconditional kill — cannot be caught or ignored. Last resort.'],
+            ['SIGHUP','1','Terminate','Historically: hangup. Modern: tell a daemon to reload its config.'],
+            ['SIGINT','2','Terminate','Keyboard interrupt (Ctrl+C)'],
+            ['SIGSTOP','19','Stop','Pause a process — cannot be caught'],
+            ['SIGCONT','18','Continue','Resume a stopped process'],
+          ]
+        }
+      },
+      {
+        title:'Process Monitoring Tools',
+        bullets:[
+          '<code>ps aux</code> — Snapshot of all running processes with PID, CPU (Central Processing Unit), memory, and command',
+          '<code>top</code> — Interactive real-time process view. <code>htop</code> adds colour, mouse support, and tree view.',
+          '<code>pgrep nginx</code> / <code>pidof nginx</code> — Find the PID of a process by name',
+          '<code>kill -SIGTERM &lt;PID&gt;</code> — Send a signal to a specific PID. <code>pkill nginx</code> — Send by name.',
+        ]
+      },
+      {
+        title:'Job Control',
+        bullets:[
+          '<code>bg</code> — Resume a stopped job in the background',
+          '<code>fg</code> — Bring a background job to the foreground',
+          '<code>nohup command &amp;</code> — Run a command immune to SIGHUP; continues after logout',
+          '<code>command &amp;</code> — Start a command in the background immediately',
+          '<code>jobs</code> — List current shell job table',
+        ]
+      },
+      {
+        title:'systemd Architecture',
+        content:'systemd is the init system (PID 1) for virtually all modern Linux distributions. It replaced SysV init\'s sequential shell-script startup with a parallel, dependency-driven model.',
+        bullets:[
+          '<span class="keyword">Unit files</span> — Declarative INI-style configs. Types: <code>.service</code>, <code>.socket</code>, <code>.mount</code>, <code>.timer</code>, <code>.target</code>. Key directives: <code>Restart=on-failure</code>, <code>RestartSec=5</code>, <code>User=</code>, <code>ExecStart=</code>.',
+          '<span class="keyword">Targets</span> — Named groupings of units corresponding to system states: <code>multi-user.target</code> (normal text mode), <code>graphical.target</code> (desktop environment).',
+          'systemctl commands: <code>start</code>, <code>stop</code>, <code>restart</code>, <code>enable</code> (start at boot), <code>disable</code>, <code>status</code>, <code>daemon-reload</code>.',
+          '<span class="keyword">journald</span> — Structured logging subsystem. Query with <code>journalctl -u api.service -f</code> to follow a service\'s log in real time. Indexed, searchable, timestamped binary journal.',
+        ]
+      }
+    ]
+  },
+  {
+    id:'mod6', title:'Module 6 — Service Discovery & Load Balancing',
+    color:'#0F766E', colorLight:'#F0FDFA', colorMid:'#99F6E4', cls:'mod-m6',
+    intro:'When you scale beyond a single server, services must find each other dynamically, traffic must be distributed fairly, failures must be detected automatically, and the system must stay available around the clock. These are the challenges that service discovery and load balancing solve.',
+    sections:[
+      {
+        title:'Service Discovery Patterns',
+        bullets:[
+          '<span class="keyword">Client-Side Discovery</span> — The calling service queries the service registry, gets a list of healthy instances, and selects one using a local algorithm. Examples: <a class="link-ref" href="https://github.com/Netflix/eureka" target="_blank">Netflix Eureka</a>, <a class="link-ref" href="https://www.consul.io" target="_blank">HashiCorp Consul</a>.',
+          '<span class="keyword">Server-Side Discovery</span> — The calling service sends its request to a load balancer or API (Application Programming Interface) gateway. The gateway consults the registry and forwards the request. The client never sees the registry. Examples: <a class="link-ref" href="https://aws.amazon.com/elasticloadbalancing" target="_blank">AWS Elastic Load Balancing</a>, Kubernetes Service objects.',
+          '<span class="keyword">DNS-Based Discovery</span> — A DNS record returns multiple IP addresses for a single hostname. Simple but cache TTL delays can cause stale routing.',
+        ]
+      },
+      {
+        title:'Service Registries',
+        content:'A service registry is a highly available database storing IP addresses and ports of all running service instances. Instances register on startup, deregister on shutdown. Entries that stop sending heartbeat signals are automatically expired.',
+        bullets:[
+          '<a class="link-ref" href="https://www.consul.io" target="_blank">HashiCorp Consul</a> — Feature-rich: service discovery, health checks, KV store, multi-datacenter support',
+          '<a class="link-ref" href="https://zookeeper.apache.org" target="_blank">Apache ZooKeeper</a> — Distributed coordination service; used by Kafka and Hadoop',
+          '<a class="link-ref" href="https://etcd.io" target="_blank">etcd</a> — Key-value store embedded in every Kubernetes control plane',
+          '<a class="link-ref" href="https://github.com/Netflix/eureka" target="_blank">Netflix Eureka</a> — Java-based registry designed for AWS deployments',
+        ]
+      },
+      {
+        title:'Load Balancing Algorithms',
+        table:{
+          headers:['Algorithm','Description','Best For'],
+          rows:[
+            ['Round-Robin','Rotate requests across all instances in strict sequence','Homogeneous workloads with similar request durations'],
+            ['Weighted Round-Robin','Instances get requests proportional to their assigned weight','Servers with different capacities'],
+            ['Least Connections','New request → instance with fewest active connections','Variable request duration (e.g., mix of fast reads and slow DB writes)'],
+            ['IP Hash','Client IP is hashed to always reach the same instance','Session persistence (sticky sessions)'],
+            ['Random','Request sent to a randomly selected instance','Simple; effective at high volume'],
+          ]
+        }
+      },
+      {
+        title:'Reverse Proxies: Nginx & HAProxy',
+        bullets:[
+          '<a class="link-ref" href="https://nginx.org" target="_blank">Nginx (Engine-X)</a> — High-performance web server and reverse proxy. Handles TLS (Transport Layer Security) termination, caching, compression, rate limiting. Configure upstream pools with the <code>upstream</code> block.',
+          '<a class="link-ref" href="https://www.haproxy.org" target="_blank">HAProxy (High Availability Proxy)</a> — Purpose-built Layer 4 (TCP) and Layer 7 (HTTP) load balancer. Known for extremely high throughput, rich health checks, and zero-downtime reloads.',
+        ]
+      },
+      {
+        title:'Health Checks, Failover & High Availability (HA)',
+        bullets:[
+          '<span class="keyword">Health checks</span> — Periodic probes (HTTP GET <code>/health</code>, TCP connection, custom script) sent to each back-end instance. Failed instances are removed from rotation; recovered instances are re-added automatically.',
+          '<span class="keyword">SPOF (Single Point of Failure)</span> — Any component whose failure brings down the whole system. HA design eliminates SPOFs through redundancy.',
+          '<span class="keyword">Active–Active HA</span> — All nodes handle live traffic. Better utilisation; seamless scaling. Requires distributed state management.',
+          '<span class="keyword">Active–Passive HA</span> — Primary handles traffic; standby waits. Simpler but wastes standby capacity. Failover latency is seconds to minutes.',
+          '<span class="keyword">SLA (Service Level Agreement)</span>: 99.9% ("three nines") = ~8.7 hrs downtime/year; 99.99% ("four nines") = ~52 min/year; 99.999% ("five nines") = ~5 min/year.',
+          '<span class="keyword">MTTR (Mean Time To Recovery)</span> — Average time to restore after a failure. Lower is better. <span class="keyword">MTBF (Mean Time Between Failures)</span> — Average time between failures. Higher is better.',
+        ]
+      }
+    ]
+  }
+];
+
+// ─── CASE STUDY DATA ─────────────────────────────────────────────
+const caseStudies = [
+  {
+    num:'Case Study 1', chapter:'Module 4 — Containerization',
+    title:'The "Works on My Machine" Deployment Failure',
+    scenario:'A team of three students writes a Python web application on Windows and macOS laptops. When they deploy it to a Linux-based cloud VM (Virtual Machine), it crashes immediately with a library-not-found error. The module instructor suggests switching to containers. Explain why this switch resolves the problem, and describe the specific kernel features that make containers portable.',
+    answer:`The crash happens because the VM does not have the exact Python library versions or native extensions that the developers installed locally. A container image, built with a Dockerfile, packages the application code together with its complete dependency tree — the Python version, every pip package, any native shared libraries, and OS-level packages — into a single read-only image.
+
+When that image runs on any host with a compatible Linux kernel, it sees exactly the same environment the developer tested against. Portability comes from two kernel primitives:
+
+1. Namespaces isolate what the container process can see: it has its own filesystem view (MNT namespace), its own network stack (NET namespace), and its own process tree (PID namespace). The container cannot accidentally depend on anything the host has installed outside its image.
+
+2. Cgroups (Control Groups) cap how much CPU, memory, and disk I/O the container can consume, preventing resource contention with other workloads on the same host.
+
+Because the image carries its own environment and the container cannot see host libraries, the "works on my machine" problem disappears: the machine is always the image.`
+  },
+  {
+    num:'Case Study 2', chapter:'Module 2 — Name and Directory Services',
+    title:'DNS (Domain Name System) Cache Poisoning Outage',
+    scenario:'A university\'s internal web portal suddenly redirects all student login attempts to an unknown IP (Internet Protocol) address. The IT team discovers that the campus DNS resolver is returning a wrong IP for the portal\'s domain name. Explain what likely happened, and describe what DNSSEC (DNS Security Extensions) is and how it would have prevented this incident.',
+    answer:`What likely happened is a DNS cache poisoning attack (also known as DNS spoofing). An attacker sent forged DNS response packets to the campus resolver faster than the legitimate authoritative server, inserting a fraudulent IP-to-name mapping into the resolver's cache. Because the resolver trusted cached responses without verifying their source, subsequent student queries returned the attacker's IP.
+
+DNSSEC (DNS Security Extensions) — see ICANN's DNSSEC overview at https://www.icann.org — adds a chain of cryptographic signatures to DNS records. Each DNS zone signs its records with a private key; resolvers verify those signatures using publicly available public keys published in parent zones (a chain of trust from the DNS root down to the domain).
+
+A forged DNS response would not carry a valid signature. A DNSSEC-aware resolver would discard it rather than cache it. The attack would fail because the fraudulent record could not be authenticated, protecting all users from redirection to the malicious IP address.`
+  },
+  {
+    num:'Case Study 3', chapter:'Module 5 — Process Management & Automation',
+    title:'Zombie Process Accumulation in a Microservices Cluster',
+    scenario:'A distributed application running on a 20-node cluster begins degrading over 48 hours. Operators notice that the process table on several worker nodes is nearly full of processes in state Z, yet the nodes are not under heavy CPU or memory load. The application runs as containerized microservices managed by a custom orchestrator. Identify the root cause and propose a fix.',
+    answer:`Root Cause: A zombie process leak. When the orchestrator spawns child processes to handle work units and those children finish, they enter state Z (Zombie) because the orchestrator (the parent) is not calling wait() or waitpid() to collect their exit status. Each zombie retains an entry in the kernel's process table. With thousands of tasks over 48 hours, the process table fills; the kernel can no longer create new processes, causing the degradation.
+
+Fix Options:
+
+1. Rewrite the orchestrator to call wait() after each child exits, either synchronously or by installing a SIGCHLD signal handler that calls waitpid(-1, WNOHANG) in a loop to reap all available children.
+
+2. Double-fork technique: the parent forks a child, which immediately forks a grandchild and exits. The parent reaps the (short-lived) child; the grandchild is re-parented to PID 1 (systemd), which automatically reaps all adopted orphans.
+
+3. Use a minimal init process such as tini (https://github.com/krallin/tini) as PID 1 inside containers. tini reaps orphaned zombie processes automatically — this is exactly why Docker uses it by default when you pass --init.`
+  },
+  {
+    num:'Case Study 4', chapter:'Module 3 — Linux System Administration Essentials',
+    title:'Unauthorized Access Through Overprivileged Service Account',
+    scenario:'A company discovers that a compromised Python API (Application Programming Interface) server was able to read every file on the host, modify system configuration, and install malware. An audit shows the API service was running under the root user account. Describe the Principle of Least Privilege, explain what went wrong, and outline remediation using Linux user and group management.',
+    answer:`The Principle of Least Privilege states that every process should run with only the minimum permissions required to perform its legitimate function. When the API ran as root (UID 0), the compromised process inherited unlimited access to the entire system.
+
+Remediation steps:
+
+1. Create a dedicated service account:
+   useradd --system --no-create-home --shell /usr/sbin/nologin api_svc
+   (system account, no home directory, no interactive login)
+
+2. Change ownership of API files:
+   chown -R api_svc:api_svc /opt/api
+
+3. Update the systemd unit file — set User=api_svc and Group=api_svc in the [Service] section.
+
+4. Apply ACLs (Access Control Lists) to grant access only to specific directories:
+   setfacl -m u:api_svc:rx /var/log/app
+
+5. Use Linux capabilities (setcap) to grant only the specific privilege needed — e.g., CAP_NET_BIND_SERVICE for binding to port 80 — rather than full root access.
+
+With this setup, a future compromise of the API process would be contained to the resources that api_svc can access, not the entire machine.`
+  },
+  {
+    num:'Case Study 5', chapter:'Module 6 — Service Discovery & Load Balancing',
+    title:'Load Balancer Configuration for a Flash Sale',
+    scenario:'An e-commerce startup expects 10× normal traffic during a 2-hour flash sale. Their current setup is a single application server behind an Nginx reverse proxy. Describe a High Availability (HA) architecture, specify which load balancing algorithm to use and why, and explain how health checks protect the sale event.',
+    answer:`Recommended Architecture:
+• Deploy at least 3 application server instances (horizontal scaling) behind Nginx in Active–Active HA configuration.
+• Add a second Nginx instance and use keepalived with VRRP (Virtual Router Redundancy Protocol) to share a floating VIP (Virtual IP) between the two Nginx nodes. If the primary Nginx fails, the VIP moves to the standby within seconds.
+
+Algorithm: Least Connections (Least-Conn). During a flash sale, request processing time is uneven — some users browse (fast), others check out and trigger payment processing (slow). Least-Conn routes each new request to whichever server has the fewest active connections at that moment, preventing any one server from becoming a bottleneck.
+
+Health Checks: Configure Nginx to perform an HTTP health check against GET /health on each back-end instance every 5 seconds. If any instance fails 2 consecutive checks, Nginx removes it from rotation immediately. When it recovers and passes 3 consecutive checks, it re-enters rotation. A crashing instance is isolated within 10 seconds without human intervention — protecting the sale from cascading failures.`
+  },
+  {
+    num:'Case Study 6', chapter:'Module 4 — Containerization',
+    title:'Container Image Security Vulnerability',
+    scenario:'A security scan reveals that a production container image is built FROM ubuntu:18.04, which has 47 known CVEs (Common Vulnerabilities and Exposures). The team also discovers the container runs as root inside the container. Propose a remediation plan covering both issues.',
+    answer:`Issue 1 — Outdated base image:
+Replace FROM ubuntu:18.04 with a current minimal base image such as ubuntu:24.04, or better, a distroless image (e.g., gcr.io/distroless/python3) that contains only the runtime and application files — no package manager, no shell, dramatically reduced attack surface.
+
+Rebuild and re-scan in your CI/CD (Continuous Integration/Continuous Delivery) pipeline using Trivy (https://trivy.dev) or Grype before pushing to the registry.
+
+Issue 2 — Container running as root:
+Add USER instructions to the Dockerfile:
+  RUN useradd --uid 1001 --no-create-home appuser
+  USER appuser
+
+This ensures the process runs as UID 1001. Even if the container escapes its namespace, it maps to an unprivileged user on the host — especially effective with USER namespace mapping.
+
+Also add --no-new-privileges to the Docker run command or the Kubernetes (K8s) securityContext to prevent privilege escalation via SUID binaries inside the image.
+
+Together, these changes reduce the blast radius of any future vulnerability from "full container compromise" to a heavily restricted user context.`
+  },
+  {
+    num:'Case Study 7', chapter:'Module 2 — Naming Services & Module 3 — Linux SysAdmin',
+    title:'LDAP (Lightweight Directory Access Protocol) Integration for Multi-Server Deployment',
+    scenario:'A startup has 15 Linux application servers. Each new employee currently requires an administrator to create a local account on every single server. Propose an LDAP-based solution to centralise identity management, and explain how each server would authenticate users against it.',
+    answer:`Solution: Deploy a central OpenLDAP server (https://www.openldap.org) or managed equivalent (AWS Directory Service). Define the directory tree with one entry per employee under ou=People,dc=company,dc=com.
+
+On each of the 15 application servers:
+
+1. Install the sssd (System Security Services Daemon) or nss-pam-ldapd package.
+
+2. Configure /etc/nsswitch.conf to use LDAP:
+   passwd: files ldap
+   group:  files ldap
+   shadow: files ldap
+
+3. Configure /etc/pam.d/sshd to use pam_ldap.so for authentication.
+
+4. Enable home directory creation on first login with pam_mkhomedir.so.
+
+Results:
+• Creating one LDAP entry provisions access across all 15 servers instantly.
+• Deleting the entry revokes access everywhere immediately.
+• Password changes in LDAP propagate automatically.
+• Access to specific servers can be restricted using LDAP group membership checks in the PAM (Pluggable Authentication Modules) configuration, satisfying the Principle of Least Privilege at the fleet level.`
+  },
+  {
+    num:'Case Study 8', chapter:'Module 5 — Process Management & Automation',
+    title:'systemd Service Not Restarting After Crash',
+    scenario:'A production Node.js microservice crashes due to an unhandled promise rejection. The systemd unit does not restart it automatically. The on-call engineer receives an alert 4 minutes later after a user reports the outage. What was missing from the unit file, write the corrected configuration, and describe how to prevent a restart loop.',
+    answer:`Missing: The unit file lacked a Restart= directive in the [Service] section. Without it, systemd treats an unexpected exit as a one-off event and does not attempt recovery.
+
+Corrected unit file:
+  [Unit]
+  Description=Node.js Microservice
+  After=network.target
+
+  [Service]
+  User=nodeapp
+  ExecStart=/usr/bin/node /opt/app/server.js
+  Restart=on-failure
+  RestartSec=5
+  StartLimitIntervalSec=60
+  StartLimitBurst=3
+
+  [Install]
+  WantedBy=multi-user.target
+
+Directive explanations:
+• Restart=on-failure — restart when the process exits with a non-zero code or is killed by a signal, but NOT when stopped with systemctl stop.
+• RestartSec=5 — wait 5 seconds before restarting, giving dependencies (database, message broker) time to recover.
+• StartLimitIntervalSec=60 + StartLimitBurst=3 — if the service fails and restarts 3 times within 60 seconds, systemd stops trying. This prevents an infinite restart loop when the application has a persistent startup bug. The operator is paged to investigate rather than the server thrashing indefinitely.`
+  },
+  {
+    num:'Case Study 9', chapter:'Module 3 — Linux System Administration Essentials',
+    title:'Disk Space Exhaustion on a Logging Server',
+    scenario:'A centralised logging server\'s root filesystem reaches 100% capacity, causing all application logs to be lost. The disk has 2TB of unpartitioned space available. Describe how you would use LVM (Logical Volume Manager) to extend the logging volume without unmounting it or rebooting, and identify which monitoring command you would run first.',
+    answer:`Step 1 — Diagnose (run first):
+  df -h              # Shows filesystem usage; identifies the full mount point
+  lsblk              # Confirms unpartitioned disk space available
+  du -sh /var/log/* | sort -rh | head   # Finds largest log directories
+
+Step 2 — Create a new Physical Volume on the unpartitioned disk (assuming /dev/sdb):
+  fdisk /dev/sdb     # Create partition of type 8e (Linux LVM)
+  pvcreate /dev/sdb1
+
+Step 3 — Extend the existing Volume Group:
+  vgextend vg_data /dev/sdb1   # Add new PV to the volume group
+
+Step 4 — Extend the Logical Volume online:
+  lvextend -L +1.8T /dev/vg_data/lv_logs
+
+Step 5 — Resize the filesystem without unmounting:
+  resize2fs /dev/vg_data/lv_logs     # For ext4
+  # OR
+  xfs_growfs /var/log                # For XFS — pass the mount point
+
+The entire process is online — no reboot, no service interruption. This is one of the most compelling reasons to use LVM in production storage designs.`
+  },
+  {
+    num:'Case Study 10', chapter:'Module 1 — Fundamentals',
+    title:'Distributed System Clock Skew Causing Transaction Ordering Errors',
+    scenario:'A distributed payment processing system spans 5 data centres. Operators discover that transactions are occasionally recorded out of order: a refund is logged before the original purchase, even though users made the purchase first. Explain the root cause, what NTP (Network Time Protocol) does to help, and introduce logical clocks as a stronger solution.',
+    answer:`Root Cause: Each node tracks time with its own hardware clock. Hardware clocks drift at different rates — even a few milliseconds of divergence is enough to make an event on Node B appear to have an earlier timestamp than an event on Node A. When transactions are sorted by wall-clock timestamp, the order is wrong.
+
+NTP (Network Time Protocol) — see https://www.ntp.org — synchronises all nodes to a global time reference (typically a stratum-1 server disciplined by an atomic clock or GPS). NTP keeps clocks within 1–10 ms of each other on a LAN (Local Area Network). This drastically reduces ordering errors but does not eliminate them, because 10 ms is still enough for a race condition in a high-throughput payment system.
+
+Logical Clocks (Lamport Clocks) provide a stronger guarantee. The rule is simple: if event A causes event B (A → B), then counter(A) < counter(B). When a message is sent, the sender includes its counter; the receiver sets its own counter to max(local, received) + 1. This gives consistent causal ordering that does not depend on physical time at all.
+
+Vector Clocks extend this: each node keeps a vector of counters (one per node), enabling the system to determine definitively which purchase happened before which refund, regardless of clock drift — making them the robust solution for the payment system.`
+  }
+];
+
+// ─── MCQ DATA (45 questions) ──────────────────────────────────────
+const mcqs = [
+  {id:1,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'Which of the following best describes a distributed system?',
+   opts:['A single powerful computer running multiple programs simultaneously.',
+         'A collection of independent computers that appears to users as one coherent system.',
+         'A cluster of computers sharing a single operating system kernel.',
+         'A mainframe server accessed by remote terminals.'],
+   ans:'B',exp:'A distributed system is defined as multiple independent computers that communicate by passing messages and present themselves as a single system to users. They do not share memory or a kernel. (Module 1)'},
+
+  {id:2,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'What does "lack of a global clock" mean in the context of distributed systems?',
+   opts:['There is no way to measure elapsed time in a distributed system.',
+         'Each node has its own clock and clocks drift apart, making event ordering difficult.',
+         'The system deliberately removes timestamps to protect privacy.',
+         'All clocks are synchronised to exactly the same time using GPS (Global Positioning System).'],
+   ans:'B',exp:'In a distributed system, each machine has its own hardware clock that drifts independently. There is no master clock, so it is impossible to determine event ordering from timestamps alone without additional mechanisms like NTP or logical clocks. (Module 1)'},
+
+  {id:3,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'According to Leslie Lamport\'s famous definition, a distributed system is one in which:',
+   opts:['All nodes share a common RAM (Random Access Memory) pool.',
+         'The failure of a computer you didn\'t know existed can make your own unusable.',
+         'Every component can be scaled independently.',
+         'Messages are always delivered in the order they are sent.'],
+   ans:'B',exp:'Lamport\'s definition highlights that in a distributed system, components you have no direct knowledge of can affect your system. This captures the partial-failure nature of distributed computing. (Module 1)'},
+
+  {id:4,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'Which transparency type hides the fact that a resource has multiple replicas?',
+   opts:['Access transparency','Location transparency','Replication transparency','Migration transparency'],
+   ans:'C',exp:'Replication transparency means the user or application is unaware that multiple copies of a resource exist. Reads may come from any replica and writes are propagated — all without the client knowing. (Module 1)'},
+
+  {id:5,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'Which DNS (Domain Name System) record type maps a domain name to an IPv4 address?',
+   opts:['CNAME (Canonical Name)','MX (Mail Exchange)','A','PTR (Pointer)'],
+   ans:'C',exp:'An A record maps a hostname directly to a 32-bit IPv4 address. CNAME is an alias; MX specifies mail servers; PTR is used for reverse DNS lookups. (Module 2)'},
+
+  {id:6,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'What is the purpose of TTL (Time To Live) in a DNS record?',
+   opts:['To limit the number of times a domain can be looked up.',
+         'To specify how long a DNS answer may be cached by resolvers.',
+         'To set the maximum size of a DNS response packet.',
+         'To define the expiry date of a TLS (Transport Layer Security) certificate.'],
+   ans:'B',exp:'TTL tells resolvers how many seconds they may cache a DNS answer. Short TTLs allow faster propagation of changes; long TTLs reduce query load on authoritative servers. (Module 2)'},
+
+  {id:7,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'In LDAP (Lightweight Directory Access Protocol), what does a DN (Distinguished Name) uniquely identify?',
+   opts:['A network interface on a server.','An entry in the directory tree.','A cryptographic certificate.','A DNS zone file.'],
+   ans:'B',exp:'A DN is the unique path from the root of the DIT (Directory Information Tree) to a specific entry. Example: cn=Alice,ou=Users,dc=company,dc=com. No two entries in the same directory can share a DN. (Module 2)'},
+
+  {id:8,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'Which of the following is an example of a pure identifier in a naming system?',
+   opts:['www.university.edu','192.168.1.1','A student\'s institutional ID number','A computer\'s hostname'],
+   ans:'C',exp:'Pure identifiers are stable references that do not change even if the resource moves — like a student ID. Domain names and IP addresses encode location or routing information and can change when a resource moves. (Module 2)'},
+
+  {id:9,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'What is the primary purpose of /etc/shadow on a Linux system?',
+   opts:['To store read-only backups of user home directories.',
+         'To store hashed user passwords, readable only by root.',
+         'To list all shadow filesystem mounts.',
+         'To configure screen brightness on headless servers.'],
+   ans:'B',exp:'/etc/shadow holds one-way hashed passwords. Unlike /etc/passwd (world-readable), /etc/shadow is restricted to root. Separating passwords prevents unprivileged users from reading hashes and attempting offline cracking. (Module 3)'},
+
+  {id:10,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which command displays the current user\'s UID (User Identifier), GID (Group Identifier), and all group memberships?',
+   opts:['whoami','groups','id','passwd'],
+   ans:'C',exp:'The id command prints uid=..., gid=..., and the full list of supplementary groups. whoami only prints the username; groups lists group names without IDs; passwd changes passwords. (Module 3)'},
+
+  {id:11,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'What does the Sticky Bit do when set on a directory such as /tmp?',
+   opts:['Prevents the directory from being deleted.',
+         'Makes all new files inherit the directory\'s owner.',
+         'Prevents users from deleting files owned by other users in that directory.',
+         'Forces all files to have read-only permissions.'],
+   ans:'C',exp:'With the Sticky Bit set, only the file owner, the directory owner, or root can delete or rename a file inside the directory. This is why /tmp is sticky — users can write files there but cannot delete each other\'s. (Module 3)'},
+
+  {id:12,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'A developer wants to add user "bob" to the "docker" group without removing his existing group memberships. Which command is correct?',
+   opts:['groupadd bob docker','usermod -aG docker bob','useradd -G docker bob','chown bob:docker /etc/group'],
+   ans:'B',exp:'usermod -aG appends (-a) a supplementary group (-G docker) to the user (bob) without disturbing his current group list. Without -a, usermod -G would replace all supplementary groups. (Module 3)'},
+
+  {id:13,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which lsblk output correctly represents two physical disks, each with one partition?',
+   opts:['sda 8:0 disk → sda1 8:1 part; sdb 8:16 disk → sdb1 8:17 part',
+         'eth0 linked to sda and eth1 linked to sdb',
+         'pv0 and pv1 inside vg0',
+         'loop0 and loop1 bound to disk'],
+   ans:'A',exp:'lsblk uses a tree layout: the disk (sda, sdb) is the parent node and its partitions (sda1, sdb1) are children. Network interfaces (eth0) and loop devices appear differently. (Module 3)'},
+
+  {id:14,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'What is the key difference between "firewalld" and "iptables"?',
+   opts:['firewalld manages CPU quotas; iptables manages disk quotas.',
+         'firewalld provides a higher-level zone-based abstraction; iptables works directly with kernel netfilter.',
+         'iptables is for IPv6 only; firewalld handles IPv4.',
+         'They are identical tools with different names.'],
+   ans:'B',exp:'iptables directly inserts rules into the Linux netfilter framework. firewalld is a dynamic daemon that manages iptables/nftables rules using a higher-level model of zones (trusted, public, dmz) and services, applying changes without flushing existing connections. (Module 3)'},
+
+  {id:15,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'A container\'s process sees only the processes belonging to its own container. Which Linux namespace provides this isolation?',
+   opts:['NET (Network) namespace','MNT (Mount) namespace','PID (Process ID) namespace','IPC (Inter-Process Communication) namespace'],
+   ans:'C',exp:'The PID namespace gives the container its own numbered process tree. The container\'s first process appears as PID 1 even though it is not the host\'s PID 1. This prevents the container from seeing or signalling host processes. (Module 4)'},
+
+  {id:16,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'What do cgroups (control groups) limit in the context of Linux containers?',
+   opts:['What files the container can see.',
+         'How much CPU, memory, and I/O (Input/Output) a container can consume.',
+         'Which system calls the container can make.',
+         'What network ports the container can open.'],
+   ans:'B',exp:'Cgroups enforce resource budgets: CPU quota, memory limit, disk I/O rate, and PID count. Namespaces control visibility; cgroups control consumption. Syscall filtering is done by seccomp (secure computing mode). (Module 4)'},
+
+  {id:17,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'How does a container image\'s layered filesystem save disk space?',
+   opts:['It compresses all layers into a single file before writing to disk.',
+         'It stores only the difference from the previous layer; all containers sharing the same base layer use one copy on disk.',
+         'It uses a RAM (Random Access Memory) disk so nothing is written to the hard drive.',
+         'It deletes unchanged files after each build.'],
+   ans:'B',exp:'A Docker image is a stack of read-only layers. Each layer records only files changed by that Dockerfile instruction. When 10 containers use the same base image, the base layer exists once on disk. A thin writable layer on top is unique per running container. (Module 4)'},
+
+  {id:18,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which best describes the main advantage of containers over VMs (Virtual Machines) for microservice deployments?',
+   opts:['Containers provide stronger security isolation than VMs.',
+         'Containers start faster and use fewer resources because they share the host kernel.',
+         'Containers are immune to kernel vulnerabilities.',
+         'Containers can run Windows applications on a Linux host without modification.'],
+   ans:'B',exp:'Containers share the host kernel and do not emulate hardware, so they start in milliseconds and have much lower memory overhead than VMs. The trade-off: a kernel exploit can potentially affect all containers on the host. (Module 4)'},
+
+  {id:19,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'What is a Dockerfile?',
+   opts:['A runtime configuration file that stores container environment variables only.',
+         'A text file containing instructions that define how to build a container image layer by layer.',
+         'A binary executable that starts the container daemon.',
+         'A YAML file used by Kubernetes (K8s) to schedule containers.'],
+   ans:'B',exp:'A Dockerfile is a plain-text script of FROM, RUN, COPY, ENV, EXPOSE, CMD, and other instructions. Docker reads it top-to-bottom and produces an image with one read-only layer per instruction. (Module 4)'},
+
+  {id:20,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which company originally developed cgroups (control groups) and contributed them to the Linux kernel?',
+   opts:['Red Hat','Canonical','Google','IBM (International Business Machines)'],
+   ans:'C',exp:'Google engineers developed cgroups in 2006 (originally called "process containers") and merged them into the Linux kernel in version 2.6.24. cgroups v2 is the modern unified hierarchy standard in kernel 5.x+. (Module 4)'},
+
+  {id:21,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'What is PID 1 on a modern Linux system?',
+   opts:['The kernel itself.',
+         'The first user-space process, traditionally init and now typically systemd.',
+         'The shell that the administrator first logs in with.',
+         'The process manager for containerized workloads.'],
+   ans:'B',exp:'The Linux kernel spawns PID 1 immediately after boot. On virtually all modern distributions, PID 1 is systemd. It adopts orphaned processes and is the ancestor of every other user-space process. (Module 5)'},
+
+  {id:22,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'A process is in state "Z". What does this mean?',
+   opts:['It is actively using the CPU (Central Processing Unit).',
+         'It is waiting for a disk read to complete.',
+         'It has finished executing but its parent has not yet called wait() to collect its exit code.',
+         'It has been stopped by a SIGSTOP signal.'],
+   ans:'C',exp:'A Zombie (Z-state) process has terminated but occupies a process table entry because its parent has not yet reaped it. It consumes no CPU or memory but holds a PID slot. Zombie accumulation can exhaust the process table. (Module 5)'},
+
+  {id:23,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which signal should you try first when you want a process to terminate gracefully?',
+   opts:['SIGKILL (9)','SIGSTOP (19)','SIGTERM (15)','SIGHUP (1)'],
+   ans:'C',exp:'SIGTERM is the polite termination request. A well-written process catches it, flushes buffers, closes connections, and exits cleanly. SIGKILL cannot be caught and should only be used if SIGTERM is ignored after a reasonable timeout. (Module 5)'},
+
+  {id:24,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'What does the "nohup" command do?',
+   opts:['Prevents the process from receiving SIGTERM.',
+         'Makes the process immune to SIGHUP so it continues running after the user\'s session ends.',
+         'Runs the process with elevated (root) privileges.',
+         'Attaches the process to a new terminal.'],
+   ans:'B',exp:'When a user logs out, the kernel sends SIGHUP to all processes in the session. nohup wraps a command to ignore SIGHUP. Combined with & (background), it keeps a long-running task alive after logout. (Module 5)'},
+
+  {id:25,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'In a systemd unit file, what does "Restart=on-failure" mean?',
+   opts:['The service is restarted whenever it is stopped, including by systemctl stop.',
+         'The service is restarted only when it exits with a non-zero code or is killed by a signal.',
+         'The service is restarted at a fixed time every day.',
+         'The service is only restarted if another named unit fails.'],
+   ans:'B',exp:'"on-failure" restarts the service when it exits abnormally (non-zero exit code, unhandled signal). It does not restart on a clean exit (code 0) or when stopped intentionally with systemctl stop. This is the most common restart policy for production services. (Module 5)'},
+
+  {id:26,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'What is the difference between "systemctl stop" and "systemctl disable"?',
+   opts:['stop removes the service; disable pauses it.',
+         'stop immediately terminates the running service; disable prevents it from starting at boot but does not stop it now.',
+         'They are identical.',
+         'disable removes the unit file from disk.'],
+   ans:'B',exp:'"stop" sends SIGTERM to the service process and waits for it to exit — it affects the running state now. "disable" removes the symlink from the boot target, preventing auto-start on next reboot, but leaves the current session unaffected. (Module 5)'},
+
+  {id:27,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which command shows the live, scrolling log output of a systemd service called "api.service"?',
+   opts:['journalctl -u api.service -f','tail -f /var/log/api.log','ps aux | grep api','systemctl log api.service'],
+   ans:'A',exp:'journalctl -u api.service queries systemd\'s structured log (journald) filtered to the api.service unit. The -f flag follows the log in real time, equivalent to tail -f for traditional text logs. (Module 5)'},
+
+  {id:28,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'What is the SysV init system\'s major weakness compared to systemd?',
+   opts:['SysV init is too fast for modern hardware.',
+         'SysV init starts services sequentially in fixed order, leading to slow boot times; systemd starts services in parallel based on dependency declarations.',
+         'SysV init cannot manage network services.',
+         'SysV init does not support logging.'],
+   ans:'B',exp:'SysV init runs numbered shell scripts in a strict sequence. systemd builds a dependency graph and launches independent services simultaneously, dramatically reducing boot time on multi-core systems. (Module 5)'},
+
+  {id:29,ch:'Module 6 — Service Discovery',cm:'chapter-mod6',q:'In client-side service discovery, who is responsible for selecting a service instance from the registry?',
+   opts:['The service registry itself.',
+         'A dedicated load balancer external to the client.',
+         'The calling service (client).',
+         'The operating system kernel.'],
+   ans:'C',exp:'In client-side discovery, the calling service queries the registry, receives the list of healthy instances, and applies its own selection logic (e.g., round-robin, random). In server-side discovery, that responsibility is delegated to a load balancer or API gateway. (Module 6)'},
+
+  {id:30,ch:'Module 6 — Service Discovery',cm:'chapter-mod6',q:'Which service registry is embedded in every Kubernetes (K8s) control plane?',
+   opts:['HashiCorp Consul','Netflix Eureka','etcd','Apache ZooKeeper'],
+   ans:'C',exp:'etcd is the distributed key-value store that Kubernetes uses as its backing registry for all cluster state, including service endpoints. It is embedded in every Kubernetes control plane. (Module 6)'},
+
+  {id:31,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'Which load balancing algorithm is best suited for workloads where individual requests have very different processing times?',
+   opts:['Round-Robin','Random','IP Hash','Least Connections (Least-Conn)'],
+   ans:'D',exp:'Least-Conn routes each new request to whichever server currently has the fewest active connections. When request duration varies widely (e.g., fast reads vs. slow payment processing), this prevents long-running requests from piling up on one server. (Module 6)'},
+
+  {id:32,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'What is the main purpose of IP Hash load balancing?',
+   opts:['To randomly distribute traffic for maximum fairness.',
+         'To ensure that requests from the same client IP always reach the same back-end instance (session persistence).',
+         'To route traffic based on URL path.',
+         'To prefer servers with lower CPU (Central Processing Unit) usage.'],
+   ans:'B',exp:'IP Hash applies a hash function to the client\'s IP address to deterministically select a server. This provides session stickiness: a client always reaches the same server, important for applications that store session state locally. (Module 6)'},
+
+  {id:33,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'What does a reverse proxy do that a forward proxy does not?',
+   opts:['A reverse proxy caches responses; a forward proxy does not.',
+         'A reverse proxy sits in front of servers and routes inbound traffic to them; a forward proxy sits in front of clients and routes their outbound traffic.',
+         'A reverse proxy decrypts HTTPS; a forward proxy cannot.',
+         'They are the same thing with different names.'],
+   ans:'B',exp:'A forward proxy acts on behalf of clients (e.g., a corporate proxy). A reverse proxy acts on behalf of servers: it receives client requests, selects a back-end server, and returns the response. Clients interact only with the proxy\'s IP. (Module 6)'},
+
+  {id:34,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'Which Nginx directive defines a group of back-end servers for load balancing?',
+   opts:['server_pool','upstream','backend_group','cluster'],
+   ans:'B',exp:'In Nginx, the "upstream" block defines a named pool of back-end servers. You reference that pool name in a proxy_pass directive. Example: upstream myapp { server 10.0.0.1:8080; server 10.0.0.2:8080; } (Module 6)'},
+
+  {id:35,ch:'Module 6 — Service Discovery',cm:'chapter-mod6',q:'A service instance stops sending heartbeat signals to the registry. What happens?',
+   opts:['Nothing; the registry only updates on explicit deregistration calls.',
+         'The registry marks the instance as unhealthy and removes it from the pool of available instances.',
+         'The registry restarts the instance automatically.',
+         'The registry sends a SIGTERM signal to the instance.'],
+   ans:'B',exp:'Service registries use heartbeat TTLs (Time To Live): if an instance does not renew its registration within the TTL window, the registry expires the entry. Load balancers will no longer receive that instance\'s address. (Module 6)'},
+
+  {id:36,ch:'Module 6 — High Availability',cm:'chapter-mod6',q:'What does SPOF stand for and why is it important?',
+   opts:['Single Point of Failure — a component whose failure brings down the entire system.',
+         'Shortest Path of Forwarding — an optimised routing table entry.',
+         'Synchronised Protocol Overhead Factor — a metric for latency.',
+         'Service Port Offset Filter — a firewall rule class.'],
+   ans:'A',exp:'A SPOF (Single Point of Failure) is any component that, if it fails, causes the entire system to stop working. High-availability design aims to eliminate SPOFs through redundancy: multiple instances of each component so that no single failure is fatal. (Module 6)'},
+
+  {id:37,ch:'Module 6 — High Availability',cm:'chapter-mod6',q:'In Active-Passive HA (High Availability), what is the role of the passive node?',
+   opts:['It handles approximately 50% of live traffic.',
+         'It processes only read requests while the active node handles writes.',
+         'It stands by ready to take over if the active node fails, but handles no live traffic normally.',
+         'It performs health checks on the active node.'],
+   ans:'C',exp:'In Active-Passive HA, one primary node handles all traffic. The passive node replicates state from the primary but serves no live requests. If the primary fails, the passive is promoted (failover). The disadvantage: the passive node\'s capacity is wasted during normal operation. (Module 6)'},
+
+  {id:38,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'Which of the following is NOT a transparency type defined for distributed systems?',
+   opts:['Replication transparency','Failure transparency','Compilation transparency','Migration transparency'],
+   ans:'C',exp:'The standard transparency types are: access, location, migration, replication, concurrency, failure, performance, and scaling. "Compilation transparency" is not a defined concept in distributed-systems theory. (Module 1)'},
+
+  {id:39,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'What type of DNS record would you create to route mail for "university.edu" to "mail.university.edu"?',
+   opts:['A record','CNAME (Canonical Name) record','MX (Mail Exchange) record','TXT (Text) record'],
+   ans:'C',exp:'MX records specify the mail server(s) responsible for accepting email for a domain. The MX record for university.edu would point to mail.university.edu with a numeric priority value. (Module 2)'},
+
+  {id:40,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'What does "chmod 755 script.sh" set?',
+   opts:['Owner: read/write/execute; Group: read/execute; Others: read/execute',
+         'Owner: read/write; Group: read/write/execute; Others: execute only',
+         'Owner: full access; Group: write only; Others: no access',
+         'Everyone: read/write/execute'],
+   ans:'A',exp:'755 in octal = owner (7=rwx), group (5=r-x), others (5=r-x). Owner can read, write, and execute; group and others can read and execute but not write. The standard permission for scripts that should be runnable by all but modifiable only by the owner. (Module 3)'},
+
+  {id:41,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'What is the USER namespace in Linux containers primarily used for?',
+   opts:['To allow a container to create new system users.',
+         'To map root inside the container to an unprivileged user ID on the host, improving security.',
+         'To share the user database between container and host.',
+         'To grant the container access to host user home directories.'],
+   ans:'B',exp:'The USER namespace allows a container to have its own user and group ID mappings. A process appearing to be root (UID 0) inside the container is actually an unprivileged UID on the host. This greatly reduces the risk from container escapes. (Module 4)'},
+
+  {id:42,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which command would you use to find the PID (Process Identifier) of a process named "nginx" without using ps?',
+   opts:['locate nginx','find / -name nginx','pgrep nginx','which nginx'],
+   ans:'C',exp:'pgrep searches the process table by name and prints matching PIDs. It is faster and scriptable compared to piping ps through grep. pidof is another equivalent option: pidof nginx. (Module 5)'},
+
+  {id:43,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'What does "ps aux" display?',
+   opts:['Only processes belonging to the current user.',
+         'All processes on the system with CPU (Central Processing Unit) and memory usage, in BSD-style format.',
+         'Only kernel threads.',
+         'Processes sorted by memory usage.'],
+   ans:'B',exp:'ps aux shows all processes (a = all users, u = user-oriented output with CPU/memory, x = include processes without a terminal). It is the most common ps invocation for a quick system-wide process snapshot. (Module 5)'},
+
+  {id:44,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'HAProxy (High Availability Proxy) is best described as:',
+   opts:['A container orchestration platform.',
+         'A DNS (Domain Name System) authoritative server.',
+         'A high-performance TCP/HTTP load balancer and reverse proxy widely used for HA (High Availability) deployments.',
+         'A cloud-native serverless compute platform.'],
+   ans:'C',exp:'HAProxy is purpose-built for proxying and load balancing at Layer 4 (TCP) and Layer 7 (HTTP). It is known for very high throughput, rich health-check capabilities, detailed statistics, and zero-downtime reloads. See https://www.haproxy.org. (Module 6)'},
+
+  {id:45,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'The FHS (Filesystem Hierarchy Standard) specifies that runtime variable data (logs, spool files, transient state) lives in which directory?',
+   opts:['/etc','/opt','/var','/usr'],
+   ans:'C',exp:'/var (variable data) contains files whose content changes continuously during normal operation: system logs (/var/log), print spools (/var/spool), package databases (/var/lib), and caches (/var/cache). /etc holds configuration, /opt holds optional third-party software. (Module 1)'},
+];
+
+// ─── MSQ DATA (35 questions) ─────────────────────────────────────
+const msqs = [
+  {id:1,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'Which of the following are defining characteristics of a distributed system? (Select all that apply.)',
+   opts:['Concurrency of operations across multiple nodes','A single shared global clock for all nodes','Independent failures of individual components','Lack of shared physical memory between nodes','All nodes run identical software'],
+   ans:'A, C, D',exp:'The three core characteristics are concurrency (A), independent failures (C), and no shared memory (D). There is no global clock (B is false) and nodes do not need identical software (E is false). (Module 1)'},
+
+  {id:2,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'Which of the following are recognised transparency types in distributed systems?',
+   opts:['Location transparency','Compilation transparency','Replication transparency','Failure transparency','Bandwidth transparency'],
+   ans:'A, C, D',exp:'The standard ISO-recognised types include location, access, migration, replication, concurrency, failure, performance, and scaling transparencies. Compilation and bandwidth are not formal types. (Module 1)'},
+
+  {id:3,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'Which of the following are valid DNS (Domain Name System) record types?',
+   opts:['A','MX (Mail Exchange)','SQL','CNAME (Canonical Name)','AAAA'],
+   ans:'A, B, D, E',exp:'A, MX, CNAME, and AAAA are standard DNS record types. SQL is a database query language, not a DNS record type. Other valid types include TXT, NS, PTR, SRV, and SOA. (Module 2)'},
+
+  {id:4,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'Which properties should a well-designed naming system possess?',
+   opts:['Uniqueness within a namespace','Global write access for all users','Scalability to millions of names','Persistence of names over time','Efficiency in resolution speed'],
+   ans:'A, C, D, E',exp:'A good naming system must be unique (A), scalable (C), persistent (D), and efficient (E). Global write access (B) would allow anyone to modify any name — a severe security problem. (Module 2)'},
+
+  {id:5,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which files store identity-related information on a Linux system?',
+   opts:['/etc/passwd','/etc/hostname','/etc/shadow','/etc/group','/etc/resolv.conf'],
+   ans:'A, C, D',exp:'/etc/passwd (user accounts), /etc/shadow (hashed passwords), and /etc/group (group memberships) are the three identity files. /etc/hostname holds the system hostname; /etc/resolv.conf configures DNS resolver settings. (Module 3)'},
+
+  {id:6,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which of the following are correct characteristics of a Linux service account?',
+   opts:['No interactive login shell (set to /usr/sbin/nologin)','No password required for the account','Root (UID 0) privileges for all operations','Permissions scoped only to what the service needs','A home directory is optional and typically omitted'],
+   ans:'A, B, D, E',exp:'Service accounts are designed for automated processes: no login shell (A), no password (B), minimal permissions (D), and usually no home directory (E). They must NOT run as root (C violates Principle of Least Privilege). (Module 3)'},
+
+  {id:7,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which commands are used for disk management tasks on Linux?',
+   opts:['lsblk','fdisk','passwd','mkfs','lvextend'],
+   ans:'A, B, D, E',exp:'lsblk lists block devices, fdisk partitions disks, mkfs creates filesystems, and lvextend grows LVM (Logical Volume Manager) logical volumes. passwd changes user passwords and is unrelated to disk management. (Module 3)'},
+
+  {id:8,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which of the following are correct about POSIX (Portable Operating System Interface) ACLs (Access Control Lists) on Linux?',
+   opts:['They extend the traditional owner/group/other permission model','They are configured with getfacl and setfacl','They replace the traditional chmod command entirely','They allow permissions to be granted to specific named users or groups','They are stored as extended attributes on the filesystem'],
+   ans:'A, B, D, E',exp:'POSIX ACLs extend (not replace) the triad model (A), use getfacl/setfacl (B), can target arbitrary users/groups (D), and are stored in extended attributes (E). chmod still works alongside ACLs — it is not replaced. (Module 3)'},
+
+  {id:9,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which Linux kernel features do containers directly rely on?',
+   opts:['Namespaces','Cgroups (Control Groups)','Hypervisor API (Application Programming Interface)','eBPF (Extended Berkeley Packet Filter)','seccomp (Secure Computing Mode)'],
+   ans:'A, B',exp:'The two foundational primitives are namespaces (isolation of what the container sees) and cgroups (limits on what it consumes). Hypervisors are used by VMs (Virtual Machines). eBPF and seccomp are optional security/monitoring tools, not fundamental container requirements. (Module 4)'},
+
+  {id:10,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which namespace types are used in Linux containers?',
+   opts:['PID (Process ID)','NET (Network)','MNT (Mount)','CPU (Central Processing Unit)','UTS (UNIX Time-Sharing)'],
+   ans:'A, B, C, E',exp:'PID, NET, MNT, and UTS are among the six standard namespace types (also IPC and USER). CPU isolation is managed by cgroups, not a namespace. (Module 4)'},
+
+  {id:11,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which statements about container images are correct?',
+   opts:['An image is composed of stacked read-only layers','Each layer records only the changes from the layer below it','Running containers share the same writable layer','The base layer is specified with a FROM instruction in a Dockerfile','Images are immutable once built'],
+   ans:'A, B, D, E',exp:'Images are layered (A), each layer is a delta (B), the base is specified by FROM (D), and built images are immutable (E). Running containers each have their own unique writable layer — they do NOT share it (C is false). (Module 4)'},
+
+  {id:12,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which of the following are public or cloud-hosted container registries?',
+   opts:['Docker Hub','AWS ECR (Elastic Container Registry)','GitHub','Apache ZooKeeper','Google Artifact Registry'],
+   ans:'A, B, E',exp:'Docker Hub, AWS ECR, and Google Artifact Registry are container image registries. GitHub is a code repository (though GitHub Container Registry is a separate feature). Apache ZooKeeper is a distributed coordination service, not a registry. (Module 4)'},
+
+  {id:13,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which of the following are valid Linux process states?',
+   opts:['R (Running)','Z (Zombie)','X (eXecuting)','D (Uninterruptible Sleep)','S (Interruptible Sleep)'],
+   ans:'A, B, D, E',exp:'The standard Linux process states are R, S, D, T (Stopped), and Z. X is not a standard process state flag in the Linux kernel. (Module 5)'},
+
+  {id:14,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which signals can a process catch and handle?',
+   opts:['SIGTERM (15)','SIGKILL (9)','SIGHUP (1)','SIGINT (2)','SIGSTOP (19)'],
+   ans:'A, C, D',exp:'SIGTERM, SIGHUP, and SIGINT can all be caught and handled by a signal handler in the application code. SIGKILL (9) and SIGSTOP (19) are special: the kernel delivers them directly and the process cannot intercept or ignore them. (Module 5)'},
+
+  {id:15,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which of the following are valid systemd unit file types?',
+   opts:['.service','.timer','.socket','.conf','.target'],
+   ans:'A, B, C, E',exp:'systemd manages .service (daemon), .timer (scheduler), .socket (socket activation), .target (dependency group), .mount, .device, and others. .conf is a generic configuration file extension, not a unit type. (Module 5)'},
+
+  {id:16,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which "systemctl" sub-commands are commonly used to manage services?',
+   opts:['start','compile','enable','daemon-reload','status'],
+   ans:'A, C, D, E',exp:'start, enable, daemon-reload, and status are core systemctl operations. "compile" is not a systemctl sub-command. daemon-reload is important after editing a unit file — it tells systemd to re-read unit definitions from disk. (Module 5)'},
+
+  {id:17,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'What advantages does systemd have over the traditional SysV init?',
+   opts:['Parallel service start-up based on declared dependencies','Structured logging via journald','Mandatory use of shell scripts for all service definitions','On-demand service activation via socket and device triggers','Built-in service watchdog and restart capability'],
+   ans:'A, B, D, E',exp:'systemd starts services in parallel (A), logs to a structured journal (B), supports socket and device activation (D), and can restart crashed services automatically (E). systemd replaces shell scripts with declarative unit files — they are not mandatory (C is false). (Module 5)'},
+
+  {id:18,ch:'Module 6 — Service Discovery',cm:'chapter-mod6',q:'Which are examples of service registry tools?',
+   opts:['HashiCorp Consul','Nginx (Engine-X)','Apache ZooKeeper','Netflix Eureka','etcd'],
+   ans:'A, C, D, E',exp:'Consul, ZooKeeper, Netflix Eureka, and etcd are all service registries / distributed coordination services. Nginx is a web server and reverse proxy, not a service registry. (Module 6)'},
+
+  {id:19,ch:'Module 6 — Service Discovery',cm:'chapter-mod6',q:'Which are correct statements about DNS (Domain Name System)-based service discovery?',
+   opts:['It is one of the oldest and simplest discovery mechanisms','DNS caching can delay updates when service instances change','It requires a dedicated service registry daemon on every node','A single hostname can resolve to multiple IP addresses','It is immune to stale data because DNS never caches records'],
+   ans:'A, B, D',exp:'DNS-based discovery is simple and long-established (A). Resolvers cache answers per TTL, so updates propagate slowly (B). A round-robin DNS record can list multiple IPs for one hostname (D). It does NOT require a daemon on every node (C is false), and DNS absolutely does cache records (E is false). (Module 6)'},
+
+  {id:20,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'Which load balancing algorithms are described in the course material?',
+   opts:['Round-Robin','Least Connections (Least-Conn)','IP Hash','Deep Packet Inspection','Weighted Round-Robin'],
+   ans:'A, B, C, E',exp:'Round-Robin, Least-Conn, IP Hash, and Weighted Round-Robin are standard load balancing algorithms covered in Module 6. Deep Packet Inspection (DPI) is a network security/monitoring technique, not a load balancing algorithm. (Module 6)'},
+
+  {id:21,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'Which of the following are functions a reverse proxy typically provides?',
+   opts:['TLS (Transport Layer Security) termination','Response caching','Client-side JavaScript execution','Rate limiting','Compression of responses'],
+   ans:'A, B, D, E',exp:'Reverse proxies like Nginx handle TLS termination (A), can cache backend responses (B), enforce rate limits (D), and compress responses (E). JavaScript execution happens in the browser, not the proxy (C is false). (Module 6)'},
+
+  {id:22,ch:'Module 6 — High Availability',cm:'chapter-mod6',q:'Which of the following contribute to a High Availability (HA) architecture?',
+   opts:['Eliminating SPOFs (Single Points of Failure)','Automated health checks with failover','Running all services on one large server','Geographic redundancy across data centres','Active-Active or Active-Passive node configurations'],
+   ans:'A, B, D, E',exp:'HA is achieved by removing SPOFs (A), using health-check-driven failover (B), distributing across locations (D), and deploying redundant configurations (E). Running everything on one server creates a SPOF and is the antithesis of HA (C is false). (Module 6)'},
+
+  {id:23,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'Which of the following are real-world examples of distributed systems?',
+   opts:['A standalone desktop calculator application','The global DNS (Domain Name System) infrastructure','A streaming platform such as Netflix','A distributed database cluster','A single-user offline word processor'],
+   ans:'B, C, D',exp:'DNS (B), Netflix (C), and distributed database clusters (D) are all distributed systems. A standalone calculator and an offline word processor run on a single computer with no network communication. (Module 1)'},
+
+  {id:24,ch:'Module 2 — Naming Services',cm:'chapter-mod2',q:'Which of the following are true about LDAP (Lightweight Directory Access Protocol)?',
+   opts:['It organises entries in a tree structure called the DIT (Directory Information Tree)','It uses DNs (Distinguished Names) to uniquely identify entries','It is primarily used to manage load balancing rules','It is the protocol underlying Microsoft Active Directory','It is an open, vendor-neutral standard'],
+   ans:'A, B, D, E',exp:'LDAP uses a DIT tree (A), DNs for unique identification (B), is the basis for Active Directory (D), and is vendor-neutral (E). It has nothing to do with load balancing (C is false). (Module 2)'},
+
+  {id:25,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which commands can display active network connections and listening ports on a Linux system?',
+   opts:['ss -tlnp','netstat -tulnp','ip route','nmap','df -h'],
+   ans:'A, B',exp:'ss and netstat both show socket statistics including listening TCP/UDP ports. ip route shows the routing table, not active connections. nmap is an external port scanner. df -h shows disk usage. (Module 3)'},
+
+  {id:26,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which of the following describe differences between containers and VMs (Virtual Machines)?',
+   opts:['Containers share the host OS (Operating System) kernel; VMs each run their own kernel','Containers start faster than VMs','VMs provide stronger isolation boundaries than containers','Containers can only run on Linux hosts','Containers use less memory than VMs for the same workload'],
+   ans:'A, B, C, E',exp:'Containers share the host kernel (A), start in milliseconds vs. seconds/minutes for VMs (B), VMs have stronger isolation because of the hypervisor boundary (C), and containers use less memory (E). Containers can run on Windows and macOS via a lightweight Linux VM layer — not Linux-only (D is false). (Module 4)'},
+
+  {id:27,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which of the following tools provide real-time process monitoring?',
+   opts:['top','htop','journalctl','ps aux','grep'],
+   ans:'A, B',exp:'top and htop provide live, continuously updating process lists with CPU and memory usage. journalctl reads system logs. ps aux takes a static snapshot (not real-time). grep is a text search tool. (Module 5)'},
+
+  {id:28,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which of the following are correct about job control in the Bash shell?',
+   opts:['bg resumes a stopped job in the background','fg brings a background job to the foreground','jobs lists all current shell jobs','& at the end of a command runs it in the foreground','nohup prevents a process from receiving SIGHUP'],
+   ans:'A, B, C, E',exp:'bg, fg, jobs, and nohup are all job control tools. The & operator runs a command in the background, not the foreground (D is false). (Module 5)'},
+
+  {id:29,ch:'Module 6 — Service Discovery',cm:'chapter-mod6',q:'Which statements about health checks in a load balancing setup are correct?',
+   opts:['They are periodic probes sent by the load balancer to back-end instances','A failed health check immediately and permanently removes an instance from the pool','HTTP, TCP, and custom script checks are common probe types','An instance can be re-added to the pool after it passes health checks again','Health checks eliminate the need for logging'],
+   ans:'A, C, D',exp:'Health checks are periodic (A), support multiple probe types (C), and support automatic recovery (D). A failed check does NOT permanently remove an instance — it re-enters rotation when it recovers (B is false). Health checks do not replace logging (E is false). (Module 6)'},
+
+  {id:30,ch:'Module 6 — High Availability',cm:'chapter-mod6',q:'Which SLA (Service Level Agreement) values represent valid industry uptime targets?',
+   opts:['99.9% ("three nines" — ~8.7 hours downtime/year)','99.99% ("four nines" — ~52 minutes downtime/year)','100% (complete availability)','99.999% ("five nines" — ~5 minutes downtime/year)','50% (half the year available)'],
+   ans:'A, B, D',exp:'Three nines (A), four nines (B), and five nines (D) are standard industry SLA targets. 100% uptime (C) is theoretically impossible — maintenance and unexpected failures always consume some availability. 50% (E) would be catastrophically poor for any production service. (Module 6)'},
+
+  {id:31,ch:'Module 3 — Linux SysAdmin',cm:'chapter-mod3',q:'Which LVM (Logical Volume Manager) components form the correct hierarchy?',
+   opts:['PV (Physical Volume)','VG (Volume Group)','LV (Logical Volume)','FS (Filesystem)','MBR (Master Boot Record)'],
+   ans:'A, B, C',exp:'LVM\'s three-level hierarchy is: Physical Volumes (raw disks/partitions) → Volume Groups (pools) → Logical Volumes (virtual partitions). A filesystem is created on top of an LV but is not part of LVM itself. MBR is a disk partition table format, not an LVM concept. (Module 3)'},
+
+  {id:32,ch:'Module 4 — Containerization',cm:'chapter-mod4',q:'Which cgroups (control groups) resource controllers are mentioned in the course material?',
+   opts:['CPU quota','Memory limit','Disk I/O (Input/Output) throttling','Screen resolution limit','PID (Process Identifier) count limit'],
+   ans:'A, B, C, E',exp:'cgroups can limit CPU (A), memory (B), disk I/O (C), and the number of processes via PID limits (E). Screen resolution is a display/GPU concern completely unrelated to cgroups. (Module 4)'},
+
+  {id:33,ch:'Module 1 — Fundamentals',cm:'chapter-mod1',q:'Which of the following are correct about the Linux FHS (Filesystem Hierarchy Standard)?',
+   opts:['/etc contains system configuration files','/var contains variable runtime data such as logs','/proc is a virtual filesystem exposing live kernel information','/home is the standard directory for third-party optional software','/bin contains essential user command binaries'],
+   ans:'A, B, C, E',exp:'/etc (A), /var (B), /proc (C), and /bin (E) are all correct per the FHS. /opt is the standard location for optional third-party software — /home contains user home directories (D is false). (Module 1)'},
+
+  {id:34,ch:'Module 5 — Process Management',cm:'chapter-mod5',q:'Which of the following are correct about zombie processes?',
+   opts:['They have completed execution','They consume significant CPU resources','Their parent process has not yet called wait() to reap them','They occupy an entry in the kernel process table','They can be killed with SIGKILL (9)'],
+   ans:'A, C, D',exp:'Zombie processes have finished (A), wait for their parent to collect the exit status (C), and hold a process table entry (D). They consume no CPU or memory (B is false). SIGKILL cannot kill a zombie — there is no running context to receive the signal (E is false). (Module 5)'},
+
+  {id:35,ch:'Module 6 — Load Balancing',cm:'chapter-mod6',q:'Which of the following are responsibilities of a service registry?',
+   opts:['Storing the IP address and port of each running service instance','Removing instances that stop sending heartbeat signals','Managing DNS (Domain Name System) root zone files','Providing a queryable API (Application Programming Interface) for service discovery','Compiling application source code'],
+   ans:'A, B, D',exp:'A service registry stores instance addresses (A), expires entries for unhealthy instances (B), and exposes a query API (D). It does not manage DNS root zones (C) or build software (E). (Module 6)'},
+];
+
+// ─── ESSAY DATA (20 questions) ───────────────────────────────────
+const essays = [
+  {id:1,ch:'Module 1 — Fundamentals',q:'Define a distributed system and explain, using a concrete real-world example, why "lack of a global clock" is a fundamental challenge.',
+   ans:`A distributed system is a set of independent computers that communicate solely by message passing over a network and present themselves to users as a single unified system.
+
+The "lack of a global clock" means every node tracks time with its own hardware oscillator. Hardware clocks drift at different rates — even GPS-disciplined NTP (Network Time Protocol) servers leave residual drift of a few milliseconds. In a payment processing system spanning two data centres, Node A might record a purchase at 14:00:00.005 and Node B might record the subsequent refund at 14:00:00.002. If these timestamps are taken at face value, the refund appears to precede the purchase — an ordering violation.
+
+The standard engineering response is to use logical clocks (Lamport timestamps) or vector clocks, which assign a causal counter to each event independent of wall-clock time. If event A causes event B, then the logical timestamp of A is strictly less than B, regardless of what the hardware clocks show. NTP reduces drift to acceptable levels for most applications but cannot eliminate it; logical clocks provide a deterministic causal guarantee.`},
+
+  {id:2,ch:'Module 1 — Fundamentals',q:'Compare the Client-Server and Peer-to-Peer (P2P) architectural models. Under what circumstances would you choose each?',
+   ans:`In the Client-Server model a clear asymmetry exists: the server is a passive, always-on provider; clients initiate requests. Administration is centralised — one team manages server infrastructure. Web applications, email systems, and databases are classic examples.
+
+In the Peer-to-Peer (P2P) model every node is simultaneously a client and a server. There is no central authority. Nodes contribute resources as they consume them. Resilience is high: losing any single node has minimal impact. Coordination overhead is higher because there is no central authority.
+
+Choose Client-Server when you need: centralised control and audit, consistent data views, simple deployment, and you can guarantee server availability. Enterprise applications, banking systems, and content management fit here.
+
+Choose P2P when you need: extreme resilience to node failure, massive scale without proportional server cost, geographic distribution, or censorship resistance. File-sharing (BitTorrent), blockchain (Bitcoin), and CDN (Content Delivery Network) edge networks favour P2P patterns. Many modern systems combine both: a central discovery service with P2P data transfer once peers are introduced.`},
+
+  {id:3,ch:'Module 2 — Naming Services',q:'Explain how DNS (Domain Name System) resolution works step by step, from the moment a user types a URL into a browser until the browser connects to the correct web server.',
+   ans:`When a user types www.example.com into a browser:
+
+1. The browser checks its own DNS cache. If a valid record exists, the lookup ends here.
+2. If not cached, the OS (Operating System) asks the local recursive resolver (configured in /etc/resolv.conf — typically provided by the ISP or a public resolver like 8.8.8.8).
+3. The recursive resolver checks its own cache. If empty, it contacts a DNS root server cluster (operated by organisations including ICANN — see https://www.icann.org) and asks "Where is .com?"
+4. A root server responds with the address of the .com TLD (Top-Level Domain) server.
+5. The resolver asks the .com TLD server "Where is example.com?"
+6. The TLD server responds with the address of example.com's authoritative name server.
+7. The resolver asks the authoritative server "What is the IP address of www.example.com?"
+8. The authoritative server returns an A record with the IP address and a TTL (Time To Live) value.
+9. The resolver caches the record and returns the IP to the user's OS.
+10. The browser opens a TCP connection to that IP address.
+
+The entire process typically completes in under 100 ms for a warm resolver cache.`},
+
+  {id:4,ch:'Module 2 — Naming Services',q:'What is LDAP (Lightweight Directory Access Protocol) and how does it enable centralised authentication in an enterprise with hundreds of Linux servers?',
+   ans:`LDAP (Lightweight Directory Access Protocol) is a vendor-neutral, open-standard protocol for querying and modifying directory services over TCP/IP. It organises directory entries in a tree called the DIT (Directory Information Tree). Each entry has a DN (Distinguished Name) like cn=alice,ou=People,dc=company,dc=com.
+
+In an enterprise with hundreds of Linux servers, without LDAP every new employee requires a local account on every server. With central LDAP (OpenLDAP or AWS Directory Service):
+
+1. One LDAP entry per employee contains their username, UID (User Identifier), GID (Group Identifier), shell, home directory, and hashed password.
+2. Each Linux server is configured via nsswitch.conf to query LDAP for user/group lookups in addition to local files.
+3. PAM (Pluggable Authentication Modules) is configured to authenticate against the LDAP password attribute.
+4. Home directories are created automatically on first login with pam_mkhomedir.so.
+
+Results: creating one LDAP entry provisions access to all servers. Deleting it revokes access everywhere instantly. Groups in LDAP can restrict access to specific servers, satisfying the Principle of Least Privilege at fleet scale.`},
+
+  {id:5,ch:'Module 3 — Linux SysAdmin',q:'Explain the Principle of Least Privilege as it applies to Linux service accounts. Use a web server example to illustrate what could go wrong without it and how to implement it correctly.',
+   ans:`The Principle of Least Privilege states that every process should operate with only the minimum access rights needed to perform its legitimate function.
+
+Without this principle, a web server like Nginx running as root has unrestricted access to the entire filesystem, all network ports, and every system call. If an attacker exploits a vulnerability, they gain a root shell and can install malware, read credential files, or pivot to other systems.
+
+Correct implementation:
+1. Create a dedicated service account:
+   useradd --system --no-create-home --shell /usr/sbin/nologin www-data
+
+2. Assign only the web content directories to this user:
+   chown -R www-data:www-data /var/www
+
+3. Use Linux capabilities instead of root for privileged operations:
+   setcap cap_net_bind_service=+ep /usr/sbin/nginx
+   (Allows binding to port 80 without full root privileges)
+
+4. Configure the systemd unit with User=www-data and PrivateTmp=yes.
+
+5. Optionally use seccomp (Secure Computing Mode) profiles to restrict system calls.
+
+A compromised www-data process can read files in /var/www — not the rest of the machine.`},
+
+  {id:6,ch:'Module 3 — Linux SysAdmin',q:'Describe the LVM (Logical Volume Manager) architecture and explain why it is preferred over traditional static partitioning for distributed system servers.',
+   ans:`LVM introduces an abstraction layer between physical storage and the filesystems that use it, operating in three levels:
+
+1. PVs (Physical Volumes) — Raw block devices (disks or partitions) initialised with pvcreate.
+2. VGs (Volume Groups) — One or more PVs pooled together with vgcreate. A VG is a reservoir of storage capacity.
+3. LVs (Logical Volumes) — Virtual partitions carved from a VG with lvcreate. Create a filesystem on an LV with mkfs and mount it normally.
+
+Advantages over static partitioning in a distributed server context:
+
+• Online resizing: An LV can be extended (lvextend + resize2fs or xfs_growfs) while the filesystem is mounted and the server is live. Static partitions cannot be resized without unmounting.
+• Snapshots: LVM creates point-in-time copy-on-write snapshots of an LV in seconds, enabling consistent backups without downtime.
+• Thin provisioning: Storage allocated on demand rather than upfront, improving utilisation across many nodes.
+• Flexibility: A VG can span multiple physical disks; adding a disk means pvcreate + vgextend + lvextend — no data migration needed.
+
+These properties are essential in distributed environments where storage demands are hard to predict at provisioning time.`},
+
+  {id:7,ch:'Module 4 — Containerization',q:'What problem do Linux namespaces solve, and what problem do cgroups (control groups) solve? Why are both needed to build a functional container?',
+   ans:`Namespaces and cgroups solve two orthogonal problems:
+
+Namespaces answer "What can this process see?" by creating isolated views of system resources. A process inside a PID (Process Identifier) namespace believes it is the only process tree on the machine. NET (Network) namespace: each container has its own IP address and routing table. MNT (Mount) namespace: its own filesystem tree. Without namespaces, all processes on a host would see and potentially interfere with each other's process lists, network stacks, and filesystems.
+
+Cgroups answer "How much can this process use?" by enforcing resource budgets. A process group can be limited to 2 CPU cores, 512 MB of RAM (Random Access Memory), 100 MB/s of disk I/O, and a maximum of 256 child processes. Without cgroups, a single misbehaving container could consume all CPU cycles on the host, starving every other workload.
+
+Both are needed because:
+• Isolation without resource limits: a namespace-isolated process could still eat all the host's RAM and crash every other container.
+• Resource limits without isolation: a resource-limited process could still read another process's files if namespace boundaries are absent.
+
+Together, namespaces + cgroups define what a container is at the kernel level.`},
+
+  {id:8,ch:'Module 4 — Containerization',q:'Explain the concept of a container image registry. Why are private registries preferred over public ones in enterprise environments?',
+   ans:`A container image registry is a server that stores, manages, and distributes container images. It operates like a package repository: developers push images with docker push; servers pull them with docker pull. Docker Hub (https://hub.docker.com) is the default public registry.
+
+Private registries (AWS ECR, Google Artifact Registry, or self-hosted Harbor — see https://goharbor.io) are preferred in enterprise environments for several reasons:
+
+1. Security: Images are stored behind authentication. Public registries expose images to anyone; private registries restrict pull/push to authorised principals.
+
+2. Compliance: Regulated industries (healthcare, finance) must control where data resides. A private registry can be deployed in a specific geographic region to satisfy data sovereignty requirements.
+
+3. Vulnerability scanning: Enterprise registries integrate with scanners like Trivy (https://trivy.dev) to reject images containing known CVEs (Common Vulnerabilities and Exposures) before they reach production.
+
+4. Network efficiency: A registry within the same data centre means image pulls traverse the internal network at full speed rather than consuming expensive internet bandwidth.
+
+5. Tag immutability: Enterprise registries can prevent overwriting a production tag with an untested image.`},
+
+  {id:9,ch:'Module 5 — Process Management',q:'Describe the complete lifecycle of a Linux process, from creation to termination, including the significance of zombie processes in distributed systems.',
+   ans:`A Linux process is born through the fork() system call: the kernel clones the calling process, creating a child with a new PID (Process Identifier). The child calls exec() to load a new program image. The child has its own address space and file descriptor table, though it shares read-only memory pages with the parent until either modifies them (copy-on-write).
+
+During its life a process moves through states: RUNNING (R) when scheduled on a CPU, SLEEPING (S or D) when waiting for events or I/O (Input/Output), and STOPPED (T) if paused by a signal or debugger.
+
+Termination occurs when the process calls exit() or receives an unhandled signal. At this point it enters the ZOMBIE (Z) state. The process has released all its memory and closed all file descriptors, but its process table entry persists — holding one piece of information: the exit status code. The parent must call wait() or waitpid() to collect this code, at which point the kernel removes the entry.
+
+In distributed systems, zombie accumulation is a serious hazard. An orchestrator that forks thousands of short-lived worker tasks without reaping them will eventually fill the process table. The kernel cannot create new processes once the table is full, causing the entire application to fail. The fix: correct SIGCHLD signal handling, double-fork technique, or using tini as PID 1 inside containers.`},
+
+  {id:10,ch:'Module 5 — Process Management',q:'What is systemd and how does it improve on SysV init? Explain the role of unit files, targets, and journald in a production Linux environment.',
+   ans:`systemd is the init system (PID 1) for virtually all modern Linux distributions. It replaced SysV init, which started services by executing numbered shell scripts sequentially — slow (each service waited for the previous), fragile (a failing script could stall the entire boot), and lacking standardised service management.
+
+Unit files are declarative INI-style configuration files. A .service unit specifies the executable, the user it runs under, restart behaviour, and dependency relationships (After=network.target, Requires=postgresql.service). systemd reads all unit files, builds a dependency graph, and launches independent units in parallel.
+
+Targets are named groups of units corresponding to system states: multi-user.target is the normal text-mode multi-user state; graphical.target adds a display manager. They replace SysV runlevels with a more expressive dependency model.
+
+journald is systemd's structured logging subsystem. Unlike traditional text logs, journal entries are binary, indexed, and carry metadata (unit name, PID, UID, priority). Query with:
+• journalctl -u api.service -f  → follow a service's log in real time
+• journalctl --since '1 hour ago' → recent entries
+• journalctl -p err → only error-priority messages
+
+This structured approach makes log analysis in large distributed deployments far more tractable than grep-ing through plain-text files.`},
+
+  {id:11,ch:'Module 6 — Service Discovery',q:'Explain the difference between client-side and server-side service discovery. Give a real-world technology example for each.',
+   ans:`In client-side service discovery the calling service (client) is responsible for locating a target service. It queries a service registry directly (via HTTP API), receives a list of healthy instance addresses, and selects one using a local load balancing algorithm.
+
+Example: Netflix Eureka (https://github.com/Netflix/eureka). Netflix's microservices use a client library (Ribbon) that polls Eureka for instance lists and performs client-side round-robin selection.
+
+In server-side discovery the calling service sends its request to a load balancer or API (Application Programming Interface) gateway. That intermediary consults the registry, selects a healthy back-end instance, and forwards the request. The client never sees the registry or back-end addresses.
+
+Example: Kubernetes (K8s) Service objects. A Service provides a stable virtual ClusterIP; kube-proxy or eBPF rules translate that IP to a real pod IP from the endpoint list maintained by kube-apiserver.
+
+Trade-offs:
+• Client-side gives each service team control over selection logic but requires every client to embed a registry client library.
+• Server-side centralises that complexity and keeps clients simple, but introduces the load balancer as a potential bottleneck or SPOF (Single Point of Failure) if not made redundant.`},
+
+  {id:12,ch:'Module 6 — Service Discovery',q:'Describe Round-Robin and Least Connections load balancing algorithms. When would you choose one over the other?',
+   ans:`Round-Robin distributes requests in strict rotation: request 1 → server A, request 2 → server B, request 3 → server C, request 4 → server A again. Every server receives an equal number of requests over time, regardless of how long each takes to process. It is the simplest algorithm with minimal overhead.
+
+Least Connections (Least-Conn) routes each new request to whichever server currently has the fewest active (open) connections. It is dynamic: as server loads fluctuate, the algorithm compensates automatically.
+
+Choose Round-Robin when:
+• Requests are short and homogeneous (e.g., static file serving, simple API calls with similar processing costs).
+• All servers have equivalent capacity.
+• The overhead of tracking connection counts is unnecessary.
+
+Choose Least-Conn when:
+• Request processing time varies significantly (e.g., a mix of fast reads and slow writes; an e-commerce site where browsing is fast but checkout triggers slow payment processing).
+• Some servers are slower due to hardware differences.
+
+Without Least-Conn in heterogeneous workloads, fast servers finish requests quickly and accumulate new ones while slow servers are still processing older requests, eventually causing overload on the fast servers.`},
+
+  {id:13,ch:'Module 6 — Service Discovery',q:'Explain what a health check is in the context of load balancing, and describe how automated failover protects a high-traffic application.',
+   ans:`A health check is a periodic probe sent by a load balancer to each registered back-end instance to verify it is alive and capable of serving requests. Common probe types: HTTP (GET /health returns 200 OK), TCP (successful three-way handshake), and custom scripts (testing application-layer conditions like database connectivity).
+
+Configuration typically specifies: probe interval (e.g., every 5 seconds), failure threshold (e.g., 3 consecutive failures → mark unhealthy), and recovery threshold (e.g., 2 consecutive successes → re-enter rotation).
+
+Automated failover in action: Suppose a web application runs on three servers behind Nginx. Server B develops a memory leak and starts returning 503 errors. At the next health check, Nginx records one failure; after three failures (15 seconds at 5-second intervals), Nginx removes Server B from the upstream pool. All subsequent requests are distributed between Servers A and C. Users experience no downtime — only a small number of in-flight requests to Server B during the failure window may fail.
+
+When the operator restarts Server B and its /health endpoint begins returning 200 OK, Nginx's recovery threshold is met and Server B automatically re-enters the rotation — no manual intervention, no deployment needed.`},
+
+  {id:14,ch:'Module 4 — Containerization',q:'Explain what a Dockerfile is, describe at least five common instructions, and explain how image layering affects build times.',
+   ans:`A Dockerfile is a plain-text script that describes the steps Docker should follow to build a container image. Each line is an instruction; Docker executes them in order and produces one read-only image layer per instruction.
+
+Five common Dockerfile instructions:
+1. FROM — Specifies the base image (e.g., FROM python:3.12-slim). Every Dockerfile starts with FROM.
+2. RUN — Executes a shell command during the build (e.g., RUN apt-get install -y curl). Creates a new layer.
+3. COPY — Copies files from the build context into the image. Preferred over ADD for simple file copies.
+4. ENV — Sets environment variables that persist into running containers (e.g., ENV PORT=8080).
+5. CMD / ENTRYPOINT — Defines the default command when the container starts. CMD can be overridden at runtime; ENTRYPOINT cannot.
+
+Image layering and build caching: Docker caches each layer keyed to the instruction and its inputs. If you change a RUN instruction midway through a Dockerfile, only that layer and all layers below it are rebuilt; layers above the changed instruction are served from cache.
+
+This means layer order matters: place infrequently changed instructions (installing OS packages) BEFORE frequently changed ones (copying application code) to maximise cache reuse and minimise build time. A poorly ordered Dockerfile can turn a 30-second build into a 10-minute one on every code change.`},
+
+  {id:15,ch:'Module 3 — Linux SysAdmin',q:'Describe the differences between "apt" and "dnf" package managers. What are the commands to install, update, and remove a package on each?',
+   ans:`apt (Advanced Package Tool) is the package manager for Debian-based distributions such as Ubuntu, Debian, and Linux Mint. dnf (Dandified YUM — Yellowdog Updater Modified) is for Red Hat-based distributions including RHEL (Red Hat Enterprise Linux — see https://www.redhat.com), Fedora, CentOS Stream, and AlmaLinux.
+
+Both resolve and install dependencies automatically, but their repository formats, metadata structures, and configuration paths differ.
+
+apt commands:
+  sudo apt update           # Update package index from repositories
+  sudo apt install nginx    # Install a package
+  sudo apt upgrade          # Upgrade all installed packages
+  sudo apt remove nginx     # Remove a package (keep config files)
+  sudo apt purge nginx      # Remove a package AND its configuration
+
+dnf commands:
+  sudo dnf check-update     # Check for available updates
+  sudo dnf install nginx    # Install a package
+  sudo dnf upgrade          # Upgrade all installed packages
+  sudo dnf remove nginx     # Remove a package
+
+Key differences:
+• Repository format: apt uses .deb packages; dnf uses .rpm packages.
+• Configuration: apt reads /etc/apt/sources.list; dnf reads /etc/yum.repos.d/.
+• Transaction history: dnf provides "dnf history" and "dnf history undo <id>" to roll back package changes — a feature apt lacks natively.`},
+
+  {id:16,ch:'Module 1 — Fundamentals',q:'What is concurrency in a distributed system? How does it differ from parallelism, and why can concurrent execution lead to race conditions?',
+   ans:`Concurrency means that multiple components are in progress simultaneously, making forward progress on their respective tasks, though they may not be executing at the exact same physical instant. When you upload a photo to a social platform, multiple microservices may be handling different aspects at overlapping times: one compresses the image, another updates your storage quota, a third sends a push notification.
+
+Parallelism specifically means multiple computations executing at the exact same physical instant on separate CPU cores or machines. Concurrency is a structural property (tasks logically overlap); parallelism is an execution property (they run simultaneously on separate hardware).
+
+Concurrent execution leads to race conditions when two or more processes access a shared resource without proper synchronisation, and the final result depends on the relative timing of their operations. In a distributed system, a classic example: two servers both read a bank balance ($500), both decide to debit $400, and both write back $100. The correct final balance should reflect both debits, but due to the race, $100 is written twice.
+
+Mitigation strategies include: distributed locks (e.g., using Redis SETNX or a Consul lock), optimistic concurrency control (read a version number, write only if the version has not changed), and database transactions with serialisable isolation levels. The CAP (Consistency-Availability-Partition Tolerance) theorem governs the fundamental trade-offs.`},
+
+  {id:17,ch:'Module 2 — Naming Services',q:'What is the difference between recursive and iterative DNS resolution? Which type does your computer typically use and why?',
+   ans:`In iterative DNS resolution the client (resolver) does all the work. It contacts a root server, receives a referral to the appropriate TLD (Top-Level Domain) server, contacts that server, receives another referral, and continues until it reaches an authoritative server that provides the final answer. Each step returns "I don't know, but try this server." The client must implement the full resolution loop.
+
+In recursive DNS resolution the client hands the query to a resolver and waits for a complete answer. The resolver performs all the iterative steps on the client's behalf and returns either the final IP address or an error. The client sees one request and one response.
+
+Most computers use recursive resolution — they send queries to a local stub resolver (e.g., systemd-resolved or the ISP's resolver configured in /etc/resolv.conf), and that resolver does the iterative work. This has two advantages:
+
+1. Caching: The recursive resolver caches answers per TTL. Millions of users sharing a resolver share a warm cache, drastically reducing query latency and load on authoritative servers.
+2. Simplicity: The client application needs no knowledge of the DNS hierarchy — it asks one server and waits.
+
+The iterative model is used between resolvers in the DNS hierarchy itself — root servers respond iteratively to recursive resolvers.`},
+
+  {id:18,ch:'Module 5 — Process Management',q:'Explain the role of signals in Linux process management. Give three practical examples of how signals are used in distributed application deployments.',
+   ans:`Signals are asynchronous notifications sent from the kernel, or from one process to another, to indicate that a specific event has occurred. The receiving process can define a signal handler (a function called when the signal arrives), ignore the signal, or let the kernel apply the default action (which for most signals is termination).
+
+Three practical examples in distributed deployments:
+
+1. Graceful shutdown (SIGTERM): When a Kubernetes (K8s) pod is removed, Kubernetes first sends SIGTERM to the container's PID 1. A well-written application catches SIGTERM, stops accepting new requests, drains in-flight requests to completion, flushes write buffers, and then exits cleanly. Kubernetes waits a configurable period (terminationGracePeriodSeconds) before sending SIGKILL if the process has not exited.
+
+2. Configuration reload (SIGHUP): Nginx and HAProxy (High Availability Proxy) handle SIGHUP to re-read their configuration files without restarting. In a load balancing deployment, adding a new back-end server means editing the Nginx config and sending: kill -HUP $(pidof nginx). Active connections are preserved; only new connections use the updated configuration.
+
+3. Core dump for debugging (SIGSEGV): When a distributed service crashes unexpectedly in production, enabling core dumps (ulimit -c unlimited) means the kernel writes a memory snapshot on SIGSEGV (Segmentation Fault). Engineers can load the core dump into gdb to inspect the exact stack trace and variable state at the moment of the crash, without reproducing the fault in a test environment.`},
+
+  {id:19,ch:'Module 6 — High Availability',q:'Compare Active-Active and Active-Passive High Availability (HA) architectures. Under what business requirements would you choose each?',
+   ans:`Active-Active HA deploys two or more fully operational nodes that all handle live production traffic simultaneously. A load balancer distributes requests across all nodes. If one node fails, traffic is automatically redistributed to the remaining nodes.
+
+Active-Passive HA deploys a primary node handling all traffic and one or more standby nodes that replicate state but serve no requests. A failover mechanism (keepalived with VRRP — Virtual Router Redundancy Protocol, or a cloud health check) promotes a passive node when the active fails.
+
+Active-Active advantages: full utilisation of hardware, horizontal scalability, faster implicit failover.
+Active-Active disadvantages: all nodes must handle concurrent writes; data consistency requires careful architecture (shared database, distributed cache, or eventual consistency). More complex to operate.
+
+Active-Passive advantages: simpler — only one node writes at a time, no consistency problems. Suitable for stateful applications that are hard to distribute (e.g., a primary database with a hot standby).
+Active-Passive disadvantages: wasted capacity (the passive node consumes resources while idle). Failover latency is seconds to minutes.
+
+Choose Active-Active for: stateless web services and API gateways where horizontal scaling and maximum resource utilisation matter.
+Choose Active-Passive for: stateful services like databases, message brokers, or any component where write consistency is paramount.`},
+
+  {id:20,ch:'Module 6 — High Availability',q:'Define MTTR (Mean Time To Recovery) and MTBF (Mean Time Between Failures). How do service discovery, health checks, and automated failover affect these metrics?',
+   ans:`MTBF (Mean Time Between Failures) is the average elapsed time between successive failures of a system component. Higher MTBF means the component rarely fails.
+
+MTTR (Mean Time To Recovery) is the average time required to restore the component to full operation after a failure. Lower MTTR means failures are resolved quickly.
+
+System availability ≈ MTBF / (MTBF + MTTR)
+
+An SLA (Service Level Agreement) of 99.9% uptime ("three nines") permits roughly 8.7 hours of downtime per year, which constrains the combination of MTBF and MTTR the architecture must achieve.
+
+How each mechanism affects these metrics:
+
+Service Discovery reduces MTTR by making instance locations dynamic. When a new instance starts and registers itself, it is immediately available to receive traffic. No human needs to update a config file or restart a load balancer. Time from "instance is healthy" to "instance receiving traffic" drops from minutes (manual) to seconds (automated).
+
+Health Checks reduce MTTR by detecting failures proactively. A load balancer probing every 5 seconds with a threshold of 3 failures detects a failing node within 15 seconds. Without health checks, failures are only detected when users report errors — potentially minutes later.
+
+Automated Failover eliminates the human-intervention component of MTTR entirely for known failure modes. When the passive database node is promoted automatically in under 30 seconds, MTTR for a primary database failure is 30 seconds regardless of time of day — versus 15–60 minutes if the on-call engineer is asleep.
+
+Together, these three mechanisms primarily compress MTTR, keeping availability high even when MTBF is imperfect.`}
+];
+
+// ─── REFERENCE LINKS ────────────────────────────────────────────
+const refs = [
+  {label:'ISO (International Organization for Standardization)', url:'https://www.iso.org', cat:'Standards'},
+  {label:'FHS (Filesystem Hierarchy Standard)', url:'https://refspecs.linuxfoundation.org/fhs.shtml', cat:'Linux'},
+  {label:'Docker — Container Platform', url:'https://www.docker.com', cat:'Containers'},
+  {label:'Docker Hub — Image Registry', url:'https://hub.docker.com', cat:'Containers'},
+  {label:'Kubernetes (K8s)', url:'https://kubernetes.io', cat:'Orchestration'},
+  {label:'etcd — Distributed Key-Value Store', url:'https://etcd.io', cat:'Orchestration'},
+  {label:'Nginx — Web Server & Proxy', url:'https://nginx.org', cat:'Load Balancing'},
+  {label:'HAProxy (High Availability Proxy)', url:'https://www.haproxy.org', cat:'Load Balancing'},
+  {label:'HashiCorp Consul — Service Registry', url:'https://www.consul.io', cat:'Discovery'},
+  {label:'Apache ZooKeeper', url:'https://zookeeper.apache.org', cat:'Discovery'},
+  {label:'Netflix Eureka', url:'https://github.com/Netflix/eureka', cat:'Discovery'},
+  {label:'AWS Elastic Load Balancing', url:'https://aws.amazon.com/elasticloadbalancing', cat:'Cloud'},
+  {label:'OpenLDAP — Directory Services', url:'https://www.openldap.org', cat:'Directory'},
+  {label:'LDAP.com — Protocol Reference', url:'https://ldap.com', cat:'Directory'},
+  {label:'ICANN — DNS Governance', url:'https://www.icann.org', cat:'Naming'},
+  {label:'NTP (Network Time Protocol)', url:'https://www.ntp.org', cat:'Protocols'},
+  {label:'Cloudflare 1.1.1.1 DNS', url:'https://1.1.1.1', cat:'Naming'},
+  {label:'Red Hat Enterprise Linux', url:'https://www.redhat.com', cat:'Linux'},
+  {label:'Harbor — Private Registry', url:'https://goharbor.io', cat:'Containers'},
+  {label:'Trivy — Container Scanner', url:'https://trivy.dev', cat:'Security'},
+  {label:'tini — Minimal Init (PID 1)', url:'https://github.com/krallin/tini', cat:'Containers'},
+  {label:'Microsoft Active Directory Docs', url:'https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview', cat:'Directory'},
+];
+
+// ─── REVEAL COUNTER ──────────────────────────────────────────────
+let totalRevealable = 10 + 45 + 35 + 20; // cases + mcqs + msqs + essays
+let revealed = 0;
+
+function updateProgress() {
+  const pct = Math.round((revealed / totalRevealable) * 100);
+  document.getElementById('trackFill').style.width = pct + '%';
+  document.getElementById('trackLabel').textContent = revealed + ' / ' + totalRevealable;
+}
+
+// ─── RENDER: MODULES ─────────────────────────────────────────────
+function renderModules() {
+  const container = document.getElementById('modulePanels');
+  modules.forEach((mod, idx) => {
+    const panel = document.createElement('div');
+    panel.className = 'module-panel' + (idx === 0 ? ' active' : '');
+    panel.id = 'panel_' + idx;
+    panel.setAttribute('data-tab', idx);
+
+    let html = `
+      <div id="${mod.id}"></div>
+      <div class="mod-heading">
+        <span style="color:${mod.color}">${mod.title}</span>
+        <span class="mod-tag" style="background:${mod.colorLight};color:${mod.color}">Module ${idx+1}</span>
+      </div>
+      <p class="mod-intro">${mod.intro}</p>
+    `;
+
+    mod.sections.forEach(sec => {
+      html += `<div class="mod-section">
+        <div class="mod-section-title" style="color:${mod.color}">${sec.title}</div>
+        <div class="mod-content">`;
+      if (sec.content) html += `<p>${sec.content}</p>`;
+      if (sec.table) {
+        html += `<table class="mod-table"><thead><tr>${sec.table.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+        sec.table.rows.forEach(row => {
+          html += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+        });
+        html += `</tbody></table>`;
+      }
+      if (sec.bullets) {
+        html += `<ul>`;
+        sec.bullets.forEach(b => { html += `<li>${b}</li>`; });
+        html += `</ul>`;
+      }
+      html += `</div></div>`;
+    });
+
+    panel.innerHTML = html;
+    container.appendChild(panel);
+  });
+}
+
+function switchTab(idx) {
+  document.querySelectorAll('.mod-tab').forEach((t,i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.module-panel').forEach((p,i) => p.classList.toggle('active', i === idx));
+}
+
+// ─── RENDER: CASE STUDIES ─────────────────────────────────────────
+function renderCaseStudies() {
+  const container = document.getElementById('caseStudies');
+  caseStudies.forEach((cs, idx) => {
+    const card = document.createElement('div');
+    card.className = 'cs-card fade-in';
+    card.innerHTML = `
+      <div class="cs-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span class="cs-num">${cs.num}</span>
+            <span class="cs-chapter">${cs.chapter}</span>
+          </div>
+          <div class="cs-title">${cs.title}</div>
+        </div>
+      </div>
+      <div class="cs-scenario">
+        <div class="cs-scenario-label">📋 Scenario</div>
+        ${cs.scenario}
+      </div>
+      <div class="cs-answer" id="csAns_${idx}">
+        <div class="cs-answer-label">✅ Model Answer & Explanation</div>
+        <div class="cs-answer-body">${escHtml(cs.answer)}</div>
+      </div>
+      <div class="cs-footer">
+        <span style="font-size:.8rem;color:var(--text-3)">Think through your answer first, then reveal.</span>
+        <button class="btn-reveal" id="csBtn_${idx}" onclick="toggleCS(${idx})">
+          <span class="btn-icon">👁</span> Reveal Answer
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleCS(idx) {
+  const ans = document.getElementById('csAns_' + idx);
+  const btn = document.getElementById('csBtn_' + idx);
+  const isOpen = ans.classList.toggle('open');
+  btn.classList.toggle('shown', isOpen);
+  btn.innerHTML = isOpen
+    ? '<span class="btn-icon">🙈</span> Hide Answer'
+    : '<span class="btn-icon">👁</span> Reveal Answer';
+  if (isOpen) { revealed++; updateProgress(); }
+  else { revealed = Math.max(0, revealed - 1); updateProgress(); }
+}
+
+// ─── RENDER: MCQs ────────────────────────────────────────────────
+function getChapterColor(cm) {
+  const map = {
+    'chapter-mod1':'#1D4ED8', 'chapter-mod2':'#7C3AED',
+    'chapter-mod3':'#15803D', 'chapter-mod4':'#C2410C',
+    'chapter-mod5':'#1E40AF', 'chapter-mod6':'#0F766E'
+  };
+  return map[cm] || '#374151';
+}
+
+function renderMCQs() {
+  const container = document.getElementById('mcqList');
+  mcqs.forEach((q, idx) => {
+    const letters = ['A','B','C','D'];
+    const opts = q.opts.map((o, i) => `
+      <div class="q-opt" id="mcqOpt_${idx}_${i}" onclick="selectMCQ(${idx}, ${i}, '${q.ans}')">
+        <div class="opt-letter">${letters[i]}</div>
+        <div>${o}</div>
+      </div>`).join('');
+
+    const card = document.createElement('div');
+    card.className = 'q-card fade-in';
+    card.innerHTML = `
+      <div class="q-header">
+        <span class="q-num">Question ${q.id} of 45</span>
+        <span class="q-chapter-badge ${q.cm}" style="border:1px solid;border-color:${getChapterColor(q.cm)}40">${q.ch}</span>
+      </div>
+      <div class="q-body">
+        <div class="q-text">${q.q}</div>
+        <div class="q-options">${opts}</div>
+      </div>
+      <div class="q-answer" id="mcqAns_${idx}">
+        <div class="q-answer-label">Correct Answer</div>
+        <div class="q-answer-val">✓ Option ${q.ans}</div>
+        <div class="q-answer-exp">${q.exp}</div>
+      </div>
+      <div class="q-footer">
+        <span class="q-feedback" id="mcqFeedback_${idx}"></span>
+        <button class="btn-reveal" id="mcqBtn_${idx}" onclick="toggleMCQ(${idx}, '${q.ans}')">
+          <span class="btn-icon">👁</span> Reveal Answer
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function selectMCQ(idx, optIdx, correct) {
+  const letters = ['A','B','C','D'];
+  // Block if already answered
+  if (document.getElementById('mcqOpt_' + idx + '_' + optIdx).classList.contains('answered')) return;
+
+  const chosen = letters[optIdx];
+  const isCorrect = chosen === correct;
+
+  letters.forEach((l, i) => {
+    const opt = document.getElementById('mcqOpt_' + idx + '_' + i);
+    opt.classList.add('answered');
+    if (i === optIdx) {
+      opt.classList.add(isCorrect ? 'correct' : 'wrong-pick');
+    } else if (l === correct) {
+      opt.classList.add('correct'); // always reveal the right answer
+    } else {
+      opt.classList.add('incorrect'); // dim the rest
+    }
+  });
+
+  const fb = document.getElementById('mcqFeedback_' + idx);
+  if (isCorrect) {
+    fb.textContent = '✓ Correct!';
+    fb.className = 'q-feedback correct-fb';
+  } else {
+    fb.textContent = '✗ Incorrect — correct answer: ' + correct;
+    fb.className = 'q-feedback wrong-fb';
+  }
+}
+
+function toggleMCQ(idx, correct) {
+  const ans = document.getElementById('mcqAns_' + idx);
+  const btn = document.getElementById('mcqBtn_' + idx);
+  const isOpen = ans.classList.toggle('open');
+  btn.classList.toggle('shown', isOpen);
+  btn.innerHTML = isOpen
+    ? '<span class="btn-icon">🙈</span> Hide'
+    : '<span class="btn-icon">👁</span> Reveal Answer';
+
+  // Only apply coloring if student hasn't already answered
+  const letters = ['A','B','C','D'];
+  const alreadyAnswered = document.getElementById('mcqOpt_' + idx + '_0').classList.contains('answered');
+  if (!alreadyAnswered) {
+    letters.forEach((l, i) => {
+      const opt = document.getElementById('mcqOpt_' + idx + '_' + i);
+      if (isOpen) {
+        opt.classList.toggle('correct', l === correct);
+        opt.classList.toggle('incorrect', l !== correct);
+      } else {
+        opt.classList.remove('correct', 'incorrect');
+      }
+    });
+  }
+
+  if (isOpen) { revealed++; updateProgress(); }
+  else { revealed = Math.max(0, revealed - 1); updateProgress(); }
+}
+
+function revealAll(type) {
+  if (type === 'mcq') {
+    mcqs.forEach((q, idx) => {
+      const ans = document.getElementById('mcqAns_' + idx);
+      if (!ans.classList.contains('open')) toggleMCQ(idx, q.ans);
+    });
+  } else {
+    msqs.forEach((q, idx) => {
+      const ans = document.getElementById('msqAns_' + idx);
+      if (!ans.classList.contains('open')) toggleMSQ(idx, q.ans);
+    });
+  }
+}
+
+// ─── RENDER: MSQs ────────────────────────────────────────────────
+function renderMSQs() {
+  const container = document.getElementById('msqList');
+  const letters = ['A','B','C','D','E'];
+  msqs.forEach((q, idx) => {
+    const opts = q.opts.map((o, i) => `
+      <div class="q-opt" id="msqOpt_${idx}_${i}" onclick="toggleMSQOpt(${idx}, ${i})">
+        <div class="opt-letter">${letters[i]}</div>
+        <div>${o}</div>
+      </div>`).join('');
+
+    const card = document.createElement('div');
+    card.className = 'q-card fade-in';
+    card.innerHTML = `
+      <div class="q-header">
+        <span class="q-num">MSQ ${q.id} of 35</span>
+        <span class="q-chapter-badge ${q.cm}" style="border:1px solid;border-color:${getChapterColor(q.cm)}40">${q.ch}</span>
+      </div>
+      <div class="q-body">
+        <div class="msq-note">⚠ Select ALL that apply</div>
+        <div class="q-text">${q.q}</div>
+        <div class="q-options">${opts}</div>
+      </div>
+      <div class="q-answer" id="msqAns_${idx}" style="background:var(--orange-light);border-color:#FED7AA">
+        <div class="q-answer-label" style="color:var(--orange)">Correct Answers</div>
+        <div class="q-answer-val" style="color:var(--orange)">✓ ${q.ans}</div>
+        <div class="q-answer-exp">${q.exp}</div>
+      </div>
+      <div class="q-footer">
+        <span class="q-feedback" id="msqFeedback_${idx}"></span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn-check" id="msqCheckBtn_${idx}" onclick="checkMSQ(${idx}, '${q.ans}')">
+            <span class="btn-icon">✔</span> Check My Answers
+          </button>
+          <button class="btn-reveal" id="msqBtn_${idx}" onclick="toggleMSQ(${idx}, '${q.ans}')">
+            <span class="btn-icon">👁</span> Reveal Answers
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleMSQOpt(idx, i) {
+  const opt = document.getElementById('msqOpt_' + idx + '_' + i);
+  if (!opt || opt.classList.contains('answered')) return;
+  opt.classList.toggle('selected');
+}
+
+function checkMSQ(idx, correctStr) {
+  const letters = ['A','B','C','D','E'];
+  const corrects = correctStr.split(', ').map(s => s.trim());
+
+  // Gather selected
+  const selected = [];
+  letters.forEach((l, i) => {
+    const opt = document.getElementById('msqOpt_' + idx + '_' + i);
+    if (opt && opt.classList.contains('selected')) selected.push(l);
+  });
+
+  // Mark each option
+  letters.forEach((l, i) => {
+    const opt = document.getElementById('msqOpt_' + idx + '_' + i);
+    if (!opt) return;
+    opt.classList.add('answered');
+    opt.classList.remove('selected');
+    if (corrects.includes(l) && selected.includes(l)) {
+      opt.classList.add('correct');           // right and selected ✓
+    } else if (corrects.includes(l) && !selected.includes(l)) {
+      opt.classList.add('correct');           // right but missed — still reveal it green
+    } else if (!corrects.includes(l) && selected.includes(l)) {
+      opt.classList.add('wrong-pick');        // wrong but selected ✗
+    } else {
+      opt.classList.add('incorrect');         // wrong and not selected — dim
+    }
+  });
+
+  // Feedback message
+  const isPerfect = corrects.length === selected.length && corrects.every(c => selected.includes(c));
+  const fb = document.getElementById('msqFeedback_' + idx);
+  if (isPerfect) {
+    fb.textContent = '✓ Perfect!';
+    fb.className = 'q-feedback correct-fb';
+  } else {
+    const missed = corrects.filter(c => !selected.includes(c));
+    const extra  = selected.filter(s => !corrects.includes(s));
+    let msg = '✗ Not quite.';
+    if (missed.length) msg += ' Missed: ' + missed.join(', ') + '.';
+    if (extra.length)  msg += ' Wrong pick: ' + extra.join(', ') + '.';
+    fb.textContent = msg;
+    fb.className = 'q-feedback wrong-fb';
+  }
+
+  const checkBtn = document.getElementById('msqCheckBtn_' + idx);
+  if (checkBtn) checkBtn.disabled = true;
+}
+
+function toggleMSQ(idx, correctStr) {
+  const ans = document.getElementById('msqAns_' + idx);
+  const btn = document.getElementById('msqBtn_' + idx);
+  const isOpen = ans.classList.toggle('open');
+  btn.classList.toggle('shown', isOpen);
+  btn.innerHTML = isOpen
+    ? '<span class="btn-icon">🙈</span> Hide'
+    : '<span class="btn-icon">👁</span> Reveal Answers';
+
+  // Only apply coloring if student hasn't checked yet
+  const letters = ['A','B','C','D','E'];
+  const alreadyChecked = document.getElementById('msqOpt_' + idx + '_0') &&
+    document.getElementById('msqOpt_' + idx + '_0').classList.contains('answered');
+  if (!alreadyChecked) {
+    const corrects = correctStr.split(', ').map(s => s.trim());
+    letters.forEach((l, i) => {
+      const opt = document.getElementById('msqOpt_' + idx + '_' + i);
+      if (!opt) return;
+      if (isOpen) {
+        opt.classList.toggle('correct', corrects.includes(l));
+        opt.classList.toggle('incorrect', !corrects.includes(l));
+      } else {
+        opt.classList.remove('correct', 'incorrect');
+      }
+    });
+  }
+
+  if (isOpen) { revealed++; updateProgress(); }
+  else { revealed = Math.max(0, revealed - 1); updateProgress(); }
+}
+
+// ─── RENDER: ESSAYS ───────────────────────────────────────────────
+function renderEssays() {
+  const container = document.getElementById('essayList');
+  essays.forEach((e, idx) => {
+    const card = document.createElement('div');
+    card.className = 'essay-card fade-in';
+    card.innerHTML = `
+      <div class="essay-header" id="essayHdr_${idx}" onclick="toggleEssay(${idx})">
+        <div class="essay-num-badge">${e.id}</div>
+        <div class="essay-meta">
+          <div class="essay-chapter">${e.ch}</div>
+          <div class="essay-question">${e.q}</div>
+        </div>
+        <div class="essay-chevron">▾</div>
+      </div>
+      <div class="essay-answer" id="essayAns_${idx}">
+        <div class="essay-answer-inner">
+          <div class="essay-answer-label">📝 Model Answer</div>
+          <div class="essay-answer-text">${escHtml(e.ans)}</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleEssay(idx) {
+  const ans = document.getElementById('essayAns_' + idx);
+  const hdr = document.getElementById('essayHdr_' + idx);
+  const isOpen = ans.classList.toggle('open');
+  hdr.classList.toggle('open', isOpen);
+  if (isOpen) { revealed++; updateProgress(); }
+  else { revealed = Math.max(0, revealed - 1); updateProgress(); }
+}
+
+// ─── RENDER: REFERENCE LINKS ─────────────────────────────────────
+function renderRefs() {
+  const container = document.getElementById('refGrid');
+  refs.forEach(r => {
+    container.innerHTML += `
+      <div class="ref-item">
+        <a href="${r.url}" target="_blank" rel="noopener">${r.label} ↗</a>
+        <span>${r.cat}</span>
+      </div>
+    `;
+  });
+}
+
+// ─── UTILITIES ───────────────────────────────────────────────────
+function escHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── SCROLL PROGRESS BAR ─────────────────────────────────────────
+function updateScrollBar() {
+  const doc = document.documentElement;
+  const scrolled = doc.scrollTop || document.body.scrollTop;
+  const total = doc.scrollHeight - doc.clientHeight;
+  const pct = total > 0 ? (scrolled / total) * 100 : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+// ─── INTERSECTION OBSERVER (fade-in) ─────────────────────────────
+function setupFadeIn() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+}
+
+// ─── NAV ACTIVE ──────────────────────────────────────────────────
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el.classList.contains('nav-item')) el.classList.add('active');
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderModules();
+  renderCaseStudies();
+  renderMCQs();
+  renderMSQs();
+  renderEssays();
+  renderRefs();
+  setupFadeIn();
+  updateProgress();
+  window.addEventListener('scroll', updateScrollBar, { passive: true });
+});
+</script>
+</body>
+</html>
