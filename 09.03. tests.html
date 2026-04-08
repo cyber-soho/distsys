@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenShift Study Materials</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; color: #1f2937; }
+        
+        /* Tab Styles */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Flashcard Flip Styles */
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+            cursor: pointer;
+            height: 200px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 0.75rem;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .flip-card-front {
+            background-color: #ffffff;
+            color: #1f2937;
+            border: 2px solid #e5e7eb;
+        }
+        .flip-card-back {
+            background-color: #2563eb;
+            color: white;
+            transform: rotateY(180deg);
+            border: 2px solid #1d4ed8;
+        }
+
+        /* Quiz Styles */
+        .rationale { display: none; margin-top: 0.5rem; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; }
+        .rationale.correct { background-color: #d1fae5; color: #065f46; display: block; border-left: 4px solid #10b981; }
+        .rationale.incorrect { background-color: #fee2e2; color: #991b1b; display: block; border-left: 4px solid #ef4444; }
+        .option-label { cursor: pointer; display: flex; align-items: flex-start; padding: 0.5rem; border-radius: 0.25rem; transition: background-color 0.2s; }
+        .option-label:hover { background-color: #f3f4f6; }
+        .quiz-hint { font-size: 0.875rem; color: #6b7280; font-style: italic; margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body class="font-sans antialiased p-6 md:p-12">
+
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center text-gray-800">Container Orchestration Study Hub</h1>
+
+        <div class="flex justify-center border-b border-gray-300 mb-8">
+            <button onclick="openTab('flashcards')" id="btn-flashcards" class="px-6 py-3 font-semibold text-blue-600 border-b-2 border-blue-600 hover:bg-gray-50 transition-colors">Flashcards (25)</button>
+            <button onclick="openTab('quiz')" id="btn-quiz" class="px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600 hover:bg-gray-50 transition-colors">Practice Quiz (9 Qs)</button>
+        </div>
+
+        <div id="flashcards" class="tab-content active">
+            <p class="text-center text-gray-600 mb-8">Click on a card to flip it and reveal the answer.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="flashcard-container">
+                </div>
+        </div>
+
+        <div id="quiz" class="tab-content max-w-4xl mx-auto">
+            <p class="text-center text-gray-600 mb-8">Test your knowledge. Select an answer and click "Check Answers" at the bottom.</p>
+            <div id="quiz-container" class="space-y-8">
+                </div>
+            
+            <div class="mt-8 pt-8 border-t border-gray-300 flex justify-between items-center">
+                <div id="quiz-score" class="text-2xl font-bold text-gray-800 hidden">Score: <span id="score-value">0</span> / 9</div>
+                <button onclick="evaluateQuiz()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors">Check Answers</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA --- //
+        
+        const flashcardData = [
+            { front: "Percentage of organizations using containers in production", back: "84%, according to the Cloud Native Computing Foundation (CNCF)." },
+            { front: "Orchestrator function: Scheduling", back: "Assigning containers to specific machines based on available CPU and RAM." },
+            { front: "Orchestrator function: Self-Healing", back: "Restarting crashed containers and relocating workloads from failed servers." },
+            { front: "Orchestrator function: Scaling", back: "Spinning up or tearing down container replicas based on demand." },
+            { front: "Orchestrator function: Rolling Updates", back: "Deploying new versions of an application with zero downtime." },
+            { front: "Analogy: Kubernetes vs. OpenShift", back: "Kubernetes is the high-performance engine; OpenShift is the fully assembled luxury vehicle built around that engine." },
+            { front: "Three pillars of OpenShift architecture", back: "Master Nodes (Control Plane), Worker Nodes (Compute Plane), and etcd." },
+            { front: "Role of Master Nodes", back: "Acting as the 'brains' or control plane of the cluster to manage operations, without running application workloads." },
+            { front: "Minimum master nodes required for production", back: "At least 3 for high availability." },
+            { front: "kube-apiserver", back: "The single point of contact for all operations on the master node." },
+            { front: "kube-scheduler", back: "The component responsible for assigning pods to worker nodes." },
+            { front: "kubelet", back: "The primary node agent on a worker node that receives instructions from the master and manages containers." },
+            { front: "CRI-O", back: "The Container Runtime Interface (Open) responsible for actually starting and stopping containers." },
+            { front: "etcd", back: "The strongly consistent, distributed key-value store that acts as the single source of truth for all cluster state." },
+            { front: "Consensus algorithm used by etcd", back: "The Raft consensus algorithm." },
+            { front: "RHCOS", back: "Red Hat Enterprise Linux CoreOS, the minimal, immutable, container-optimized operating system running on every OpenShift 4.x node." },
+            { front: "OpenShift Project", back: "The top-level wrapper providing isolation, resource quotas, and access control." },
+            { front: "Pod", back: "The smallest deployable unit in OpenShift, containing one or more tightly coupled containers." },
+            { front: "Deployment", back: "The resource that declares the desired state of an application, such as the image to use and the desired replica count." },
+            { front: "Service", back: "A stable internal load-balancing endpoint that masks the constant creation and destruction of pods." },
+            { front: "Route", back: "The resource used to expose a service externally with a URL, optionally securing traffic with TLS." },
+            { front: "oc CLI", back: "OpenShift's primary command-line tool, which functions as a superset of kubectl." },
+            { front: "Command to expose a service to the public via a Route", back: "oc expose svc/&lt;service-name&gt;" },
+            { front: "Default security posture: Kubernetes vs. OpenShift", back: "Kubernetes is permissive by default, while OpenShift is strict by default using Security Context Constraints (SCCs)." },
+            { front: "OpenShift CI/CD built-in tooling", back: "Tekton Pipelines and Source-to-Image (S2I)." }
+        ];
+
+        const quizData = [
+            {
+                q: "Why does a production environment running thousands of containers across multiple data centers require an orchestrator?",
+                hint: "Think about what happens when you need to deploy, restart, or route traffic to 10,000 separate entities manually.",
+                options: [
+                    { text: "To automatically rewrite application code to be cloud-native.", rationale: "Orchestrators manage the deployment and running of containers, they do not refactor or rewrite the underlying application source code.", correct: false },
+                    { text: "To physically provision new bare-metal servers in the data center.", rationale: "While some infrastructure-as-code tools provision servers, container orchestrators specifically manage the containers running on top of those servers.", correct: false },
+                    { text: "To compile the source code into container images.", rationale: "Compiling code and building images is the job of Continuous Integration (CI) tools, not the runtime orchestrator.", correct: false },
+                    { text: "To automate the scheduling, scaling, and network management of the containers.", rationale: "An orchestrator automates the entire lifecycle of containerized applications at scale, handling tasks that are impossible for humans to manage manually.", correct: true }
+                ]
+            },
+            {
+                q: "If a sudden spike in user traffic occurs, which orchestrator function ensures that the incoming web requests are spread evenly across all healthy instances of the application?",
+                hint: "Consider what mechanism acts like a traffic cop directing cars to the least crowded lanes.",
+                options: [
+                    { text: "Self-Healing", rationale: "Self-healing is responsible for restarting crashed containers and relocating workloads from failed servers.", correct: false },
+                    { text: "Load Balancing", rationale: "Load balancing specifically distributes incoming requests evenly across all available, healthy replicas of a container.", correct: true },
+                    { text: "Scheduling", rationale: "Scheduling is the process of picking which physical or virtual machine a new container should run on.", correct: false },
+                    { text: "Rolling Updates", rationale: "Rolling updates manage the deployment of new application versions without downtime.", correct: false }
+                ]
+            },
+            {
+                q: "In an OpenShift architecture, what is the primary responsibility of the Master Nodes?",
+                hint: "Recall the 'Hospital Administration' analogy from the lesson.",
+                options: [
+                    { text: "To act as the control plane and manage the overall state of the cluster.", rationale: "Master nodes serve as the 'brains' of the cluster, handling administration, scheduling, and API requests rather than running user apps.", correct: true },
+                    { text: "To execute the actual user application containers.", rationale: "User workloads and application containers run on the Worker Nodes, not the Master Nodes.", correct: false },
+                    { text: "To provide persistent storage volumes for databases.", rationale: "Persistent storage is typically handled by separate storage integrations.", correct: false },
+                    { text: "To compile and build Source-to-Image (S2I) pipelines.", rationale: "While OpenShift manages S2I, the master nodes' primary architectural role is cluster control and management.", correct: false }
+                ]
+            },
+            {
+                q: "Which architectural component acts as the 'memory' of the OpenShift cluster, storing all state and configuration data?",
+                hint: "This component uses the Raft consensus algorithm and must run on fast SSD storage.",
+                options: [
+                    { text: "kube-apiserver", rationale: "The API server is the communication interface, but it doesn't store the data itself.", correct: false },
+                    { text: "CRI-O", rationale: "CRI-O is the container runtime interface on worker nodes.", correct: false },
+                    { text: "etcd", rationale: "etcd is the distributed key-value store that serves as the single source of truth for all cluster state.", correct: true },
+                    { text: "kube-scheduler", rationale: "The scheduler's job is to assign newly created pods to available worker nodes.", correct: false }
+                ]
+            },
+            {
+                q: "On an OpenShift worker node, which component acts as the primary agent receiving instructions from the master and ensuring containers are running?",
+                hint: "Think of this component as the manager of the 'Hospital Ward'.",
+                options: [
+                    { text: "kube-proxy", rationale: "kube-proxy manages network rules and routing for pod traffic on the node.", correct: false },
+                    { text: "kubelet", rationale: "The kubelet is the primary node agent that communicates with the master node and uses the container runtime to run containers.", correct: true },
+                    { text: "MCO (Machine Config Operator)", rationale: "The MCO manages updates to the underlying RHCOS operating system.", correct: false },
+                    { text: "kube-controller-manager", rationale: "The controller manager runs on the Master Node, not the Worker Node.", correct: false }
+                ]
+            },
+            {
+                q: "What is the smallest deployable compute unit that you can create and manage in OpenShift?",
+                hint: "Recall the analogy where this unit represents a 'student's desk'.",
+                options: [
+                    { text: "A Container", rationale: "OpenShift does not manage raw containers directly; it wraps them in a higher-level abstraction.", correct: false },
+                    { text: "A Deployment", rationale: "A deployment is a higher-level controller that manages the desired state of compute units.", correct: false },
+                    { text: "A Pod", rationale: "A Pod is the smallest deployable unit, capable of running one or more tightly coupled containers.", correct: true },
+                    { text: "A Service", rationale: "A service provides stable internal networking and load balancing, it does not run compute workloads.", correct: false }
+                ]
+            },
+            {
+                q: "You want to make a web application accessible to users on the public internet. Which OpenShift resource must you configure?",
+                hint: "This resource gives your application a public URL.",
+                options: [
+                    { text: "Service", rationale: "A Service provides a stable internal IP address for pods to communicate within the cluster.", correct: false },
+                    { text: "Project", rationale: "A Project provides isolation, resource quotas, and access control wrappers.", correct: false },
+                    { text: "Route", rationale: "A Route is used specifically to expose a service externally via a URL.", correct: true },
+                    { text: "Deployment", rationale: "A Deployment manages pod replicas and updates; it has no role in external routing.", correct: false }
+                ]
+            },
+            {
+                q: "Which statement accurately describes the relationship between the OpenShift CLI (oc) and the Kubernetes CLI (kubectl)?",
+                hint: "Think of `oc` as having all the capabilities of the original tool, plus extra features.",
+                options: [
+                    { text: "oc is a superset of kubectl, meaning all standard kubectl commands work within oc.", rationale: "The oc CLI includes all functionality of kubectl and adds extra commands specific to OpenShift.", correct: true },
+                    { text: "oc replaces kubectl and uses a completely different syntax for all commands.", rationale: "oc maintains compatibility with standard Kubernetes commands.", correct: false },
+                    { text: "oc is only used for OpenShift-specific resources and cannot manage standard Kubernetes Pods.", rationale: "The oc CLI can fully manage standard Kubernetes resources.", correct: false },
+                    { text: "kubectl is required for administration, while oc is only meant for developers.", rationale: "Both administrators and developers use oc as the primary interaction tool.", correct: false }
+                ]
+            },
+            {
+                q: "When comparing default security postures, how does Red Hat OpenShift differ from vanilla Kubernetes?",
+                hint: "Consider why an enterprise might choose an IBM/Red Hat product over an open-source project.",
+                options: [
+                    { text: "OpenShift is permissive by default, allowing containers to run as root easily.", rationale: "This describes the default behavior of vanilla Kubernetes, not OpenShift.", correct: false },
+                    { text: "OpenShift disables Role-Based Access Control (RBAC).", rationale: "OpenShift heavily enforces RBAC and access controls.", correct: false },
+                    { text: "There is no difference; both use identical default security configurations.", rationale: "OpenShift intentionally alters default security settings to be much stricter.", correct: false },
+                    { text: "OpenShift is strict by default, enforcing Security Context Constraints (SCCs) out-of-the-box.", rationale: "OpenShift prevents containers from running as root and enforces strict security policies by default.", correct: true }
+                ]
+            }
+        ];
+
+        // --- INITIALIZATION --- //
+
+        function init() {
+            renderFlashcards();
+            renderQuiz();
+        }
+
+        // --- TAB LOGIC --- //
+
+        function openTab(tabName) {
+            // Hide all
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Reset buttons
+            document.getElementById('btn-flashcards').className = "px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600 hover:bg-gray-50 transition-colors";
+            document.getElementById('btn-quiz').className = "px-6 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600 hover:bg-gray-50 transition-colors";
+            
+            // Show selected
+            document.getElementById(tabName).classList.add('active');
+            document.getElementById('btn-' + tabName).className = "px-6 py-3 font-semibold text-blue-600 border-b-2 border-blue-600 hover:bg-gray-50 transition-colors";
+        }
+
+        // --- FLASHCARD LOGIC --- //
+
+        function renderFlashcards() {
+            const container = document.getElementById('flashcard-container');
+            flashcardData.forEach((card, index) => {
+                const cardHTML = `
+                    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                        <div class="flip-card-inner">
+                            <div class="flip-card-front shadow-sm">
+                                <p class="text-lg font-medium text-center">${card.front}</p>
+                            </div>
+                            <div class="flip-card-back shadow-md">
+                                <p class="text-md text-center px-2">${card.back}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+
+        // --- QUIZ LOGIC --- //
+
+        function shuffle(array) {
+            let currentIndex = array.length,  randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            quizData.forEach((item, qIndex) => {
+                // Shuffle options for this question
+                const shuffledOptions = shuffle([...item.options]);
+                
+                let optionsHTML = '';
+                shuffledOptions.forEach((opt, oIndex) => {
+                    optionsHTML += `
+                        <div class="mb-2">
+                            <label class="option-label border border-gray-200">
+                                <input type="radio" name="q${qIndex}" value="${opt.correct}" class="mt-1 mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <span class="text-gray-800">${opt.text}</span>
+                                    <div class="rationale mt-2" data-correct="${opt.correct}">
+                                        <strong>${opt.correct ? 'Correct!' : 'Incorrect.'}</strong> ${opt.rationale}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                });
+
+                const questionHTML = `
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200" id="question-block-${qIndex}">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${qIndex + 1}. ${item.q}</h3>
+                        <p class="quiz-hint">Hint: ${item.hint}</p>
+                        <div class="mt-4">
+                            ${optionsHTML}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', questionHTML);
+            });
+        }
+
+        function evaluateQuiz() {
+            let score = 0;
+            quizData.forEach((_, qIndex) => {
+                const selected = document.querySelector(`input[name="q${qIndex}"]:checked`);
+                const questionBlock = document.getElementById(`question-block-${qIndex}`);
+                const rationales = questionBlock.querySelectorAll('.rationale');
+                
+                // Reset styling
+                rationales.forEach(r => { r.className = 'rationale'; });
+                
+                if (selected) {
+                    const isCorrect = selected.value === 'true';
+                    if (isCorrect) score++;
+                    
+                    // Show rationale for the selected item
+                    const selectedRationale = selected.nextElementSibling.querySelector('.rationale');
+                    if (isCorrect) {
+                        selectedRationale.classList.add('correct');
+                        questionBlock.classList.add('border-green-300');
+                    } else {
+                        selectedRationale.classList.add('incorrect');
+                        questionBlock.classList.add('border-red-300');
+                        
+                        // Also show the rationale for the correct answer to help them learn
+                        const correctInput = questionBlock.querySelector(`input[value="true"]`);
+                        if(correctInput) {
+                            const correctRationale = correctInput.nextElementSibling.querySelector('.rationale');
+                            correctRationale.classList.add('correct');
+                        }
+                    }
+                } else {
+                    // Highlight unanswered
+                    questionBlock.classList.add('border-yellow-400');
+                }
+            });
+
+            // Update Score
+            document.getElementById('score-value').innerText = score;
+            document.getElementById('quiz-score').classList.remove('hidden');
+            window.scrollTo({ top: document.getElementById('quiz').scrollHeight, behavior: 'smooth' });
+        }
+
+        // Run on load
+        init();
+
+    </script>
+</body>
+</html>
+
+
+
