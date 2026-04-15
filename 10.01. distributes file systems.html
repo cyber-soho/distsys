@@ -1,0 +1,524 @@
+<!-- Chosen Palette: Warm Neutral Tech (Stone/Sand background, Slate text, Sky Blue and Amber accents) -->
+<!-- Application Structure Plan: The application is structured as an "Interactive Study Guide" designed for undergraduate IT students. Instead of a linear slide deck, it's organized into four thematic modules: 1. Storage Foundations, 2. DFS Theory, 3. Implementations (NFS/HDFS), 4. Resilience. This chunking prevents cognitive overload. Navigation is fixed for easy jumping. Interactive elements (like the CAP theorem explorer and HDFS replication simulator) are used to turn abstract concepts into tangible, explorable models, prioritizing active learning over passive reading. -->
+<!-- Visualization & Content Choices: 
+1. Storage Arch Comparison -> Compare Throughput/Cost -> Chart.js Radar Chart -> Allows multi-dimensional comparison of abstract metrics (High/Medium/Low mapped to numbers).
+2. File Systems -> Organize/Compare -> Interactive HTML Table -> JS filtering allows students to study by OS ecosystem.
+3. Partitions vs Volumes -> Organize -> CSS Grid layout comparing MBR/GPT and logical volume stacking.
+4. CAP Theorem -> Relationships -> CSS Venn Diagram -> Clickable areas reveal trade-offs without SVG.
+5. HDFS Replication -> Explain Process -> CSS/JS Simulator -> Visually demonstrates rack-aware block distribution (Write Once, Read Many). 
+All visualizations strictly avoid SVG and Mermaid, relying on Canvas, HTML, CSS, and Unicode. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed File Systems - Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fafaf9; color: #292524; }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 350px; }
+        }
+
+        .cap-circle {
+            width: 150px; height: 150px; border-radius: 50%; position: absolute;
+            opacity: 0.8; mix-blend-mode: multiply; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: white; cursor: pointer; transition: transform 0.2s;
+        }
+        .cap-circle:hover { transform: scale(1.05); }
+        .cap-container { position: relative; width: 300px; height: 300px; margin: 0 auto; }
+        .circle-c { background-color: #0369a1; top: 0; left: 75px; }
+        .circle-a { background-color: #b45309; bottom: 30px; left: 0; }
+        .circle-p { background-color: #15803d; bottom: 30px; right: 0; }
+        
+        .server-node {
+            background: #e7e5e4; border-top: 4px solid #78716c; padding: 0.5rem; text-align: center;
+            border-radius: 0.25rem; font-family: monospace; font-size: 0.8rem; transition: all 0.3s;
+        }
+        .server-node.active { background: #dcfce7; border-top-color: #22c55e; }
+        .server-node.dead { background: #fee2e2; border-top-color: #ef4444; opacity: 0.5; }
+        .block-replica { display: inline-block; width: 15px; height: 15px; background: #3b82f6; margin: 2px; border-radius: 2px; }
+
+        .tab-btn.active { border-bottom: 2px solid #0369a1; color: #0369a1; font-weight: 600; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-stone-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-sky-800">Cyber.SoHo 🖧 DFS</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#foundations" class="text-stone-600 hover:text-sky-700 transition">1. Foundations</a>
+                    <a href="#architecture" class="text-stone-600 hover:text-sky-700 transition">2. DFS Theory</a>
+                    <a href="#protocols" class="text-stone-600 hover:text-sky-700 transition">3. Protocols</a>
+                    <a href="#resilience" class="text-stone-600 hover:text-sky-700 transition">4. Resilience</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-stone-100 py-12 border-b border-stone-200">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h1 class="text-4xl font-extrabold text-stone-800 mb-4">Distributed File Systems</h1>
+            <p class="text-xl text-stone-600 mb-6">Advanced Topics — Undergraduate Programme</p>
+            <p class="text-md text-stone-500 italic max-w-2xl mx-auto">"From the Industry to the Classroom — Building the IT's Future, Today and Together!"</p>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-24">
+
+        <section id="foundations" class="scroll-mt-20">
+            <div class="mb-8 border-b-2 border-stone-200 pb-4">
+                <h2 class="text-3xl font-bold text-stone-800 mb-2">Module 1: Storage Foundations</h2>
+                <p class="text-stone-600 text-lg">Before understanding how data is distributed across networks, we must understand how it is stored locally. This module covers physical media, connection architectures, and local file systems, providing the building blocks for distributed systems.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-sky-800">Connection Architectures</h3>
+                    <p class="text-stone-700 mb-4">How storage connects to compute defines its speed, shareability, and cost. Use the chart to compare Direct-Attached Storage (DAS), Network-Attached Storage (NAS), Storage Area Networks (SAN), and Object Storage.</p>
+                    <ul class="space-y-3">
+                        <li class="p-3 bg-white border border-stone-200 rounded shadow-sm"><strong>DAS:</strong> Speed for one machine (Block-level).</li>
+                        <li class="p-3 bg-white border border-stone-200 rounded shadow-sm"><strong>NAS:</strong> File sharing for everyone (NFS/SMB).</li>
+                        <li class="p-3 bg-white border border-stone-200 rounded shadow-sm"><strong>SAN:</strong> Enterprise block-level powerhouse.</li>
+                        <li class="p-3 bg-white border border-stone-200 rounded shadow-sm"><strong>Object:</strong> Infinite scale via APIs (HTTP/REST).</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-100">
+                    <div class="chart-container">
+                        <canvas id="archChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-stone-500 mt-2">Relative comparison (Higher value = Better performance/Scale or Lower Cost)</p>
+                </div>
+            </div>
+
+            <div class="mt-16">
+                <h3 class="text-xl font-semibold mb-4 text-sky-800">Local File Systems Landscape</h3>
+                <p class="text-stone-700 mb-6">The invisible architecture organizing raw binary data. Explore standard file systems based on operating system ecosystems. Journaling and Copy-on-Write (CoW) are critical features for modern data integrity.</p>
+                
+                <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                    <div class="bg-stone-100 px-4 py-3 border-b border-stone-200 flex gap-4">
+                        <button class="fs-filter px-4 py-1 rounded bg-sky-700 text-white text-sm" data-filter="all">All</button>
+                        <button class="fs-filter px-4 py-1 rounded bg-stone-200 text-stone-700 hover:bg-stone-300 text-sm" data-filter="Windows">Windows</button>
+                        <button class="fs-filter px-4 py-1 rounded bg-stone-200 text-stone-700 hover:bg-stone-300 text-sm" data-filter="Linux">Linux</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-stone-50 text-stone-600 border-b border-stone-200">
+                                    <th class="p-3">File System</th>
+                                    <th class="p-3">OS Ecosystem</th>
+                                    <th class="p-3">Max File Size</th>
+                                    <th class="p-3">Key Feature</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fs-table-body" class="divide-y divide-stone-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-16 bg-stone-100 rounded-xl p-6 border border-stone-200">
+                <h3 class="text-xl font-semibold mb-4 text-stone-800">Partitions vs. Volumes (LVM)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="font-bold text-amber-700 mb-2">Physical: Partitions</h4>
+                        <p class="text-sm text-stone-600 mb-2">A physical wall dividing a disk. Defined by MBR (legacy, 2TB limit) or GPT (modern, 9.4ZB limit).</p>
+                        <div class="flex gap-1 h-8 bg-stone-300 w-full rounded overflow-hidden relative">
+                            <div class="w-1/4 bg-stone-400 border-r border-stone-500 text-xs text-center leading-8">C: (OS)</div>
+                            <div class="w-3/4 bg-stone-400 text-xs text-center leading-8">D: (Data)</div>
+                            <div class="absolute inset-0 border-2 border-stone-800 rounded pointer-events-none"></div>
+                        </div>
+                        <p class="text-xs text-stone-500 mt-1 text-center">Physical Disk 1</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sky-700 mb-2">Logical: Volumes (LVM)</h4>
+                        <p class="text-sm text-stone-600 mb-2">Logical room you can mount. LVM decouples volumes from physical disks, allowing resizing on the fly.</p>
+                        <div class="flex flex-col gap-1">
+                            <div class="h-6 bg-sky-200 rounded text-xs text-center leading-6 border border-sky-300">Logical Volume (LV)</div>
+                            <div class="text-center text-stone-400">↑</div>
+                            <div class="h-6 bg-sky-100 rounded text-xs text-center leading-6 border border-sky-200">Volume Group (VG)</div>
+                            <div class="text-center text-stone-400">↑</div>
+                            <div class="flex gap-2">
+                                <div class="h-4 bg-stone-300 w-1/2 rounded text-[10px] text-center border border-stone-400">PV 1</div>
+                                <div class="h-4 bg-stone-300 w-1/2 rounded text-[10px] text-center border border-stone-400">PV 2</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="scroll-mt-20">
+            <div class="mb-8 border-b-2 border-stone-200 pb-4">
+                <h2 class="text-3xl font-bold text-stone-800 mb-2">Module 2: DFS Architecture & Theory</h2>
+                <p class="text-stone-600 text-lg">A Distributed File System (DFS) stores data across multiple networked machines while presenting a single unified view. This module explores the core components and the fundamental physical limitations (CAP Theorem) governing these systems.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-sky-800">Core DFS Components</h3>
+                    <p class="text-stone-700 mb-4">The architecture separates the "map" from the "territory" to achieve Location Transparency.</p>
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm relative overflow-hidden">
+                        <div class="flex justify-center mb-8">
+                            <div class="bg-amber-100 border-2 border-amber-400 px-4 py-2 rounded shadow text-center z-10 relative">
+                                <span class="block text-2xl">💻</span>
+                                <span class="text-sm font-bold">Client</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-start relative z-10">
+                            <div class="w-2/5 text-center">
+                                <div class="bg-sky-100 border-2 border-sky-400 px-4 py-2 rounded shadow mb-2">
+                                    <span class="block text-2xl">🧠</span>
+                                    <span class="text-sm font-bold">Metadata Server</span>
+                                </div>
+                                <p class="text-xs text-stone-600">The Brain. Holds the map. Knows block locations.</p>
+                            </div>
+                            <div class="w-2/5 text-center">
+                                <div class="bg-emerald-100 border-2 border-emerald-400 px-4 py-2 rounded shadow mb-2">
+                                    <span class="block text-2xl">💪</span>
+                                    <span class="text-sm font-bold">Data Servers</span>
+                                </div>
+                                <p class="text-xs text-stone-600">The Muscle. Stores actual binary data.</p>
+                            </div>
+                        </div>
+
+                        <div class="absolute inset-0 pointer-events-none">
+                            <div class="absolute top-[50px] left-[50%] w-[2px] h-[50px] bg-stone-300 border-l-2 border-dashed border-stone-400"></div>
+                        </div>
+                        <div class="mt-6 p-3 bg-stone-50 rounded border border-stone-200 text-sm text-stone-700 font-mono">
+                            1. Client asks Meta: "Where is File X?"<br>
+                            2. Meta replies: "Blocks on Data A, B"<br>
+                            3. Client reads directly from Data A, B
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-sky-800">The CAP Theorem Constraints</h3>
+                    <p class="text-stone-700 mb-4">Formulated by Eric Brewer, it states a distributed system can guarantee at most 2 of 3 properties. Click the intersections to explore trade-offs.</p>
+                    
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm flex flex-col items-center">
+                        <div class="cap-container mb-4">
+                            <div class="cap-circle circle-c" onclick="updateCap('C')">Consistency</div>
+                            <div class="cap-circle circle-a" onclick="updateCap('A')">Availability</div>
+                            <div class="cap-circle circle-p" onclick="updateCap('P')">Partition<br>Tolerance</div>
+                            
+                            <div class="absolute top-[120px] left-[135px] w-8 h-8 rounded-full bg-white/20 cursor-pointer z-20 flex items-center justify-center hover:bg-white/50" onclick="updateCap('CP')" title="CP Tradeoff"></div>
+                            <div class="absolute bottom-[80px] left-[135px] w-8 h-8 rounded-full bg-white/20 cursor-pointer z-20 flex items-center justify-center hover:bg-white/50" onclick="updateCap('AP')" title="AP Tradeoff"></div>
+                            <div class="absolute top-[140px] left-[80px] w-8 h-8 rounded-full bg-white/20 cursor-pointer z-20 flex items-center justify-center hover:bg-white/50" onclick="updateCap('CA')" title="CA Tradeoff"></div>
+                        </div>
+                        
+                        <div id="cap-explanation" class="w-full min-h-[100px] p-4 bg-stone-50 rounded border border-stone-200 text-stone-700 text-sm">
+                            <em>Select a circle or an intersection above to see the explanation.</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="protocols" class="scroll-mt-20">
+            <div class="mb-8 border-b-2 border-stone-200 pb-4">
+                <h2 class="text-3xl font-bold text-stone-800 mb-2">Module 3: Protocols in Practice</h2>
+                <p class="text-stone-600 text-lg">We move from theory to practical implementations. We examine NFS, the long-standing standard for Unix file sharing, and HDFS, designed for petabyte-scale big data analytics.</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 mb-12">
+                <h3 class="text-2xl font-semibold mb-4 border-l-4 border-sky-700 pl-3">Network File System (NFS)</h3>
+                <p class="text-stone-700 mb-4">Developed in 1984, NFS allows clients to mount remote directories as if they were local. Current standard is NFSv4 (Stateful, TCP-only, Kerberos security).</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-stone-50 p-4 rounded">
+                    <div>
+                        <h4 class="font-bold text-stone-800 mb-2 text-sm uppercase">Server: Exporting (/etc/exports)</h4>
+                        <code class="block bg-stone-800 text-green-400 p-3 rounded text-sm overflow-x-auto">
+                            /data/shared 192.168.1.0/24(rw,sync)<br>
+                            /data/readonly *(ro,root_squash)
+                        </code>
+                        <p class="text-xs text-stone-500 mt-2">rw=read/write, ro=read-only, sync=safe writes, root_squash=security mapping.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-stone-800 mb-2 text-sm uppercase">Client: Mounting</h4>
+                        <code class="block bg-stone-800 text-sky-300 p-3 rounded text-sm overflow-x-auto">
+                            mount -t nfs -o rw,hard,intr server:/share /mnt/nfs
+                        </code>
+                        <p class="text-xs text-stone-500 mt-2">hard=retry indefinitely (safe), intr=allow cancellation, timeo=timeout.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+                <h3 class="text-2xl font-semibold mb-4 border-l-4 border-sky-700 pl-3">Hadoop Distributed File System (HDFS)</h3>
+                <p class="text-stone-700 mb-4">Optimized for "write once, read many times" at petabyte scale across commodity hardware. Utilizes a strict Master-Slave architecture.</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-6">
+                    <div class="bg-sky-50 p-4 rounded border border-sky-200">
+                        <h4 class="font-bold text-sky-900 mb-2 flex items-center"><span>🧠</span> NameNode (Master)</h4>
+                        <ul class="text-sm text-sky-800 space-y-1 list-disc pl-4">
+                            <li>Manages namespace in RAM</li>
+                            <li>FsImage (snapshot) + EditLog (changes)</li>
+                            <li>NEVER touches actual data</li>
+                        </ul>
+                    </div>
+                    <div class="bg-emerald-50 p-4 rounded border border-emerald-200 col-span-1 lg:col-span-2">
+                        <h4 class="font-bold text-emerald-900 mb-2 flex items-center"><span>🗄️</span> DataNodes (Slaves) & Blocks</h4>
+                        <p class="text-sm text-emerald-800 mb-2">Files are split into 128 MB blocks. Default Replication Factor (RF) = 3.</p>
+                        
+                        <div class="mt-4 border-t border-emerald-200 pt-4">
+                            <h5 class="text-xs font-bold text-emerald-700 mb-2 uppercase">Interactive Rack-Aware Replication Simulator</h5>
+                            <button id="btn-replicate" class="mb-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded shadow transition">Write 128MB Block</button>
+                            
+                            <div class="flex gap-4 overflow-x-auto pb-2" id="rack-container">
+                                <div class="bg-stone-200 p-2 rounded min-w-[120px]">
+                                    <div class="text-[10px] text-center text-stone-600 font-bold mb-1">Rack 1</div>
+                                    <div class="server-node mb-1" id="node-1-1">Node 1A<br><div class="block-container min-h-[20px]"></div></div>
+                                    <div class="server-node" id="node-1-2">Node 1B<br><div class="block-container min-h-[20px]"></div></div>
+                                </div>
+                                <div class="bg-stone-200 p-2 rounded min-w-[120px]">
+                                    <div class="text-[10px] text-center text-stone-600 font-bold mb-1">Rack 2</div>
+                                    <div class="server-node mb-1" id="node-2-1">Node 2A<br><div class="block-container min-h-[20px]"></div></div>
+                                    <div class="server-node" id="node-2-2">Node 2B<br><div class="block-container min-h-[20px]"></div></div>
+                                </div>
+                                <div class="bg-stone-200 p-2 rounded min-w-[120px]">
+                                    <div class="text-[10px] text-center text-stone-600 font-bold mb-1">Rack 3</div>
+                                    <div class="server-node mb-1" id="node-3-1">Node 3A<br><div class="block-container min-h-[20px]"></div></div>
+                                    <div class="server-node" id="node-3-2">Node 3B<br><div class="block-container min-h-[20px]"></div></div>
+                                </div>
+                            </div>
+                            <p id="rep-status" class="text-xs text-stone-500 mt-2 h-4 italic"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="resilience" class="scroll-mt-20 mb-24">
+            <div class="mb-8 border-b-2 border-stone-200 pb-4">
+                <h2 class="text-3xl font-bold text-stone-800 mb-2">Module 4: Resilience & Management</h2>
+                <p class="text-stone-600 text-lg">Hardware fails constantly. DFS handles this via replication and checksums. Finally, we look at admin tools like autofs for managing massive distributed environments efficiently.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl border border-amber-200 shadow-sm border-t-4 border-t-amber-500">
+                    <h3 class="text-xl font-bold text-stone-800 mb-3 flex items-center gap-2"><span>⚠️</span> Fault Tolerance Mechanisms</h3>
+                    <ul class="space-y-4">
+                        <li class="flex gap-3">
+                            <span class="text-amber-600 mt-1">💓</span>
+                            <div>
+                                <strong class="text-stone-800 block">Heartbeats (Detection)</strong>
+                                <span class="text-sm text-stone-600">DataNodes ping NameNode every 3s. No ping for 10m = Dead Node → Trigger re-replication.</span>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-amber-600 mt-1">✓</span>
+                            <div>
+                                <strong class="text-stone-800 block">Checksums (Integrity)</strong>
+                                <span class="text-sm text-stone-600">Computed on write, verified on read. Mismatch = Corrupt → Fetch from healthy replica.</span>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-amber-600 mt-1">🔄</span>
+                            <div>
+                                <strong class="text-stone-800 block">Replication (Recovery)</strong>
+                                <span class="text-sm text-stone-600">RF=3 means 200% storage overhead, but guarantees survival against rack failures. (Erasure coding in Hadoop 3.x reduces this to ~50%).</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                    <h3 class="text-xl font-bold text-stone-800 mb-3">autofs: Scale Management</h3>
+                    <p class="text-stone-700 mb-4 text-sm">Managing hundreds of static NFS mounts in /etc/fstab is unscalable. <strong>autofs</strong> solves this.</p>
+                    
+                    <div class="bg-stone-100 p-4 rounded text-sm mb-4 border border-stone-200">
+                        <ul class="list-disc pl-4 text-stone-700 space-y-1">
+                            <li><strong>On-demand:</strong> Mounts only when accessed.</li>
+                            <li><strong>Auto-unmount:</strong> Disconnects idle shares (5 min default).</li>
+                            <li><strong>Graceful:</strong> Workstations boot even if NFS server is down.</li>
+                        </ul>
+                    </div>
+
+                    <div class="font-mono text-xs bg-stone-800 text-stone-300 p-3 rounded">
+                        <div class="text-stone-500 mb-1"># Master Map (/etc/auto.master)</div>
+                        <div class="mb-3">/home&nbsp;&nbsp;&nbsp;&nbsp;/etc/auto.home&nbsp;&nbsp;&nbsp;--timeout=300</div>
+                        
+                        <div class="text-stone-500 mb-1"># Map File (/etc/auto.home) using wildcard</div>
+                        <div>*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-rw,hard,intr&nbsp;&nbsp;server:/exports/home/&</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-8 text-center text-sm">
+        <p>© Cyber.SoHo Educational Hub 2026 | Schiller International University</p>
+        <p class="mt-2 text-stone-500">Interactive Study Material - Distributed Systems</p>
+    </footer>
+
+    <script>
+        // --- Data Storage ---
+        const fsData = [
+            { name: "FAT32", os: "Universal", maxFile: "4 GB", feature: "Universal compatibility", type: ["Windows", "Linux", "Universal"] },
+            { name: "exFAT", os: "Win/Mac/Linux", maxFile: "16 EB", feature: "No 4 GB limit, flash drives", type: ["Windows", "Linux", "Universal"] },
+            { name: "NTFS", os: "Windows", maxFile: "16 EB", feature: "ACLs, encryption, compression", type: ["Windows"] },
+            { name: "ext4", os: "Linux", maxFile: "16 TB", feature: "Linux server workhorse", type: ["Linux"] },
+            { name: "XFS", os: "Linux", maxFile: "8 EB", feature: "Parallel I/O, large files", type: ["Linux"] },
+            { name: "ZFS", os: "Linux/Solaris", maxFile: "16 EB", feature: "Checksums, RAID-Z, dedup", type: ["Linux"] },
+            { name: "APFS", os: "macOS/iOS", maxFile: "8 EB", feature: "Flash-optimised, encryption", type: ["Universal"] } // categorized as universal for filtering simplicity here
+        ];
+
+        // --- Core Interaction & Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            initFSTable();
+            
+            // Replicate Button Logic
+            document.getElementById('btn-replicate').addEventListener('click', simulateReplication);
+        });
+
+        function initCharts() {
+            const ctxArch = document.getElementById('archChart').getContext('2d');
+            
+            // Map categorical text to relative numbers for visualization
+            // Throughput: DAS(5), SAN(5), Object(4), NAS(3)
+            // Cost Efficiency (Inverted Cost): Object(5), DAS(4), NAS(3), SAN(1)
+            // Shareability/Scale: Object(5), NAS(4), SAN(3), DAS(1)
+            
+            new Chart(ctxArch, {
+                type: 'radar',
+                data: {
+                    labels: ['Throughput', 'Cost Efficiency', 'Scale & Shareability'],
+                    datasets: [
+                        { label: 'DAS', data: [5, 4, 1], backgroundColor: 'rgba(120, 113, 108, 0.2)', borderColor: 'rgba(120, 113, 108, 1)', pointBackgroundColor: 'rgba(120, 113, 108, 1)' },
+                        { label: 'NAS', data: [3, 3, 4], backgroundColor: 'rgba(14, 116, 144, 0.2)', borderColor: 'rgba(14, 116, 144, 1)', pointBackgroundColor: 'rgba(14, 116, 144, 1)' },
+                        { label: 'SAN', data: [5, 1, 3], backgroundColor: 'rgba(180, 83, 9, 0.2)', borderColor: 'rgba(180, 83, 9, 1)', pointBackgroundColor: 'rgba(180, 83, 9, 1)' },
+                        { label: 'Object', data: [4, 5, 5], backgroundColor: 'rgba(21, 128, 61, 0.2)', borderColor: 'rgba(21, 128, 61, 1)', pointBackgroundColor: 'rgba(21, 128, 61, 1)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: { angleLines: { display: true }, suggestedMin: 0, suggestedMax: 5, ticks: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': Level ' + context.raw;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initFSTable() {
+            const tbody = document.getElementById('fs-table-body');
+            const renderRows = (filterType) => {
+                tbody.innerHTML = '';
+                fsData.forEach(fs => {
+                    if(filterType === 'all' || fs.type.includes(filterType)) {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-stone-50 transition';
+                        tr.innerHTML = `
+                            <td class="p-3 font-semibold text-stone-800">${fs.name}</td>
+                            <td class="p-3 text-stone-600 text-sm">${fs.os}</td>
+                            <td class="p-3 text-stone-600 text-sm">${fs.maxFile}</td>
+                            <td class="p-3 text-stone-600 text-sm">${fs.feature}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                });
+            };
+
+            renderRows('all');
+
+            document.querySelectorAll('.fs-filter').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Update active button styling
+                    document.querySelectorAll('.fs-filter').forEach(b => {
+                        b.classList.remove('bg-sky-700', 'text-white');
+                        b.classList.add('bg-stone-200', 'text-stone-700');
+                    });
+                    e.target.classList.remove('bg-stone-200', 'text-stone-700');
+                    e.target.classList.add('bg-sky-700', 'text-white');
+                    
+                    renderRows(e.target.dataset.filter);
+                });
+            });
+        }
+
+        const capData = {
+            'C': "<strong>Consistency:</strong> Every read receives the most recent write or an error. All nodes see the same data at the same time.",
+            'A': "<strong>Availability:</strong> Every request receives a (non-error) response, without the guarantee that it contains the most recent write.",
+            'P': "<strong>Partition Tolerance:</strong> The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes.",
+            'CP': "<strong>CP Trade-off:</strong> Prioritizes consistency and partition tolerance. If a network splits, the minority side becomes unavailable to prevent stale reads (e.g., HBase, MongoDB).",
+            'AP': "<strong>AP Trade-off:</strong> Prioritizes availability. If a network splits, all nodes answer queries, but might return stale data (e.g., Cassandra, DynamoDB).",
+            'CA': "<strong>CA Trade-off:</strong> Prioritizes consistency and availability. <em>Only possible if you assume network partitions never happen</em>, which is impossible in distributed networks. Usually refers to single-node relational databases."
+        };
+
+        function updateCap(type) {
+            const el = document.getElementById('cap-explanation');
+            el.innerHTML = capData[type];
+            el.style.backgroundColor = '#f0f9ff';
+            setTimeout(() => el.style.backgroundColor = '#fafaf9', 300);
+        }
+
+        let replicaColorHue = 200;
+        function simulateReplication() {
+            const status = document.getElementById('rep-status');
+            const color = `hsl(${replicaColorHue}, 70%, 50%)`;
+            replicaColorHue = (replicaColorHue + 50) % 360; // cycle colors for different blocks
+
+            status.textContent = "Client requests NameNode...";
+            
+            setTimeout(() => {
+                status.textContent = "NameNode maps: R1N1, R2N1, R2N2. Client writes...";
+                
+                // Rack aware replication logic (simulated): 1 local rack, 2 on a remote rack (different nodes)
+                const targetNodes = ['node-1-1', 'node-2-1', 'node-2-2'];
+                
+                targetNodes.forEach((nodeId, index) => {
+                    setTimeout(() => {
+                        const node = document.getElementById(nodeId);
+                        const container = node.querySelector('.block-container');
+                        const block = document.createElement('div');
+                        block.className = 'block-replica shadow-sm';
+                        block.style.backgroundColor = color;
+                        container.appendChild(block);
+                        
+                        node.classList.add('active');
+                        setTimeout(() => node.classList.remove('active'), 500);
+                        
+                        if(index === 2) status.textContent = "Replication complete. RF=3 achieved.";
+                    }, index * 400); // Stagger the visual appearance
+                });
+
+            }, 600);
+        }
+    </script>
+</body>
+</html>
+
+
+

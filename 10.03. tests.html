@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFS Interactive Study Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fafaf9; color: #292524; }
+        
+        /* Tab Styles */
+        .tab-btn.active { border-bottom-color: #0369a1; color: #0369a1; font-weight: 700; background-color: #f0f9ff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Flashcard 3D Flip Styles */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .flip-card-inner { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        
+        /* Quiz Custom Radio Styles */
+        .quiz-option input:checked + div { border-color: #0369a1; background-color: #f0f9ff; }
+        .quiz-option.correct input:checked + div { border-color: #16a34a; background-color: #dcfce7; }
+        .quiz-option.incorrect input:checked + div { border-color: #dc2626; background-color: #fee2e2; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-stone-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-6 text-center">
+                <h1 class="text-3xl font-extrabold text-stone-800">DFS Study Center</h1>
+                <p class="text-stone-500 mt-1">Master Distributed File Systems</p>
+            </div>
+            
+            <div class="flex justify-center border-b border-stone-200 mt-4">
+                <button onclick="switchTab('flashcards')" id="btn-flashcards" class="tab-btn active px-8 py-3 text-stone-600 border-b-4 border-transparent hover:text-sky-700 transition font-medium text-lg focus:outline-none">
+                    📇 Flashcards (25)
+                </button>
+                <button onclick="switchTab('quiz')" id="btn-quiz" class="tab-btn px-8 py-3 text-stone-600 border-b-4 border-transparent hover:text-sky-700 transition font-medium text-lg focus:outline-none">
+                    📝 Practice Quiz (10)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <div id="tab-flashcards" class="tab-content active">
+            <div class="text-center mb-8">
+                <p class="text-stone-600">Click any card to flip it over and reveal the definition. Study these core concepts to build your foundational knowledge.</p>
+                <div class="mt-4 flex justify-center gap-4">
+                    <button onclick="shuffleCards()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded shadow-sm transition text-sm font-semibold">🔀 Shuffle Cards</button>
+                    <button onclick="resetCards()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded shadow-sm transition text-sm font-semibold">🔄 Reset Flips</button>
+                </div>
+            </div>
+            
+            <div id="flashcards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                </div>
+        </div>
+
+        <div id="tab-quiz" class="tab-content">
+            <div class="text-center mb-8">
+                <p class="text-stone-600">Test your practical application of DFS theories. Select an answer to immediately receive feedback and rationale.</p>
+                <p id="quiz-score" class="text-xl font-bold text-sky-800 mt-4 hidden">Score: <span id="score-val">0</span> / 10</p>
+            </div>
+
+            <div id="quiz-container" class="space-y-10">
+                </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Data Definitions ---
+
+        const flashcardData = [
+            { front: "Direct-Attached Storage (DAS)", back: "Storage physically connected to one server with block-level access that is not shareable across a network." },
+            { front: "Network-Attached Storage (NAS)", back: "A dedicated device on the network providing file-level access that multiple users or machines can share simultaneously." },
+            { front: "Storage Area Network (SAN)", back: "A dedicated high-speed network connecting servers to shared, block-level enterprise storage." },
+            { front: "Object Storage", back: "Highly scalable storage with no file hierarchy, using a flat namespace and accessed via HTTP/REST APIs." },
+            { front: "File System", back: "The underlying architecture that organizes raw binary data into structured files and folders on a storage medium." },
+            { front: "FAT32 File System limitation", back: "A universal file system constrained by a maximum file size limit of 4 GB." },
+            { front: "File System Journaling", back: "A log area where file changes are recorded before being committed to disk, aiding in recovery after a system crash." },
+            { front: "Disk Partition", back: "A contiguous, physical division of a storage disk defined by a partition table like MBR or GPT." },
+            { front: "Storage Volume", back: "A logical, mountable storage unit that can potentially span multiple physical partitions or disks." },
+            { front: "Logical Volume Manager (LVM)", back: "A tool that decouples logical volumes from physical disks, allowing administrators to resize or move volumes dynamically without downtime." },
+            { front: "Distributed File System (DFS)", back: "A system that stores data across multiple networked machines while presenting it as a single, unified local file system to the user." },
+            { front: "Location Transparency", back: "The fundamental goal of a DFS, where users access files without needing to know which physical machine actually holds the data." },
+            { front: "DFS Metadata Server", back: "The architectural component that acts as the brain, tracking the locations of all files and data blocks across the network." },
+            { front: "CAP Theorem", back: "The principle stating that a distributed system can guarantee at most two out of three traits: Consistency, Availability, and Partition tolerance." },
+            { front: "Network File System (NFS)", back: "The standard file sharing protocol for Unix/Linux environments, originally developed by Sun Microsystems in 1984." },
+            { front: "NFS `hard` mount option", back: "A client configuration that forces the system to retry operations indefinitely if the remote NFS server becomes unreachable." },
+            { front: "Hadoop Distributed File System (HDFS)", back: "A petabyte-scale distributed file system optimized for 'write once, read many times' big data workloads." },
+            { front: "NameNode (in HDFS)", back: "The master server in HDFS that manages the file system namespace and stores all metadata in its RAM." },
+            { front: "DataNode (in HDFS)", back: "The slave servers in HDFS responsible for storing the actual physical 128 MB data blocks." },
+            { front: "Default HDFS Replication Factor", back: "Three (3), meaning each data block is copied to three different DataNodes to ensure fault tolerance." },
+            { front: "Rack-Aware Placement", back: "An HDFS strategy that places block replicas across different physical server racks to ensure data survives a complete rack failure." },
+            { front: "Heartbeat (in DFS)", back: "A periodic signal sent by DataNodes to the NameNode to confirm they are still alive and operational." },
+            { front: "Checksums", back: "Mathematical values computed during data writes and verified during reads to detect silent data corruption." },
+            { front: "Erasure Coding", back: "A feature in Hadoop 3.x that acts as an alternative to standard replication, using mathematical parity to reduce storage overhead to roughly 50%." },
+            { front: "autofs", back: "A utility that automatically mounts NFS network shares on-demand when accessed and gracefully unmounts them when idle." }
+        ];
+
+        const quizData = [
+            {
+                q: "A hospital IT department needs to deploy a new storage solution for their virtualisation cluster. The virtual machines require high-speed, block-level access to a shared storage pool. Which architecture should they deploy?",
+                opts: [
+                    { text: "Storage Area Network (SAN)", correct: true, rationale: "SANs provide dedicated, high-speed networks connecting servers to shared storage at the block level, making them the enterprise standard for VMs." },
+                    { text: "Network-Attached Storage (NAS)", correct: false, rationale: "NAS provides file-level access rather than the required block-level access, introducing too much overhead for optimal VM performance." },
+                    { text: "Direct-Attached Storage (DAS)", correct: false, rationale: "DAS is physically connected to only one server and cannot be shared across a cluster." },
+                    { text: "Object Storage", correct: false, rationale: "Object storage is highly scalable via HTTP/REST APIs, making it completely unsuitable for the low-latency, block-level requirements of VMs." }
+                ],
+                hint: "Consider which architecture provides both the 'shared' capability of a network and the 'block-level' speed of a local drive."
+            },
+            {
+                q: "A videographer needs to format a 64 GB external flash drive to transfer 12 GB 4K video files between Windows, macOS, and Linux without installing third-party drivers. Which file system is the correct choice?",
+                opts: [
+                    { text: "exFAT", correct: true, rationale: "exFAT offers native cross-platform compatibility across Win/Mac/Linux and supports file sizes well into the Exabytes, easily accommodating a 12 GB video." },
+                    { text: "FAT32", correct: false, rationale: "FAT32 has a strict maximum file size limit of 4 GB, meaning the 12 GB video file would fail to copy." },
+                    { text: "NTFS", correct: false, rationale: "NTFS is typically read-only on macOS without third-party software, breaking the seamless cross-platform requirement." },
+                    { text: "ext4", correct: false, rationale: "ext4 easily handles large files but is entirely unreadable by native Windows and macOS systems without specialized drivers." }
+                ],
+                hint: "You need a format that combines the universal compatibility of older standards with the large file support of modern operating systems."
+            },
+            {
+                q: "A Linux DB server is running out of space. The admin physically installs a new hard drive. Utilizing LVM, what is the conceptual order of operations to expand the database's available space?",
+                opts: [
+                    { text: "Initialize new drive as Physical Volume (PV), add to Volume Group (VG), then extend Logical Volume (LV).", correct: true, rationale: "LVM abstracts storage in layers; the raw disk must first become a PV, which is pooled into a VG, providing free space to stretch the LV." },
+                    { text: "Extend Logical Volume (LV), initialize new drive as Physical Volume (PV), and map to Volume Group (VG).", correct: false, rationale: "A Logical Volume cannot be extended unless there is already unallocated free space available within its underlying Volume Group." },
+                    { text: "Change the partition table of the old drive from MBR to GPT to unlock capacity.", correct: false, rationale: "Converting MBR to GPT expands the limit of a single disk, but does not bridge space across two entirely separate physical disks." },
+                    { text: "Format new drive as a separate Volume Group (VG) and merge with existing Logical Volume (LV).", correct: false, rationale: "Logical Volumes reside entirely within a single Volume Group; you cannot merge an LV across two separate Volume Groups." }
+                ],
+                hint: "Think of the LVM stack from the bottom up: hardware abstraction, then the storage pool, then the usable space."
+            },
+            {
+                q: "A globally distributed database (NY and London) suffers a severed network cable. The database prioritizes 'AP' (CAP theorem). How will the London data center handle a query during the outage?",
+                opts: [
+                    { text: "It will process the query and return a response immediately, though the data might be stale.", correct: true, rationale: "An AP system prioritizes Availability over Consistency; it guarantees a response despite the partition, accepting the risk of stale data." },
+                    { text: "It will return a timeout error to the user until the connection is fully restored.", correct: false, rationale: "Refusing to answer a query to prevent serving stale data is a characteristic of a CP system, not an AP system." },
+                    { text: "It will securely shut down its database services to prevent conflicting edits.", correct: false, rationale: "Taking a node offline intentionally sacrifices Availability to protect Consistency, directly contradicting an AP system." },
+                    { text: "It will somehow route the query to guarantee the absolute latest data is returned.", correct: false, rationale: "The CAP theorem states that guaranteeing both absolute consistency and availability is mathematically impossible during a network partition." }
+                ],
+                hint: "If a system prioritizes 'Availability' over 'Consistency', what happens when asked for information it cannot verify?"
+            },
+            {
+                q: "An admin accidentally reboots the central NFS server. Connected Linux workstations immediately freeze up attempting to write, and users cannot cancel the terminal commands. Which mount option is missing?",
+                opts: [
+                    { text: "intr", correct: true, rationale: "The 'intr' (interruptible) option allows signals like Ctrl+C to interrupt hung operations when an NFS server drops, preventing total freezing." },
+                    { text: "hard", correct: false, rationale: "The 'hard' option dictates indefinite retries. This ensures data safety but is the cause of the freeze if not paired with 'intr'." },
+                    { text: "sync", correct: false, rationale: "The 'sync' option forces the server to write to physical disk before replying. It does not govern how clients handle a disconnected server." },
+                    { text: "soft", correct: false, rationale: "While 'soft' prevents freezing by timing out, it is highly dangerous for data integrity on writes and not recommended." }
+                ],
+                hint: "Look for the option that allows a user to send a keyboard signal to break out of a hung process."
+            },
+            {
+                q: "An enterprise HDFS cluster has 100 TB of available disk space across DataNodes, yet the NameNode has crashed entirely due to running completely out of RAM. What is causing this?",
+                opts: [
+                    { text: "Users are storing millions of very small, kilobyte-sized files.", correct: true, rationale: "The NameNode stores metadata for every single file/block in its RAM; millions of tiny files overwhelm memory regardless of empty DataNode disks." },
+                    { text: "Users are continuously writing a small number of massive, terabyte-sized files.", correct: false, rationale: "Massive files require very few metadata entries to map their constituent blocks, requiring almost no RAM on the NameNode." },
+                    { text: "The replication factor for the cluster was incorrectly configured to 5 instead of 3.", correct: false, rationale: "Increasing replication consumes more physical disk space on DataNodes, but adds negligible tracking data to the NameNode's RAM." },
+                    { text: "The DataNodes are missing their heartbeat signals, forcing the NameNode to cache data.", correct: false, rationale: "The NameNode never caches or touches actual file data; missed heartbeats trigger re-replication commands, not data caching." }
+                ],
+                hint: "Recall exactly what type of information the NameNode holds, and where it stores it."
+            },
+            {
+                q: "An HDFS cluster uses a replication factor of 3 and rack-aware placement. A power failure takes 'Rack 1' offline. What is the status of a data block whose primary replica was on Rack 1?",
+                opts: [
+                    { text: "The data is fully accessible because two other replicas exist on a separate rack.", correct: true, rationale: "Rack-aware placement ensures the 2nd and 3rd replicas are stored on a different rack than the 1st, guaranteeing survival of a complete rack failure." },
+                    { text: "The data is temporarily unavailable until the Secondary NameNode restores it.", correct: false, rationale: "The Secondary NameNode handles metadata checkpoints, not actual data block backups or failovers." },
+                    { text: "The data is permanently lost because all replicas are placed on adjacent servers.", correct: false, rationale: "Placing all replicas on a single rack is precisely what the rack-awareness algorithm is designed to prevent." },
+                    { text: "The data is accessible, but only in a read-only state directly from the EditLog.", correct: false, rationale: "The NameNode's EditLog tracks namespace modifications (like renaming); it never contains the actual file data blocks." }
+                ],
+                hint: "Think about the specific placement rules for Replica 2 and Replica 3 in a Hadoop environment."
+            },
+            {
+                q: "A DataNode suffers from a degrading hard drive causing silent corruption (flipped bits). When an application requests this block, how is the corruption caught?",
+                opts: [
+                    { text: "The client computes a checksum upon receiving the data and compares it against the stored original; a mismatch causes it to fetch a healthy replica.", correct: true, rationale: "Checksums are calculated at write time; during a read, the client recalculates and compares it to detect corruption, failing over to a good copy." },
+                    { text: "The NameNode continuously scans all DataNodes every 3 seconds to verify file integrity.", correct: false, rationale: "Heartbeats only confirm the DataNode is alive; scanning petabytes of data every 3 seconds for integrity is computationally impossible." },
+                    { text: "The DataNode's internal hardware detects the flipped bits and quarantines itself.", correct: false, rationale: "Silent corruption implies the underlying hardware and OS failed to detect the error, which is why the application layer (DFS) handles it." },
+                    { text: "The NameNode restores the corrupted blocks directly from the FsImage file.", correct: false, rationale: "The FsImage only contains a snapshot of the file system's directory structure and metadata, not the actual file contents." }
+                ],
+                hint: "What mechanism acts like a mathematical fingerprint for data, verified at the exact moment the data is read?"
+            },
+            {
+                q: "A Hadoop 3.x cluster requires strict fault tolerance but is out of hard drive space. How can they maintain resilience against node failures while reducing storage overhead from 200% to ~50%?",
+                opts: [
+                    { text: "Implement Erasure Coding.", correct: true, rationale: "Erasure Coding uses mathematical parity algorithms to split and encode data, providing the same fault tolerance as 3x replication but using roughly half the disk space." },
+                    { text: "Enable ZFS Deduplication across all DataNodes.", correct: false, rationale: "While ZFS features deduplication, it operates at the local file system level, not the distributed HDFS architectural level." },
+                    { text: "Reduce the NameNode's heartbeat interval to 1 second.", correct: false, rationale: "Adjusting the heartbeat interval only affects how quickly a downed node is detected; it has no impact on physical storage consumption." },
+                    { text: "Format the DataNode disks using LVM with Thin Provisioning.", correct: false, rationale: "Thin provisioning allows for over-allocating logical space but does not change the reality of storing three full physical copies of every block." }
+                ],
+                hint: "Look for the Hadoop 3.x feature that relies on mathematical parity rather than brute-force copying."
+            },
+            {
+                q: "An admin wants to automatically mount personal NFS home directories for 10,000 students on lab computers. They want a single rule mounting `/exports/home/<user>` to `/home/<user>` dynamically. Which `autofs` map is correct?",
+                opts: [
+                    { text: "* -rw,hard,intr server:/exports/home/&", correct: true, rationale: "In autofs map files, the asterisk (*) matches any requested directory name, and the ampersand (&) acts as a variable substituting that exact matched name into the server path." },
+                    { text: "& -rw,hard,intr server:/exports/home/*", correct: false, rationale: "This reverses the syntax; the asterisk is the wildcard match on the client side, and the ampersand is the substitution variable on the server path side." },
+                    { text: "all -rw,hard,intr server:/exports/home/users", correct: false, rationale: "'all' is not a recognized autofs wildcard, and mapping to a static 'users' directory defeats the purpose of dynamic individual mounts." },
+                    { text: "/home/* -rw,hard,intr server:/exports/&", correct: false, rationale: "Map files define subdirectories relative to the master map's base point; they do not include absolute paths like '/home/*' in the key field." }
+                ],
+                hint: "Identify the symbols autofs uses: one to 'catch' any incoming directory request, and another to 'inject' that request into the destination path."
+            }
+        ];
+
+        // --- Application Logic ---
+
+        let answeredQuestions = 0;
+        let score = 0;
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(`btn-${tabId}`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // Render Flashcards
+        function renderFlashcards(cards) {
+            const grid = document.getElementById('flashcards-grid');
+            grid.innerHTML = '';
+            
+            cards.forEach((card, index) => {
+                const cardHTML = `
+                    <div class="flip-card perspective-1000 h-56 cursor-pointer" onclick="this.classList.toggle('flipped')">
+                        <div class="flip-card-inner relative w-full h-full transform-style-3d shadow-md rounded-xl border border-stone-200">
+                            <div class="absolute inset-0 backface-hidden bg-white rounded-xl p-6 flex items-center justify-center text-center">
+                                <h3 class="text-xl font-bold text-sky-900">${card.front}</h3>
+                                <div class="absolute bottom-3 right-3 text-stone-300 text-xs">Tap to flip</div>
+                            </div>
+                            <div class="absolute inset-0 backface-hidden rotate-y-180 bg-sky-800 text-white rounded-xl p-6 flex flex-col items-center justify-center text-center overflow-y-auto">
+                                <p class="text-sm font-medium leading-relaxed">${card.back}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex > 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function shuffleCards() {
+            const shuffled = shuffleArray([...flashcardData]);
+            renderFlashcards(shuffled);
+        }
+
+        function resetCards() {
+            document.querySelectorAll('.flip-card.flipped').forEach(card => {
+                card.classList.remove('flipped');
+            });
+        }
+
+        // Render Quiz
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+
+            quizData.forEach((q, qIndex) => {
+                // Shuffle options
+                const shuffledOpts = shuffleArray([...q.opts]);
+                
+                let optionsHTML = '';
+                shuffledOpts.forEach((opt, oIndex) => {
+                    const optId = `q${qIndex}-o${oIndex}`;
+                    const isCorrectAttr = opt.correct ? 'true' : 'false';
+                    
+                    optionsHTML += `
+                        <label class="quiz-option block relative cursor-pointer group">
+                            <input type="radio" name="question${qIndex}" class="peer sr-only" onchange="handleAnswer(this, ${qIndex}, ${opt.correct})">
+                            <div class="p-4 rounded-lg border-2 border-stone-200 bg-white hover:bg-stone-50 transition-colors">
+                                <div class="flex items-center">
+                                    <div class="w-5 h-5 rounded-full border-2 border-stone-400 mr-3 peer-checked:bg-sky-600 flex-shrink-0 flex items-center justify-center">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-white hidden"></div>
+                                    </div>
+                                    <span class="text-stone-700 font-medium">${opt.text}</span>
+                                </div>
+                                <div class="rationale hidden mt-3 pt-3 border-t border-stone-200 text-sm text-stone-600">
+                                    <strong class="${opt.correct ? 'text-green-700' : 'text-red-700'}">${opt.correct ? 'Correct:' : 'Incorrect:'}</strong> 
+                                    ${opt.rationale}
+                                </div>
+                            </div>
+                        </label>
+                    `;
+                });
+
+                const questionHTML = `
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200" id="question-block-${qIndex}">
+                        <div class="flex items-start mb-4">
+                            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-sky-100 text-sky-800 font-bold mr-4 shrink-0">${qIndex + 1}</span>
+                            <h3 class="text-lg font-bold text-stone-800 pt-1">${q.q}</h3>
+                        </div>
+                        
+                        <div class="mb-4 pl-12">
+                            <button onclick="document.getElementById('hint-${qIndex}').classList.toggle('hidden')" class="text-xs text-sky-600 hover:text-sky-800 font-semibold flex items-center gap-1 focus:outline-none">
+                                💡 Need a hint?
+                            </button>
+                            <div id="hint-${qIndex}" class="hidden mt-2 p-3 bg-amber-50 text-amber-800 text-sm rounded border border-amber-200 italic">
+                                ${q.hint}
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 pl-12" id="options-${qIndex}">
+                            ${optionsHTML}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', questionHTML);
+            });
+        }
+
+        // Handle Quiz Answers
+        window.handleAnswer = function(inputElement, qIndex, isCorrect) {
+            const block = document.getElementById(`question-block-${qIndex}`);
+            const optionsContainer = document.getElementById(`options-${qIndex}`);
+            const allLabels = optionsContainer.querySelectorAll('label');
+            
+            // Prevent changing answer once selected (optional, but good for testing knowledge)
+            const inputs = optionsContainer.querySelectorAll('input');
+            inputs.forEach(inp => inp.disabled = true);
+
+            // Update Score
+            if (!block.classList.contains('answered')) {
+                answeredQuestions++;
+                if (isCorrect) score++;
+                document.getElementById('score-val').textContent = score;
+                document.getElementById('quiz-score').classList.remove('hidden');
+                block.classList.add('answered');
+            }
+
+            // Reveal rationales and styling
+            allLabels.forEach(label => {
+                const radio = label.querySelector('input');
+                const isThisOptCorrect = radio.getAttribute('onchange').includes('true');
+                const rationaleDiv = label.querySelector('.rationale');
+                
+                rationaleDiv.classList.remove('hidden');
+
+                if (radio.checked) {
+                    if (isCorrect) {
+                        label.classList.add('correct');
+                        label.querySelector('div.w-2\\.5').classList.remove('hidden'); // show inner dot
+                    } else {
+                        label.classList.add('incorrect');
+                    }
+                } else if (isThisOptCorrect) {
+                    // Highlight the correct answer if they got it wrong
+                    label.classList.add('opacity-100');
+                    label.querySelector('div').classList.add('border-green-400', 'bg-green-50');
+                } else {
+                    label.classList.add('opacity-50');
+                }
+            });
+        };
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', () => {
+            renderFlashcards(flashcardData);
+            renderQuiz();
+        });
+
+    </script>
+</body>
+</html>
+
+
+
