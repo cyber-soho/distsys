@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems - Study Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for flip cards */
+        .flip-card {
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e7e5e4;
+        }
+        .flip-card-front {
+            background-color: #ffffff;
+            color: #292524;
+        }
+        .flip-card-back {
+            background-color: #0d9488;
+            color: #ffffff;
+            transform: rotateY(180deg);
+        }
+        
+        /* Tab transitions */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 antialiased min-h-screen font-sans">
+
+    <div class="max-w-6xl mx-auto p-6 md:p-12">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold tracking-tight text-stone-900 mb-4">Distributed Systems Study Hub</h1>
+            <p class="text-lg text-stone-600">Data Management & Consistency</p>
+        </header>
+
+        <div class="flex justify-center border-b border-stone-200 mb-8">
+            <button id="btn-flashcards" class="px-8 py-4 font-bold text-teal-700 border-b-4 border-teal-600 transition-colors" onclick="switchTab('flashcards')">
+                Flashcards (25)
+            </button>
+            <button id="btn-quiz" class="px-8 py-4 font-medium text-stone-500 border-b-4 border-transparent hover:text-stone-700 transition-colors" onclick="switchTab('quiz')">
+                Practice Quiz (10)
+            </button>
+        </div>
+
+        <div id="tab-flashcards" class="tab-content active">
+            <div class="mb-6 flex justify-between items-center bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                <p class="text-stone-600">Click any card to reveal the answer.</p>
+                <button onclick="shuffleFlashcards()" class="bg-stone-200 hover:bg-stone-300 text-stone-800 px-4 py-2 rounded text-sm font-semibold transition-colors">
+                    Shuffle Cards
+                </button>
+            </div>
+            <div id="flashcards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[250px]">
+                </div>
+        </div>
+
+        <div id="tab-quiz" class="tab-content">
+            <div class="mb-6 bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                <p class="text-stone-600">Test your practical application of distributed systems concepts. Select an answer to see the rationale.</p>
+            </div>
+            <div id="quiz-container" class="space-y-8">
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Data Definitions ---
+
+        const flashcardsData = [
+            { front: "The core question of data consistency in distributed systems", back: "Whose copy of the data do we trust right now when the network is slow?" },
+            { front: "CAP Theorem components", back: "Consistency, Availability, and Partition tolerance." },
+            { front: "Consistency (in CAP)", back: "Every node returns the same most-recent answer." },
+            { front: "Availability (in CAP)", back: "Every request gets an answer, rather than an error." },
+            { front: "The practical reality of the CAP Theorem", back: "Because network partitions (P) are inevitable, systems must choose between Consistency (CP) and Availability (AP)." },
+            { front: "MongoDB's default CAP profile", back: "CP (Consistency/Partition tolerance). It refuses writes during a partition." },
+            { front: "Apache Cassandra's CAP profile", back: "AP (Availability/Partition tolerance). It always accepts writes and reconciles them later." },
+            { front: "Ideal use cases for CP systems", back: "Financial ledgers, medical records, or cluster state management (like Kubernetes)." },
+            { front: "Single-leader replication", back: "All writes go to one leader, which streams changes to followers that handle the read requests." },
+            { front: "Primary weakness of single-leader replication", back: "The leader becomes a performance bottleneck and a single point of failure." },
+            { front: "Multi-leader replication", back: "Any leader can accept writes and gossips changes to others, requiring complex conflict resolution." },
+            { front: "Leaderless replication", back: "Every node is equal. Writes and reads go to multiple nodes using a quorum rule (W + R > N)." },
+            { front: "Synchronous replication", back: "The client waits for leader and follower acknowledgements. Results in zero data loss on failover, but is slow." },
+            { front: "Asynchronous replication", back: "The client only waits for the leader's acknowledgement. It is fast, but risks losing recent writes during a failover." },
+            { front: "Eventual consistency", back: "The guarantee that if no new updates are made, all replicas will eventually converge to the same value." },
+            { front: "Read-your-writes consistency", back: "A flavor of eventual consistency where a user immediately sees their own updates." },
+            { front: "Monotonic reads", back: "A guarantee that once a user sees a specific value, they will never subsequently see an older version of that value." },
+            { front: "pg_dump", back: "A logical backup tool in PostgreSQL that creates a SQL script or compressed file. Best for smaller databases or migrations." },
+            { front: "pg_basebackup", back: "A physical backup tool in PostgreSQL that copies data directory files byte-by-byte. Best for large databases and PITR." },
+            { front: "The 3-2-1 Backup Rule", back: "Keep 3 copies of the data, on 2 different media types, with 1 copy stored off-site." },
+            { front: "PITR", back: "Point-In-Time Recovery. Allows rewinding a database to a specific second in the past." },
+            { front: "Three ingredients required for PITR", back: "A base backup, enabled WAL (Write-Ahead Log) archiving, and a recovery recipe." },
+            { front: "Strict rule for a broken data directory", back: "Never delete it (no rm -rf). Quarantine and rename it instead, as it may be needed for forensics." },
+            { front: "The restore drill frequency", back: "Restore drills should be practiced once a quarter to verify backups actually work." },
+            { front: "Real-world examples of eventual consistency", back: "DNS propagation, Instagram likes counters, and Git pull/push operations." }
+        ];
+
+        const quizData = [
+            {
+                question: "You are designing the checkout system for a major e-commerce platform gearing up for Black Friday. If a network partition occurs, the business requirement states that customers must still be able to add items to their carts and complete purchases, even if inventory counts are temporarily out of sync across regions. Which architecture profile should you choose?",
+                options: [
+                    { text: "AP (Availability and Partition Tolerance)", isCorrect: true, rationale: "An AP system, like DynamoDB or Cassandra, prioritizes accepting writes (Availability) during network breaks (Partition Tolerance), which is ideal for shopping carts where capturing the order is the highest priority." },
+                    { text: "CP (Consistency and Partition Tolerance)", isCorrect: false, rationale: "A CP system would refuse writes during a partition to ensure all nodes agree, which would block users from completing their purchases during an outage." },
+                    { text: "CA (Consistency and Availability)", isCorrect: false, rationale: "In distributed systems communicating over a network, partitions are inevitable, meaning a pure CA system cannot exist in the real world when a network link fails." },
+                    { text: "Synchronous single-leader", isCorrect: false, rationale: "Synchronous replication prioritizes consistency and zero data loss, which would sacrifice availability if the follower node becomes unreachable." }
+                ]
+            },
+            {
+                question: "Your team is building a global collaboration application similar to Google Docs. Users in London, Tokyo, and New York need to edit the same document simultaneously, even if their local connection to the main data center drops temporarily. Which replication strategy best fits this requirement?",
+                options: [
+                    { text: "Multi-leader replication", isCorrect: true, rationale: "Multi-leader replication allows any regional leader to accept writes independently and gossip changes later, ensuring high write-availability across the globe." },
+                    { text: "Single-leader replication", isCorrect: false, rationale: "With a single leader, users in distant regions would experience high latency, and offline edits would be blocked entirely until reconnection to the central boss." },
+                    { text: "Synchronous replication", isCorrect: false, rationale: "Forcing every global edit to synchronously wait for acknowledgments from all other regions would make the application intolerably slow." },
+                    { text: "Leaderless replication", isCorrect: false, rationale: "While leaderless systems scale horizontally, they rely on quorum reads and writes, which does not inherently solve the complex offline conflict resolution required by collaborative text editing." }
+                ]
+            },
+            {
+                question: "A banking application requires a new database architecture. The strictest requirement is that once a client receives confirmation of a completed fund transfer, that transaction data must absolutely not be lost, even if the primary database server immediately catches fire. Which replication mode must be configured?",
+                options: [
+                    { text: "Synchronous replication", isCorrect: true, rationale: "By forcing the client to wait for both the leader and follower to acknowledge the write, synchronous replication guarantees zero data loss on failover." },
+                    { text: "Asynchronous replication", isCorrect: false, rationale: "Asynchronous replication acknowledges the client as soon as the leader writes the data, meaning recent writes could be lost if the leader dies before streaming them to the follower." },
+                    { text: "Eventual consistency", isCorrect: false, rationale: "Eventual consistency guarantees that nodes will eventually agree, but it does not prevent data loss if the only node holding a new write fails before replicating it." },
+                    { text: "Logical replication", isCorrect: false, rationale: "Logical replication refers to how data is extracted and applied (e.g., streaming SQL commands), but does not dictate whether the client waits for confirmation from replicas." }
+                ]
+            },
+            {
+                question: "A junior developer complains that after posting a new status update on your social media platform, they refreshed the page and their update disappeared, only to reappear 10 seconds later. What specific flavor of eventual consistency is the system currently failing to provide?",
+                options: [
+                    { text: "Read-your-writes consistency", isCorrect: true, rationale: "Read-your-writes is a specific guarantee ensuring that a user will always immediately see their own updates, even if other users experience a delay." },
+                    { text: "Monotonic reads", isCorrect: false, rationale: "Monotonic reads ensure that once a user sees a specific state of data, they don't time-travel backward to an older state, but it doesn't guarantee they see their own fresh writes immediately." },
+                    { text: "Session consistency", isCorrect: false, rationale: "Session consistency provides guarantees within a specific active session, but the core issue described is specifically the failure to read one's own immediate write." },
+                    { text: "Strong consistency", isCorrect: false, rationale: "While strong consistency would solve the issue by making everyone wait, the scenario asks for the specific flavor of eventual consistency that is missing for the author." }
+                ]
+            },
+            {
+                question: "You need to migrate a 150 GB production PostgreSQL database to a newer major version running on a different server architecture. Which backup tool is the correct choice for this task?",
+                options: [
+                    { text: "pg_dump", isCorrect: true, rationale: "Logical backups created by pg_dump generate SQL scripts or custom formats that are highly portable and required when migrating across different major versions or architectures." },
+                    { text: "pg_basebackup", isCorrect: false, rationale: "Physical backups copy the actual data directory files, meaning they can only be restored onto a server running the exact same PostgreSQL major version and architecture." },
+                    { text: "Write-Ahead Log (WAL) archiving", isCorrect: false, rationale: "WAL archiving stores transaction logs for point-in-time recovery; it is not a tool for migrating database schemas and data to a new version." },
+                    { text: "Leaderless quorum reads", isCorrect: false, rationale: "This is a replication strategy for database clusters, entirely unrelated to taking backups or migrating database versions." }
+                ]
+            },
+            {
+                question: "At 2:15 PM, an administrator accidentally executes a script that corrupts the production database. You decide to initiate a Point-In-Time Recovery (PITR) to restore the database to its exact state at 2:14 PM. Which set of ingredients is strictly required to accomplish this?",
+                options: [
+                    { text: "A base backup, an enabled WAL archive, and a recovery recipe", isCorrect: true, rationale: "PITR requires a physical snapshot of the files (base backup) to start from, the transaction logs (WAL) to replay events, and a recipe to tell the database exactly when to stop replaying." },
+                    { text: "A logical backup (pg_dump) and the postgresql.conf file", isCorrect: false, rationale: "Logical backups only represent data at the moment they were taken; they cannot be used to replay transaction logs forward to a specific microsecond." },
+                    { text: "A synchronous replica and an automated failover script", isCorrect: false, rationale: "A synchronous replica instantly copies the corruption script the moment it is executed, meaning the replica is also corrupted and cannot be used to go back in time." },
+                    { text: "A multi-leader topology and an active gossip protocol", isCorrect: false, rationale: "Multi-leader replication spreads writes across nodes; it is an availability strategy, not a backup strategy, and will simply replicate the data corruption." }
+                ]
+            },
+            {
+                question: "An alert fires indicating that the primary PostgreSQL data directory has been severely corrupted due to a storage hardware failure. As the lead responder, what is your mandatory first step regarding the broken directory?",
+                options: [
+                    { text: "Quarantine and rename the broken directory", isCorrect: true, rationale: "Renaming the directory preserves the corrupted files for later forensic analysis to determine the root cause of the storage failure, while freeing up the path for the restore." },
+                    { text: "Execute a recursive delete (rm -rf) to clear space for the restore", isCorrect: false, rationale: "Deleting the directory destroys all evidence of what caused the failure and may permanently delete unarchived transaction logs that could minimize data loss." },
+                    { text: "Run pg_basebackup immediately to capture the corrupted state", isCorrect: false, rationale: "Running a backup tool against a severely corrupted data directory will likely fail or simply produce a useless, corrupted backup." },
+                    { text: "Restart the PostgreSQL service to attempt an automatic crash recovery", isCorrect: false, rationale: "If the underlying storage hardware has corrupted the files, restarting the service will fail and could potentially exacerbate the file system damage." }
+                ]
+            },
+            {
+                question: "Your company uses an architecture heavily reliant on Eventual Consistency for its analytics dashboards. Why is this often considered a smart engineering choice rather than just 'laziness'?",
+                options: [
+                    { text: "It is significantly cheaper and maintains high availability during network partitions.", isCorrect: true, rationale: "By not requiring nodes to wait for a strict quorum of acknowledgments before answering queries, systems remain highly responsive and operational even when the network degrades." },
+                    { text: "It mathematically guarantees that no data will ever be lost during a failover.", isCorrect: false, rationale: "Eventual consistency makes no guarantees about preventing data loss; it only guarantees that replicas will eventually match if no new writes arrive." },
+                    { text: "It allows developers to skip writing conflict resolution logic entirely.", isCorrect: false, rationale: "In eventually consistent systems (like multi-leader setups), conflict resolution logic is still mandatory to determine how the system converges when two nodes accept conflicting writes." },
+                    { text: "It forces clients to wait until all nodes confirm a write before proceeding.", isCorrect: false, rationale: "This describes strong, synchronous consistency, which is the exact opposite of the performance benefits provided by eventual consistency." }
+                ]
+            },
+            {
+                question: "You are auditing a startup's disaster recovery plan. They have three copies of their database, stored on SSDs and magnetic tape, all located within their primary data center in San Francisco. According to the CISA-endorsed 3-2-1 rule, what critical component is missing?",
+                options: [
+                    { text: "1 copy stored off-site", isCorrect: true, rationale: "The 3-2-1 rule mandates that at least one backup copy must be geographically separated from the primary location to protect against site-wide physical disasters." },
+                    { text: "3 different media types", isCorrect: false, rationale: "The rule only requires 2 different media types (e.g., SSDs and tape), which they already have, reducing the risk of a single media manufacturing defect ruining all backups." },
+                    { text: "2 logical backup variants", isCorrect: false, rationale: "The rule is agnostic to logical vs. physical backups; it focuses on the quantity, media diversity, and geographic distribution of the data copies." },
+                    { text: "1 synchronous standby replica", isCorrect: false, rationale: "A standby replica is an availability strategy, not a disconnected backup, and if it's in the same data center, it is still vulnerable to site-wide destruction." }
+                ]
+            },
+            {
+                question: "A team is designing a Kubernetes cluster where the control plane must always know the exact, agreed-upon state of which containers are running on which nodes. According to the CAP theorem, what trade-off must they accept?",
+                options: [
+                    { text: "They must sacrifice availability during network partitions to ensure strict consistency.", isCorrect: true, rationale: "Cluster state management (like etcd in Kubernetes) is a CP system; it will refuse writes and appear unavailable during a partition rather than risk split-brain scenarios where nodes disagree on container states." },
+                    { text: "They must sacrifice partition tolerance to achieve perfect consistency and availability.", isCorrect: false, rationale: "Partition tolerance cannot be sacrificed in a real-world distributed system because networks will inevitably fail or drop packets." },
+                    { text: "They must use leaderless replication to ensure no nodes are bottlenecked.", isCorrect: false, rationale: "Leaderless replication is typically used for AP systems (like Cassandra) because quorum reads/writes can lead to temporary inconsistencies, which is unacceptable for strict cluster state." },
+                    { text: "They must accept that replicas will eventually converge when the network heals.", isCorrect: false, rationale: "Eventual convergence is an AP trait; Kubernetes requires strong, immediate consistency to avoid starting duplicate containers or terminating the wrong workloads." }
+                ]
+            }
+        ];
+
+        // --- Logic & Rendering ---
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            const btnCards = document.getElementById('btn-flashcards');
+            const btnQuiz = document.getElementById('btn-quiz');
+
+            if (tabId === 'flashcards') {
+                btnCards.className = "px-8 py-4 font-bold text-teal-700 border-b-4 border-teal-600 transition-colors";
+                btnQuiz.className = "px-8 py-4 font-medium text-stone-500 border-b-4 border-transparent hover:text-stone-700 transition-colors";
+            } else {
+                btnQuiz.className = "px-8 py-4 font-bold text-teal-700 border-b-4 border-teal-600 transition-colors";
+                btnCards.className = "px-8 py-4 font-medium text-stone-500 border-b-4 border-transparent hover:text-stone-700 transition-colors";
+            }
+        }
+
+        function toggleCard(element) {
+            element.classList.toggle('flipped');
+        }
+
+        function shuffleArray(array) {
+            let curId = array.length;
+            while (0 !== curId) {
+                let randId = Math.floor(Math.random() * curId);
+                curId -= 1;
+                let tmp = array[curId];
+                array[curId] = array[randId];
+                array[randId] = tmp;
+            }
+            return array;
+        }
+
+        function renderFlashcards(cards) {
+            const container = document.getElementById('flashcards-container');
+            container.innerHTML = '';
+            
+            cards.forEach((card, index) => {
+                const cardHTML = `
+                    <div class="flip-card" onclick="toggleCard(this)">
+                        <div class="flip-card-inner">
+                            <div class="flip-card-front">
+                                <p class="text-xl font-bold text-center leading-snug">${card.front}</p>
+                            </div>
+                            <div class="flip-card-back">
+                                <p class="text-lg font-medium text-center leading-relaxed">${card.back}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        function shuffleFlashcards() {
+            const shuffled = shuffleArray([...flashcardsData]);
+            renderFlashcards(shuffled);
+        }
+
+        // Updated function to accept originalIndex
+        function handleQuizAnswer(qIndex, btnIndex, isCorrect, originalIndex) {
+            const optionsContainer = document.getElementById(`options-${qIndex}`);
+            const buttons = optionsContainer.querySelectorAll('button');
+            const rationaleDiv = document.getElementById(`rationale-${qIndex}`);
+            const rationaleText = document.getElementById(`rationale-text-${qIndex}`);
+            
+            // Disable all buttons for this question
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-stone-50');
+                if(btn.dataset.correct === "true") {
+                    btn.classList.add('bg-teal-50', 'border-teal-500', 'text-teal-900');
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            });
+
+            // Highlight chosen
+            const chosenBtn = document.getElementById(`btn-${qIndex}-${btnIndex}`);
+            chosenBtn.classList.remove('opacity-50');
+            
+            // Retrieve the rationale using the original unshuffled index
+            const correctRationale = quizData[qIndex].options[originalIndex].rationale;
+
+            if (isCorrect) {
+                chosenBtn.classList.add('ring-2', 'ring-teal-500');
+                rationaleDiv.classList.add('bg-teal-50', 'border-teal-200');
+                rationaleDiv.classList.remove('hidden');
+                rationaleText.innerHTML = `<strong>Correct!</strong> ${correctRationale}`;
+            } else {
+                chosenBtn.classList.add('bg-red-50', 'border-red-400', 'text-red-900', 'ring-2', 'ring-red-400');
+                rationaleDiv.classList.add('bg-amber-50', 'border-amber-200');
+                rationaleDiv.classList.remove('hidden');
+                rationaleText.innerHTML = `<strong>Incorrect.</strong> ${correctRationale}`;
+            }
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+
+            quizData.forEach((q, qIndex) => {
+                // Map the original index so we can retrieve the correct rationale after shuffling
+                const mappedOptions = q.options.map((opt, i) => ({...opt, originalIndex: i}));
+                const shuffledOptions = shuffleArray(mappedOptions);
+                
+                let optionsHTML = '';
+                shuffledOptions.forEach((opt, loopIndex) => {
+                    optionsHTML += `
+                        <button id="btn-${qIndex}-${loopIndex}" 
+                                data-correct="${opt.isCorrect}"
+                                onclick="handleQuizAnswer(${qIndex}, ${loopIndex}, ${opt.isCorrect}, ${opt.originalIndex})" 
+                                class="w-full text-left p-4 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 transition-all font-medium text-stone-700">
+                            ${opt.text}
+                        </button>
+                    `;
+                });
+
+                const questionHTML = `
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                        <h3 class="text-lg font-bold text-stone-900 mb-4">
+                            <span class="text-teal-600 mr-2">${qIndex + 1}.</span>${q.question}
+                        </h3>
+                        <div id="options-${qIndex}" class="space-y-3 mb-4">
+                            ${optionsHTML}
+                        </div>
+                        <div id="rationale-${qIndex}" class="hidden p-4 rounded-lg border text-stone-800 text-sm mt-4 transition-all">
+                            <p id="rationale-text-${qIndex}"></p>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += questionHTML;
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderFlashcards(flashcardsData);
+            renderQuiz();
+        });
+    </script>
+</body>
+</html>

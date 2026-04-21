@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributed Systems - Data Management & Consistency</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutrals with Teal and Amber accents -->
+    <!-- Application Structure Plan: The application uses a dashboard/learning hub architecture. A persistent sidebar enables non-linear navigation between four core thematic modules (CAP Theorem, Replication, Consistency, Backup/Recovery) extracted from the linear slide deck. This structure allows users to explore complex, discrete topics at their own pace, focusing on specific engineering trade-offs without losing context of the overall distributed systems landscape. -->
+    <!-- Visualization & Content Choices: 
+         1. CAP Theorem -> Goal: Compare trade-offs -> Viz: Radar Chart (Chart.js) -> Interaction: Select DB to see its CAP profile -> Justifies trade-off visually without SVG.
+         2. Replication -> Goal: Organize/Compare -> Viz: Interactive Cards & Grid (HTML/Tailwind) -> Interaction: Click topology to reveal pros/cons/use-cases -> Clean semantic layout replacing complex network diagrams.
+         3. Eventual Consistency -> Goal: Show change over time -> Viz: Line Chart (Chart.js) -> Interaction: 'Simulate' button animates convergence -> Demonstrates the 'eventual' aspect dynamically.
+         4. Backup & PITR -> Goal: Process/Inform -> Viz: Stepped Process & Comparison Tables (HTML/Tailwind) -> Interaction: Toggle between backup tools and recovery steps -> Clarifies operational procedures without Mermaid flowcharts.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fafaf9; color: #292524; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (max-width: 768px) { .chart-container { height: 250px; } }
+        .nav-active { background-color: #e7e5e4; border-left: 4px solid #0d9488; font-weight: 600; }
+        .nav-item { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .nav-item:hover:not(.nav-active) { background-color: #f5f5f4; border-left: 4px solid #a8a29e; }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid #e7e5e4; }
+        .content-section { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .content-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .stat-card { transition: transform 0.2s; cursor: pointer; }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-card.active-card { ring: 2px; ring-color: #0d9488; border-color: #0d9488; background-color: #f0fdfa; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-stone-800 antialiased selection:bg-teal-200 selection:text-teal-900">
+
+    <aside class="w-64 bg-stone-100 border-r border-stone-200 flex flex-col hidden md:flex z-20">
+        <div class="p-6 border-b border-stone-200">
+            <h1 class="text-xl font-bold text-stone-900 leading-tight">Cyber.SoHo Hub</h1>
+            <p class="text-xs text-stone-500 mt-1 uppercase tracking-wider">Distributed Systems</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1" id="nav-menu">
+                <li><button data-target="sec-intro" class="w-full text-left px-6 py-3 nav-item nav-active text-stone-700">Introduction</button></li>
+                <li><button data-target="sec-cap" class="w-full text-left px-6 py-3 nav-item text-stone-700">1. CAP Theorem</button></li>
+                <li><button data-target="sec-rep" class="w-full text-left px-6 py-3 nav-item text-stone-700">2. Replication Strategies</button></li>
+                <li><button data-target="sec-con" class="w-full text-left px-6 py-3 nav-item text-stone-700">3. Eventual Consistency</button></li>
+                <li><button data-target="sec-bak" class="w-full text-left px-6 py-3 nav-item text-stone-700">4. Backup & Recovery</button></li>
+            </ul>
+        </nav>
+        <div class="p-4 border-t border-stone-200 text-xs text-stone-500 text-center">
+            Week 11 - Data Management
+        </div>
+    </aside>
+
+    <div class="md:hidden bg-stone-100 border-b border-stone-200 flex items-center justify-between p-4 absolute w-full z-30">
+        <h1 class="text-lg font-bold">Cyber.SoHo Hub</h1>
+        <select id="mobile-nav" class="bg-white border border-stone-300 text-stone-700 rounded p-1 text-sm">
+            <option value="sec-intro">Introduction</option>
+            <option value="sec-cap">1. CAP Theorem</option>
+            <option value="sec-rep">2. Replication</option>
+            <option value="sec-con">3. Consistency</option>
+            <option value="sec-bak">4. Backup & Recovery</option>
+        </select>
+    </div>
+
+    <main class="flex-1 overflow-y-auto bg-stone-50 relative pt-16 md:pt-0">
+        <div class="max-w-5xl mx-auto p-6 md:p-12 pb-24">
+
+            <section id="sec-intro" class="content-section active">
+                <header class="mb-10">
+                    <h2 class="text-4xl font-extrabold tracking-tight text-stone-900 mb-4">Data Management & Consistency</h2>
+                    <p class="text-xl text-stone-600 font-light border-l-4 border-teal-600 pl-4">From the Industry to the Classroom — Building IT's Future, Today and Together.</p>
+                </header>
+                <div class="glass-panel p-8 rounded-xl shadow-sm mb-8">
+                    <h3 class="text-2xl font-semibold mb-4">Why This Matters</h3>
+                    <p class="text-lg mb-6 leading-relaxed">
+                        In July 2024, a 10-hour outage in Azure Central US caused airlines to stop checking in passengers and hospitals to revert to paper records. The root cause? Replicas disagreed on which write was the latest. 
+                        This learning module answers the fundamental question of distributed systems: <strong>"Whose copy of the data do we trust — right now — when the network is slow?"</strong>
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg border border-stone-200">
+                            <h4 class="font-bold text-teal-700 mb-2">Learning Objectives</h4>
+                            <ul class="list-disc pl-5 space-y-2 text-stone-700">
+                                <li>State the CAP theorem and trade-offs.</li>
+                                <li>Compare single, multi, and leaderless replication.</li>
+                                <li>Define eventual consistency.</li>
+                                <li>Understand pg_dump vs pg_basebackup.</li>
+                                <li>Execute Point-In-Time Recovery (PITR).</li>
+                            </ul>
+                        </div>
+                        <div class="bg-stone-800 text-stone-100 p-6 rounded-lg flex flex-col justify-center items-center text-center">
+                            <span class="text-4xl mb-2">🚀</span>
+                            <h4 class="font-bold text-xl mb-2">Ready to explore?</h4>
+                            <p class="text-stone-400 text-sm">Use the navigation menu to begin your journey through distributed data architecture.</p>
+                            <button onclick="document.querySelector('[data-target=\'sec-cap\']').click()" class="mt-4 bg-teal-600 hover:bg-teal-500 text-white px-6 py-2 rounded transition-colors">Start Lesson 1</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-cap" class="content-section">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-extrabold text-stone-900 mb-2">The CAP Theorem in Practice</h2>
+                    <p class="text-lg text-stone-600">The fundamental trilemma of distributed databases, formalized by Gilbert & Lynch (2002).</p>
+                </header>
+                <p class="mb-8 text-stone-700 leading-relaxed bg-white p-4 rounded-lg border-l-4 border-amber-500 shadow-sm">
+                    <strong>Context:</strong> This section visualizes the CAP theorem. The interactive radar chart below demonstrates how different real-world databases prioritize these three guarantees. Because network partitions (P) are inevitable in distributed systems, architects must choose to sacrifice either perfect Consistency (C) or 100% Availability (A) during an outage. Explore the buttons to see how different products make this trade-off.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <div class="space-y-4 mb-6">
+                            <div class="p-4 bg-white rounded-lg border border-stone-200 shadow-sm">
+                                <h3 class="font-bold text-teal-700">C — Consistency</h3>
+                                <p class="text-sm text-stone-600">Every node returns the same most-recent answer.</p>
+                            </div>
+                            <div class="p-4 bg-white rounded-lg border border-stone-200 shadow-sm">
+                                <h3 class="font-bold text-teal-700">A — Availability</h3>
+                                <p class="text-sm text-stone-600">Every request gets an answer (not an error).</p>
+                            </div>
+                            <div class="p-4 bg-white rounded-lg border border-stone-200 shadow-sm">
+                                <h3 class="font-bold text-amber-600">P — Partition Tolerance</h3>
+                                <p class="text-sm text-stone-600">System keeps working when the network between nodes breaks. <em class="block mt-1 font-semibold">Not optional in the real world.</em></p>
+                            </div>
+                        </div>
+
+                        <h4 class="font-bold mb-3 text-stone-800">Select Architecture Profile:</h4>
+                        <div class="flex flex-wrap gap-2" id="cap-buttons">
+                            <button class="px-4 py-2 bg-stone-200 hover:bg-teal-100 text-stone-800 rounded text-sm transition-colors cap-btn" data-type="cp" data-title="MongoDB / etcd (CP)">MongoDB (CP)</button>
+                            <button class="px-4 py-2 bg-stone-200 hover:bg-teal-100 text-stone-800 rounded text-sm transition-colors cap-btn" data-type="ap" data-title="Cassandra / DynamoDB (AP)">Cassandra (AP)</button>
+                            <button class="px-4 py-2 bg-stone-200 hover:bg-teal-100 text-stone-800 rounded text-sm transition-colors cap-btn" data-type="pg" data-title="PostgreSQL Sync (CP)">PostgreSQL Sync</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                        <h4 id="cap-chart-title" class="text-center font-bold text-stone-700 mb-2">Select a database to view profile</h4>
+                        <div class="chart-container">
+                            <canvas id="capChart"></canvas>
+                        </div>
+                        <p id="cap-explanation" class="text-sm text-stone-500 mt-4 text-center h-12">The "right" answer matches your business requirement.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-rep" class="content-section">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-extrabold text-stone-900 mb-2">Database Replication Strategies</h2>
+                    <p class="text-lg text-stone-600">Making a copy of your data live on another machine so that when the first machine dies, the lights stay on.</p>
+                </header>
+                <p class="mb-8 text-stone-700 leading-relaxed bg-white p-4 rounded-lg border-l-4 border-teal-600 shadow-sm">
+                    <strong>Context:</strong> This section compares the three main topologies for database replication. How nodes communicate dictates system scalability and fault tolerance. Click on each strategy below to explore its architecture, real-world examples, and the inherent strengths and weaknesses of each approach based on write patterns.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white border border-stone-200 rounded-lg p-6 stat-card active-card" data-type="single" onclick="showRep('single')">
+                        <div class="text-3xl mb-2 text-center">👑</div>
+                        <h3 class="font-bold text-center text-stone-800">Single-Leader</h3>
+                        <p class="text-xs text-center text-stone-500 mt-1">The Newspaper Editor</p>
+                    </div>
+                    <div class="bg-white border border-stone-200 rounded-lg p-6 stat-card" data-type="multi" onclick="showRep('multi')">
+                        <div class="text-3xl mb-2 text-center">🤝</div>
+                        <h3 class="font-bold text-center text-stone-800">Multi-Leader</h3>
+                        <p class="text-xs text-center text-stone-500 mt-1">The Shared Google Doc</p>
+                    </div>
+                    <div class="bg-white border border-stone-200 rounded-lg p-6 stat-card" data-type="leaderless" onclick="showRep('leaderless')">
+                        <div class="text-3xl mb-2 text-center">🕸️</div>
+                        <h3 class="font-bold text-center text-stone-800">Leaderless</h3>
+                        <p class="text-xs text-center text-stone-500 mt-1">The Flat Committee</p>
+                    </div>
+                </div>
+
+                <div id="rep-content" class="bg-white border border-stone-200 rounded-xl p-6 md:p-8 shadow-sm min-h-[300px]">
+                </div>
+
+                <div class="mt-8 bg-stone-100 p-6 rounded-lg border border-stone-200">
+                    <h3 class="font-bold text-stone-800 mb-4">The Speed vs. Safety Dial: Sync vs Async</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-stone-600">
+                            <thead class="bg-stone-200 text-stone-700 uppercase">
+                                <tr>
+                                    <th class="px-4 py-3 rounded-tl-lg">Mode</th>
+                                    <th class="px-4 py-3">Client waits for...</th>
+                                    <th class="px-4 py-3">Data loss on failover</th>
+                                    <th class="px-4 py-3 rounded-tr-lg">Speed</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-200 bg-white">
+                                <tr>
+                                    <td class="px-4 py-3 font-medium text-stone-900">Synchronous</td>
+                                    <td class="px-4 py-3">Leader + Follower ACK</td>
+                                    <td class="px-4 py-3 text-teal-600 font-bold">Zero</td>
+                                    <td class="px-4 py-3 text-amber-600">Slow</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-3 font-medium text-stone-900">Asynchronous</td>
+                                    <td class="px-4 py-3">Leader only</td>
+                                    <td class="px-4 py-3 text-amber-600 font-bold">"Last few writes"</td>
+                                    <td class="px-4 py-3 text-teal-600">Fast</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-con" class="content-section">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-extrabold text-stone-900 mb-2">Eventual Consistency</h2>
+                    <p class="text-lg text-stone-600">"Pretty soon" is usually good enough.</p>
+                </header>
+                <p class="mb-8 text-stone-700 leading-relaxed bg-white p-4 rounded-lg border-l-4 border-amber-500 shadow-sm">
+                    <strong>Context:</strong> Eventual consistency is an engineering choice, not laziness. It allows systems to be highly available and performant. The interactive chart below simulates three distinct database nodes receiving disparate data updates. By clicking 'Trigger Gossip Protocol', you can visualize how nodes reconcile differences over time, eventually converging to a single consistent state without requiring synchronous locking.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="bg-white p-5 rounded-lg border border-stone-200 shadow-sm">
+                            <h3 class="font-bold text-stone-800 mb-2">Three Flavours</h3>
+                            <ul class="space-y-3 text-sm text-stone-600">
+                                <li><strong class="text-teal-700 block">Read-your-writes</strong> You see your own tweet immediately, others see it later.</li>
+                                <li><strong class="text-teal-700 block">Monotonic reads</strong> Once you see a value, you never see an older value.</li>
+                                <li><strong class="text-teal-700 block">Session consistency</strong> Read-your-writes within one session only.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-stone-200 shadow-sm">
+                            <h3 class="font-bold text-stone-800 mb-2">Real-World Examples</h3>
+                            <ul class="list-disc pl-5 text-sm text-stone-600 space-y-1">
+                                <li>DNS propagation (24-48 hrs)</li>
+                                <li>Instagram likes (seconds)</li>
+                                <li>SMTP email (minutes)</li>
+                                <li>Git pull/push operations</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-stone-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-stone-800">Node Convergence Simulation</h3>
+                            <button id="btn-gossip" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-sm font-bold transition-colors shadow-sm">Trigger Gossip Protocol</button>
+                        </div>
+                        <div class="chart-container flex-1">
+                            <canvas id="consistencyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-bak" class="content-section">
+                <header class="mb-8">
+                    <h2 class="text-3xl font-extrabold text-stone-900 mb-2">Backup Tools & Recovery</h2>
+                    <p class="text-lg text-stone-600">Replication protects from hardware failure. Backup protects from the intern typing DROP TABLE.</p>
+                </header>
+                <p class="mb-8 text-stone-700 leading-relaxed bg-white p-4 rounded-lg border-l-4 border-teal-600 shadow-sm">
+                    <strong>Context:</strong> A comprehensive data safety strategy requires both logical/physical backups and a tested recovery plan. This section outlines PostgreSQL's core backup utilities and the critical steps for Point-In-Time Recovery (PITR). Explore the operational differences between tools and step through the recovery staircase to understand how to restore data to a precise moment before a catastrophic error occurred.
+                </p>
+
+                <div class="flex border-b border-stone-200 mb-6">
+                    <button id="tab-tools" class="px-6 py-3 font-semibold text-teal-700 border-b-2 border-teal-600" onclick="switchBakTab('tools')">Backup Tools</button>
+                    <button id="tab-pitr" class="px-6 py-3 font-medium text-stone-500 hover:text-stone-700" onclick="switchBakTab('pitr')">Recovery (PITR)</button>
+                </div>
+
+                <div id="content-tools" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
+                            <h3 class="text-xl font-bold text-stone-800 mb-1">pg_dump</h3>
+                            <p class="text-sm font-medium text-stone-500 mb-4 uppercase tracking-wider">The Logical Backup</p>
+                            <ul class="space-y-2 text-stone-600 text-sm">
+                                <li class="flex items-start"><span class="mr-2">✓</span> Connects to a running PG server, asks for data.</li>
+                                <li class="flex items-start"><span class="mr-2">✓</span> Writes a SQL script or compressed format.</li>
+                                <li class="flex items-start"><span class="mr-2">✓</span> Restores onto any compatible PG version.</li>
+                            </ul>
+                            <div class="mt-4 p-3 bg-stone-50 rounded text-sm">
+                                <strong class="text-stone-800 block mb-1">When to use:</strong>
+                                Migrating versions, cloning prod to dev, backing up single schemas, databases < 500 GB.
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                            <h3 class="text-xl font-bold text-stone-800 mb-1">pg_basebackup</h3>
+                            <p class="text-sm font-medium text-stone-500 mb-4 uppercase tracking-wider">The Physical Backup</p>
+                            <ul class="space-y-2 text-stone-600 text-sm">
+                                <li class="flex items-start"><span class="mr-2">✓</span> Copies actual files of PG data directory byte-by-byte.</li>
+                                <li class="flex items-start"><span class="mr-2">✓</span> Server stays running during copy.</li>
+                                <li class="flex items-start"><span class="mr-2">✓</span> Restores only to same major version + architecture.</li>
+                            </ul>
+                            <div class="mt-4 p-3 bg-stone-50 rounded text-sm">
+                                <strong class="text-stone-800 block mb-1">When to use:</strong>
+                                Large DBs (TB+), base of a PITR strategy, initial state of new streaming replica.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-stone-800 text-stone-100 p-6 rounded-xl text-center">
+                        <h3 class="text-xl font-bold text-amber-400 mb-2">The 3-2-1 Rule (CISA Endorsed)</h3>
+                        <p class="text-lg"><strong>3</strong> copies of the data, on <strong>2</strong> different media, with <strong>1</strong> off-site copy.</p>
+                    </div>
+                </div>
+
+                <div id="content-pitr" class="hidden">
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm mb-6">
+                        <h3 class="text-xl font-bold text-stone-800 mb-4">Point-In-Time Recovery Ingredients</h3>
+                        <div class="flex flex-wrap gap-4 mb-4">
+                            <span class="bg-teal-50 text-teal-800 px-3 py-1 rounded-full text-sm font-medium border border-teal-200">1. Base Backup</span>
+                            <span class="text-stone-400 font-bold">+</span>
+                            <span class="bg-teal-50 text-teal-800 px-3 py-1 rounded-full text-sm font-medium border border-teal-200">2. WAL Archiving Enabled</span>
+                            <span class="text-stone-400 font-bold">+</span>
+                            <span class="bg-teal-50 text-teal-800 px-3 py-1 rounded-full text-sm font-medium border border-teal-200">3. Recovery Recipe</span>
+                        </div>
+                        <p class="text-sm text-stone-600 italic">"A backup you have never restored is not a backup. It is a prayer."</p>
+                    </div>
+
+                    <h3 class="font-bold text-stone-800 mb-4 ml-2">The 6 Operational Steps</h3>
+                    <div class="space-y-3">
+                        <div class="p-4 bg-white border border-stone-200 rounded flex items-center hover:bg-stone-50 transition-colors">
+                            <div class="bg-stone-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-4 shrink-0">1</div>
+                            <p class="text-stone-700">Stop PG cleanly.</p>
+                        </div>
+                        <div class="p-4 bg-amber-50 border border-amber-200 rounded flex items-center shadow-sm">
+                            <div class="bg-amber-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-4 shrink-0">2</div>
+                            <div>
+                                <p class="text-stone-800 font-bold">Quarantine the broken data directory.</p>
+                                <p class="text-xs text-amber-700 mt-1">CRITICAL: Never rm -rf! Rename it. You may need it for forensics.</p>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-white border border-stone-200 rounded flex items-center hover:bg-stone-50 transition-colors">
+                            <div class="bg-stone-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-4 shrink-0">3</div>
+                            <p class="text-stone-700">Extract the base backup into a fresh $PGDATA.</p>
+                        </div>
+                        <div class="p-4 bg-white border border-stone-200 rounded flex items-center hover:bg-stone-50 transition-colors">
+                            <div class="bg-stone-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-4 shrink-0">4</div>
+                            <p class="text-stone-700">Create <code class="bg-stone-100 px-1 rounded text-sm">recovery.signal</code>.</p>
+                        </div>
+                        <div class="p-4 bg-white border border-stone-200 rounded flex items-center hover:bg-stone-50 transition-colors">
+                            <div class="bg-stone-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-4 shrink-0">5</div>
+                            <p class="text-stone-700">Append recovery recipe (target time) to <code class="bg-stone-100 px-1 rounded text-sm">postgresql.auto.conf</code>.</p>
+                        </div>
+                        <div class="p-4 bg-white border border-stone-200 rounded flex items-center hover:bg-stone-50 transition-colors">
+                            <div class="bg-stone-800 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold mr-4 shrink-0">6</div>
+                            <p class="text-stone-700">Start PG → it replays WAL up to the target → promotes.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.content-section');
+        const mobileNav = document.getElementById('mobile-nav');
+
+        function switchTab(targetId) {
+            sections.forEach(sec => sec.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+
+            navItems.forEach(item => {
+                if (item.dataset.target === targetId) {
+                    item.classList.add('nav-active');
+                    item.classList.add('font-semibold');
+                } else {
+                    item.classList.remove('nav-active');
+                    item.classList.remove('font-semibold');
+                }
+            });
+            mobileNav.value = targetId;
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                switchTab(e.currentTarget.dataset.target);
+            });
+        });
+
+        mobileNav.addEventListener('change', (e) => {
+            switchTab(e.target.value);
+        });
+
+        function switchBakTab(tab) {
+            const btnTools = document.getElementById('tab-tools');
+            const btnPitr = document.getElementById('tab-pitr');
+            const contentTools = document.getElementById('content-tools');
+            const contentPitr = document.getElementById('content-pitr');
+
+            if (tab === 'tools') {
+                btnTools.className = "px-6 py-3 font-semibold text-teal-700 border-b-2 border-teal-600";
+                btnPitr.className = "px-6 py-3 font-medium text-stone-500 hover:text-stone-700";
+                contentTools.style.display = 'block';
+                contentPitr.style.display = 'none';
+            } else {
+                btnPitr.className = "px-6 py-3 font-semibold text-teal-700 border-b-2 border-teal-600";
+                btnTools.className = "px-6 py-3 font-medium text-stone-500 hover:text-stone-700";
+                contentPitr.style.display = 'block';
+                contentTools.style.display = 'none';
+            }
+        }
+
+        const repData = {
+            single: {
+                title: "Single-Leader",
+                subtitle: "The Newspaper Editor",
+                desc: "One boss. All writes go to the leader. Leader streams changes to followers. Followers serve reads.",
+                used: ["PostgreSQL streaming", "MySQL async", "MongoDB replica sets"],
+                pro: "Simple, no write conflicts.",
+                con: "Leader is a bottleneck + single point of failure.",
+                layout: `<div class="flex flex-col items-center justify-center space-y-4">
+                            <div class="px-6 py-3 bg-teal-100 border-2 border-teal-600 text-teal-900 font-bold rounded shadow">Leader (R/W)</div>
+                            <div class="flex gap-4">
+                                <div class="px-4 py-2 bg-stone-100 border border-stone-400 rounded">↓</div>
+                                <div class="px-4 py-2 bg-stone-100 border border-stone-400 rounded">↓</div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="px-4 py-2 bg-stone-100 border border-stone-300 text-stone-700 rounded shadow">Follower (R)</div>
+                                <div class="px-4 py-2 bg-stone-100 border border-stone-300 text-stone-700 rounded shadow">Follower (R)</div>
+                            </div>
+                         </div>`
+            },
+            multi: {
+                title: "Multi-Leader",
+                subtitle: "The Shared Google Doc",
+                desc: "Any leader accepts writes. Leaders gossip changes to each other. Requires conflict resolution.",
+                used: ["CouchDB", "Microsoft Active Directory", "Global cache layers"],
+                pro: "Write-available in every region.",
+                con: "Conflict resolution is hard — PhD-thesis territory.",
+                layout: `<div class="flex items-center justify-center space-x-6 py-8">
+                            <div class="px-6 py-3 bg-amber-100 border-2 border-amber-500 text-amber-900 font-bold rounded shadow">Leader A (R/W)</div>
+                            <div class="text-amber-500 font-bold">↔</div>
+                            <div class="px-6 py-3 bg-amber-100 border-2 border-amber-500 text-amber-900 font-bold rounded shadow">Leader B (R/W)</div>
+                         </div>`
+            },
+            leaderless: {
+                title: "Leaderless",
+                subtitle: "The Flat Committee",
+                desc: "No boss. Every node is equal. Writes go to N nodes; reads from N nodes. Uses Quorum rule (W + R > N).",
+                used: ["Apache Cassandra", "Riak", "Amazon Dynamo"],
+                pro: "Scales horizontally, no single point of failure.",
+                con: "Tunable but always has some inconsistency window.",
+                layout: `<div class="grid grid-cols-2 gap-4 max-w-xs mx-auto py-4">
+                            <div class="px-4 py-3 bg-stone-200 border-2 border-stone-400 text-stone-800 font-bold rounded shadow text-center">Node (R/W)</div>
+                            <div class="px-4 py-3 bg-stone-200 border-2 border-stone-400 text-stone-800 font-bold rounded shadow text-center">Node (R/W)</div>
+                            <div class="px-4 py-3 bg-stone-200 border-2 border-stone-400 text-stone-800 font-bold rounded shadow text-center">Node (R/W)</div>
+                            <div class="px-4 py-3 bg-stone-200 border-2 border-stone-400 text-stone-800 font-bold rounded shadow text-center">Node (R/W)</div>
+                         </div>`
+            }
+        };
+
+        function showRep(type) {
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-card'));
+            const activeCard = document.querySelector(`.stat-card[data-type="${type}"]`);
+            if (activeCard) {
+                activeCard.classList.add('active-card');
+            }
+
+            const data = repData[type];
+            const html = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold text-stone-900">${data.title}</h3>
+                        <p class="text-sm uppercase tracking-widest text-stone-500 mb-4">${data.subtitle}</p>
+                        <p class="text-stone-700 mb-6">${data.desc}</p>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-xs font-bold text-stone-400 uppercase">Pros & Cons</h4>
+                            <p class="text-sm mt-1"><span class="text-teal-600 font-bold">✅</span> ${data.pro}</p>
+                            <p class="text-sm mt-1"><span class="text-amber-600 font-bold">❌</span> ${data.con}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-xs font-bold text-stone-400 uppercase">Used By</h4>
+                            <p class="text-sm text-stone-700 font-medium">${data.used.join(' • ')}</p>
+                        </div>
+                    </div>
+                    <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 flex items-center justify-center min-h-[200px]">
+                        ${data.layout}
+                    </div>
+                </div>
+            `;
+            document.getElementById('rep-content').innerHTML = html;
+        }
+
+        let capChartInstance = null;
+        const capProfiles = {
+            cp: { data: [100, 20, 100], desc: "Refuses writes during a partition to guarantee consistency." },
+            ap: { data: [20, 100, 100], desc: "Always accepts writes, reconciles later. Tolerates stale reads." },
+            pg: { data: [100, 40, 100], desc: "Waits for replica ACK — safer, but slower/unavailable if network fails." }
+        };
+
+        function initCapChart() {
+            const ctx = document.getElementById('capChart').getContext('2d');
+            capChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Consistency', 'Availability', 'Partition Tolerance'],
+                    datasets: [{
+                        label: 'System Profile',
+                        data: [100, 100, 100],
+                        backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        pointBackgroundColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: { 
+                            min: 0, max: 100, 
+                            ticks: { display: false },
+                            pointLabels: { font: { size: 14, family: "'Segoe UI', sans-serif" }, color: '#444' }
+                        }
+                    },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+
+            document.querySelectorAll('.cap-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const type = e.target.dataset.type;
+                    const title = e.target.dataset.title;
+                    
+                    document.getElementById('cap-chart-title').innerText = title;
+                    document.getElementById('cap-explanation').innerText = capProfiles[type].desc;
+                    
+                    capChartInstance.data.datasets[0].data = capProfiles[type].data;
+                    if(type === 'ap') {
+                        capChartInstance.data.datasets[0].backgroundColor = 'rgba(217, 119, 6, 0.2)';
+                        capChartInstance.data.datasets[0].borderColor = 'rgba(217, 119, 6, 1)';
+                    } else {
+                        capChartInstance.data.datasets[0].backgroundColor = 'rgba(13, 148, 136, 0.2)';
+                        capChartInstance.data.datasets[0].borderColor = 'rgba(13, 148, 136, 1)';
+                    }
+                    capChartInstance.update();
+                });
+            });
+        }
+
+        let conChartInstance = null;
+        function initConsistencyChart() {
+            const ctx = document.getElementById('consistencyChart').getContext('2d');
+            
+            const initialData = {
+                nodeA: [10, 10, 10, 10, 10, null, null, null, null, null],
+                nodeB: [5, 5, 5, 5, 5, null, null, null, null, null],
+                nodeC: [15, 15, 15, 15, 15, null, null, null, null, null]
+            };
+
+            conChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['T0', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9'],
+                    datasets: [
+                        { label: 'Node A', data: [...initialData.nodeA], borderColor: '#0d9488', tension: 0.3, borderWidth: 3 },
+                        { label: 'Node B', data: [...initialData.nodeB], borderColor: '#d97706', tension: 0.3, borderWidth: 3 },
+                        { label: 'Node C', data: [...initialData.nodeC], borderColor: '#57534e', tension: 0.3, borderWidth: 3 }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { title: { display: true, text: 'Data Value State' }, min: 0, max: 20 },
+                        x: { title: { display: true, text: 'Time (Seconds)' } }
+                    },
+                    plugins: {
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    animation: { duration: 1500, easing: 'easeOutQuart' }
+                }
+            });
+
+            document.getElementById('btn-gossip').addEventListener('click', () => {
+                const targetValue = 15;
+                
+                conChartInstance.data.datasets[0].data = [10, 10, 10, 10, 10, 12, 14, 15, 15, 15];
+                conChartInstance.data.datasets[1].data = [5, 5, 5, 5, 5, 8, 12, 14, 15, 15];
+                conChartInstance.data.datasets[2].data = [15, 15, 15, 15, 15, 15, 15, 15, 15, 15];
+                
+                conChartInstance.update();
+                
+                const btn = document.getElementById('btn-gossip');
+                btn.innerText = "Converged!";
+                btn.classList.replace('bg-amber-600', 'bg-teal-600');
+                btn.classList.replace('hover:bg-amber-500', 'hover:bg-teal-500');
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    conChartInstance.data.datasets[0].data = [...initialData.nodeA];
+                    conChartInstance.data.datasets[1].data = [...initialData.nodeB];
+                    conChartInstance.data.datasets[2].data = [...initialData.nodeC];
+                    conChartInstance.update();
+                    
+                    btn.innerText = "Trigger Gossip Protocol";
+                    btn.classList.replace('bg-teal-600', 'bg-amber-600');
+                    btn.classList.replace('hover:bg-teal-500', 'hover:bg-amber-500');
+                    btn.disabled = false;
+                }, 4000);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showRep('single');
+            initCapChart();
+            initConsistencyChart();
+        });
+    </script>
+</body>
+</html>
+
+
+
