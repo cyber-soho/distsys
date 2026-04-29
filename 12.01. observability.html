@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observability: Logs, Metrics, Traces - Cyber.SoHo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Slate and Stone (warm neutrals) with Teal and Amber accents -->
+    <!-- Application Structure Plan: SPA dashboard with a persistent left sidebar for navigation. Content is divided into 5 thematic modules (Overview, Pillars, Tools, Architecture, Best Practices) that users can toggle between. This structure prevents cognitive overload, allowing users to focus on one concept at a time rather than scrolling a massive document. Interactive tabs, charts, and CSS-based diagrams are used within modules to further compartmentalize information and promote active learning. -->
+    <!-- Visualization & Content Choices: 1. Three Pillars -> Comparison -> Interactive Tabs (HTML/JS) -> Clean categorization without SVG. 2. Metric Types -> Goal: Change -> Chart.js Line/Bar charts -> Demonstrates data behavior over time. 3. System Architecture -> Goal: Relationships -> HTML/CSS Flexbox Diagram -> Shows data flow without external graphic assets. Confirming NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .nav-active {
+            background-color: #e2e8f0;
+            color: #0f172a;
+            font-weight: 600;
+            border-left: 4px solid #0d9488;
+        }
+        .nav-item {
+            border-left: 4px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-item:hover:not(.nav-active) {
+            background-color: #f1f5f9;
+            border-left: 4px solid #cbd5e1;
+        }
+        .section-content {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .section-active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+        .diagram-box {
+            background: white;
+            border: 2px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            position: relative;
+            z-index: 10;
+        }
+        .diagram-arrow {
+            color: #94a3b8;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-slate-50 border-r border-slate-200 flex flex-col hidden md:flex z-20 shadow-sm">
+        <div class="p-6 border-b border-slate-200">
+            <h1 class="text-xl font-bold text-slate-800 leading-tight">Cyber.SoHo</h1>
+            <p class="text-xs text-slate-500 mt-1 font-medium">Educational Hub - Week 12</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 custom-scrollbar" id="nav-menu">
+            <button class="nav-item nav-active w-full text-left px-6 py-3 text-sm text-slate-600 focus:outline-none" data-target="overview">
+                1. Overview & Concepts
+            </button>
+            <button class="nav-item w-full text-left px-6 py-3 text-sm text-slate-600 focus:outline-none" data-target="pillars">
+                2. The Three Pillars
+            </button>
+            <button class="nav-item w-full text-left px-6 py-3 text-sm text-slate-600 focus:outline-none" data-target="tools">
+                3. Tooling Deep Dive
+            </button>
+            <button class="nav-item w-full text-left px-6 py-3 text-sm text-slate-600 focus:outline-none" data-target="architecture">
+                4. The Production Stack
+            </button>
+            <button class="nav-item w-full text-left px-6 py-3 text-sm text-slate-600 focus:outline-none" data-target="practices">
+                5. Rules & Best Practices
+            </button>
+        </nav>
+        <div class="p-4 border-t border-slate-200 bg-slate-100">
+            <p class="text-[10px] text-slate-400 text-center uppercase tracking-wider">From the Industry to the Classroom</p>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-100/50">
+        
+        <header class="bg-white border-b border-slate-200 p-4 md:p-6 flex justify-between items-center z-10 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button id="mobile-menu-btn" class="md:hidden text-slate-500 hover:text-slate-800 focus:outline-none">
+                    <span class="text-2xl">&#9776;</span>
+                </button>
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Observability</h2>
+                    <p class="text-sm text-slate-500 mt-1">Logs, Metrics, Traces, and the Tools That Tame Them</p>
+                </div>
+            </div>
+            <div class="hidden lg:flex items-center gap-2 bg-teal-50 text-teal-800 px-4 py-2 rounded-full border border-teal-100">
+                <span class="text-lg">&#128161;</span>
+                <span class="text-sm font-medium">Goal: Build systems that can be questioned.</span>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+            
+            <section id="overview" class="section-content section-active max-w-5xl mx-auto">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-2">Monitoring vs. Observability</h3>
+                    <p class="text-slate-600 text-lg leading-relaxed">
+                        Welcome to Week 12. This section explores the fundamental shift in mindset required for modern distributed systems. You will learn the critical distinction between simply watching known metrics and building a system that allows you to ask novel questions when unpredictable failures occur.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div class="glass-card rounded-xl p-6 hover:shadow-lg transition-shadow border-t-4 border-amber-400">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">&#128269;</span>
+                            <h4 class="text-xl font-bold text-slate-800">Monitoring</h4>
+                        </div>
+                        <p class="text-slate-600 mb-4 font-medium italic">"Is the thing I expected to break, broken?"</p>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li class="flex items-start gap-2"><span class="text-amber-500">&#10003;</span> Watching a known set of indicators (CPU, RAM, disk).</li>
+                            <li class="flex items-start gap-2"><span class="text-amber-500">&#10003;</span> Pre-built dashboards.</li>
+                            <li class="flex items-start gap-2"><span class="text-amber-500">&#10003;</span> Tells you THAT something is wrong.</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card rounded-xl p-6 hover:shadow-lg transition-shadow border-t-4 border-teal-500 bg-teal-50/30">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">&#128373;</span>
+                            <h4 class="text-xl font-bold text-slate-800">Observability</h4>
+                        </div>
+                        <p class="text-slate-600 mb-4 font-medium italic">"Why is checkout slow only for users in Spain on Tuesdays?"</p>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li class="flex items-start gap-2"><span class="text-teal-600">&#10003;</span> Asking new questions from the outside.</li>
+                            <li class="flex items-start gap-2"><span class="text-teal-600">&#10003;</span> No need to ship new code to investigate.</li>
+                            <li class="flex items-start gap-2"><span class="text-teal-600">&#10003;</span> Helps you find out WHY something is wrong.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                    <h4 class="text-lg font-bold text-slate-800 mb-4">Why the distinction matters</h4>
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-lg">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg flex-shrink-0">1</div>
+                            <p class="text-slate-700">Distributed systems fail in ways nobody predicted at design time.</p>
+                        </div>
+                        <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-lg">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg flex-shrink-0">2</div>
+                            <p class="text-slate-700">You cannot pre-build a dashboard for every failure mode.</p>
+                        </div>
+                        <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-lg">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg flex-shrink-0">3</div>
+                            <p class="text-slate-700">You need the raw signal (logs/metrics/traces) and the tools to slice it at query time.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="pillars" class="section-content max-w-5xl mx-auto">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-2">The Three Pillars</h3>
+                    <p class="text-slate-600 text-lg leading-relaxed">
+                        This section breaks down the three fundamental data types that make observability possible. You will interact with each pillar to understand its specific role, its strengths, weaknesses, and most importantly, how the "Correlation ID" binds them all together to form a complete narrative of a system request.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-2">
+                    <button class="pillar-tab px-4 py-2 rounded-t-lg font-semibold text-sm transition-colors bg-slate-800 text-white" data-target="logs-content">Logs (The Diary)</button>
+                    <button class="pillar-tab px-4 py-2 rounded-t-lg font-semibold text-sm transition-colors text-slate-500 hover:bg-slate-200" data-target="metrics-content">Metrics (The Heart-rate)</button>
+                    <button class="pillar-tab px-4 py-2 rounded-t-lg font-semibold text-sm transition-colors text-slate-500 hover:bg-slate-200" data-target="traces-content">Traces (The GPS)</button>
+                </div>
+
+                <div class="bg-white rounded-b-xl rounded-tr-xl p-6 md:p-8 border border-slate-200 shadow-sm min-h-[250px]">
+                    <div id="logs-content" class="pillar-content block">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="text-blue-500">&#128220;</span> Logs</h4>
+                        <p class="text-lg text-slate-600 mb-6 font-medium">Discrete time-stamped events ("X happened at T")</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                                <h5 class="font-bold text-green-800 mb-2">Best At:</h5>
+                                <p class="text-green-700 text-sm">Forensics, audit trails, answering "what exactly did the user click?"</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                                <h5 class="font-bold text-red-800 mb-2">Worst At:</h5>
+                                <p class="text-red-700 text-sm">Aggregation, fast counting at immense scale.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="metrics-content" class="pillar-content hidden">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="text-indigo-500">&#128200;</span> Metrics</h4>
+                        <p class="text-lg text-slate-600 mb-6 font-medium">Numeric measurements over time (counters, gauges, histograms)</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                                <h5 class="font-bold text-green-800 mb-2">Best At:</h5>
+                                <p class="text-green-700 text-sm">Trend graphs, alerting, answering "is p99 latency rising?"</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                                <h5 class="font-bold text-red-800 mb-2">Worst At:</h5>
+                                <p class="text-red-700 text-sm">High-cardinality detail (e.g., trying to track per-user or per-request data points).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="traces-content" class="pillar-content hidden">
+                        <h4 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2"><span class="text-purple-500">&#128271;</span> Traces</h4>
+                        <p class="text-lg text-slate-600 mb-6 font-medium">Causal record of a single request across many services</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                                <h5 class="font-bold text-green-800 mb-2">Best At:</h5>
+                                <p class="text-green-700 text-sm">Answering "*Where* exactly in the call graph is the latency occurring?"</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-100">
+                                <h5 class="font-bold text-red-800 mb-2">Worst At:</h5>
+                                <p class="text-red-700 text-sm">Long-term storage. Due to massive volume, traces are usually sampled (not all are kept).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-slate-800 text-white rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 text-8xl">&#128279;</div>
+                    <h4 class="text-xl font-bold mb-4">The Glue: Correlation IDs</h4>
+                    <p class="mb-4 text-slate-300">Every incoming request gets a <strong>trace_id</strong> (a UUID). That single ID propagates through the entire system.</p>
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
+                        <div class="bg-slate-700 p-3 rounded text-center w-full md:w-1/3 border border-slate-600">
+                            <span class="block text-sm text-slate-400">Written into</span>
+                            <span class="font-bold text-blue-300">Logs</span>
+                        </div>
+                        <div class="text-slate-500">&#8596;</div>
+                        <div class="bg-slate-700 p-3 rounded text-center w-full md:w-1/3 border border-slate-600">
+                            <span class="block text-sm text-slate-400">Attached to</span>
+                            <span class="font-bold text-indigo-300">Metrics (labels)</span>
+                        </div>
+                        <div class="text-slate-500">&#8596;</div>
+                        <div class="bg-slate-700 p-3 rounded text-center w-full md:w-1/3 border border-slate-600">
+                            <span class="block text-sm text-slate-400">Primary Key of</span>
+                            <span class="font-bold text-purple-300">Traces</span>
+                        </div>
+                    </div>
+                    <p class="mt-6 text-sm text-teal-300 font-medium text-center bg-slate-900/50 py-2 rounded">
+                        Result: From any one signal, you can pivot to the other two.
+                    </p>
+                </div>
+            </section>
+
+            <section id="tools" class="section-content max-w-5xl mx-auto">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-2">Tooling Deep Dive</h3>
+                    <p class="text-slate-600 text-lg leading-relaxed">
+                        Here you will explore the specific technologies that implement the observability pillars. From traditional Linux logging mechanisms (Syslog/journald) to the architecture of Prometheus and the visual power of Grafana. Use the dropdowns and interactive charts to see how these tools capture and display system behavior.
+                    </p>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-6 mb-8">
+                    <div class="w-full md:w-1/3">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-4">
+                            <div class="bg-slate-50 border-b border-slate-200 p-4">
+                                <h4 class="font-bold text-slate-800 text-center">Select Component</h4>
+                            </div>
+                            <div class="flex flex-col" id="tool-menu">
+                                <button class="tool-btn active-tool p-4 text-left border-b border-slate-100 hover:bg-slate-50 focus:outline-none transition" data-target="tool-prom">
+                                    <div class="font-bold text-indigo-600">Prometheus</div>
+                                    <div class="text-xs text-slate-500 mt-1">Metrics & Pull Architecture</div>
+                                </button>
+                                <button class="tool-btn p-4 text-left border-b border-slate-100 hover:bg-slate-50 focus:outline-none transition" data-target="tool-logs">
+                                    <div class="font-bold text-blue-600">Syslog & journald</div>
+                                    <div class="text-xs text-slate-500 mt-1">Linux Logging Primitives</div>
+                                </button>
+                                <button class="tool-btn p-4 text-left border-b border-slate-100 hover:bg-slate-50 focus:outline-none transition" data-target="tool-graf">
+                                    <div class="font-bold text-orange-600">Grafana</div>
+                                    <div class="text-xs text-slate-500 mt-1">Dashboards that don't lie</div>
+                                </button>
+                                <button class="tool-btn p-4 text-left hover:bg-slate-50 focus:outline-none transition" data-target="tool-alert">
+                                    <div class="font-bold text-red-600">Alertmanager</div>
+                                    <div class="text-xs text-slate-500 mt-1">Routing & Paging</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-2/3">
+                        <div id="tool-prom" class="tool-content block bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+                            <h4 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Prometheus Architecture</h4>
+                            <p class="text-slate-600 mb-6">Governed by the CNCF, Prometheus utilizes a Time-Series Database (TSDB) and the PromQL query language. Its most significant architectural decision is that <strong>it pulls data; it does not get pushed to.</strong></p>
+                            
+                            <div class="bg-indigo-50 p-4 rounded-lg mb-6 border border-indigo-100">
+                                <h5 class="font-bold text-indigo-800 mb-2">Why Pull Beats Push:</h5>
+                                <ul class="list-disc list-inside text-sm text-indigo-900 space-y-1">
+                                    <li>Health by definition: If scrape fails, target is down.</li>
+                                    <li>Service discovery friendly.</li>
+                                    <li>No client-side back-pressure needed.</li>
+                                </ul>
+                            </div>
+
+                            <h5 class="font-bold text-slate-800 mb-4">Interactive Metric Types Explorer</h5>
+                            <p class="text-sm text-slate-500 mb-4">Select a metric type exposed via the `/metrics` endpoint to visualize its behavior.</p>
+                            
+                            <select id="metricSelector" class="w-full p-2 border border-slate-300 rounded-md mb-4 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="counter">Counter (http_requests_total)</option>
+                                <option value="gauge">Gauge (temperature_celsius)</option>
+                                <option value="histogram">Histogram (request_latency_seconds)</option>
+                            </select>
+
+                            <div class="chart-container">
+                                <canvas id="metricChart"></canvas>
+                            </div>
+                            <div id="metricDescription" class="mt-4 text-sm text-slate-600 bg-slate-50 p-3 rounded border border-slate-200">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <div id="tool-logs" class="tool-content hidden bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+                            <h4 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Syslog and journald</h4>
+                            <p class="text-slate-600 mb-4">Linux relies on two main logging systems that often run side-by-side. <strong>journald</strong> collects structured, binary logs from systemd units, which can then be forwarded to <strong>syslog</strong> for long-term text archival.</p>
+                            
+                            <div class="bg-slate-900 rounded-md p-4 mb-6 font-mono text-sm text-green-400 overflow-x-auto">
+                                <span class="text-slate-500"># Most useful command you will learn this week</span><br>
+                                $ journalctl -u nginx.service<br>
+                                <span class="text-slate-500"># Tail-follow recent errors</span><br>
+                                $ journalctl -f --since "10m ago" -p err
+                            </div>
+
+                            <h5 class="font-bold text-slate-800 mb-4">The Syslog Severity Ladder</h5>
+                            <p class="text-sm text-slate-500 mb-2">Lower number = more urgent. Know level 3 (err) as the standard alert threshold.</p>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700">
+                                            <th class="p-2 border border-slate-200">#</th>
+                                            <th class="p-2 border border-slate-200">Name</th>
+                                            <th class="p-2 border border-slate-200">When to use</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td class="p-2 border border-slate-200 font-bold text-red-600">0</td><td class="p-2 border border-slate-200 font-bold text-red-600">emerg</td><td class="p-2 border border-slate-200">System is unusable</td></tr>
+                                        <tr><td class="p-2 border border-slate-200 font-bold text-red-500">1</td><td class="p-2 border border-slate-200 font-bold text-red-500">alert</td><td class="p-2 border border-slate-200">Action must be taken immediately</td></tr>
+                                        <tr><td class="p-2 border border-slate-200 font-bold text-orange-500">2</td><td class="p-2 border border-slate-200 font-bold text-orange-500">crit</td><td class="p-2 border border-slate-200">Critical conditions</td></tr>
+                                        <tr class="bg-orange-50"><td class="p-2 border border-slate-200 font-bold text-orange-600">3</td><td class="p-2 border border-slate-200 font-bold text-orange-600">err</td><td class="p-2 border border-slate-200">Error conditions (Standard Threshold)</td></tr>
+                                        <tr><td class="p-2 border border-slate-200 text-yellow-600">4</td><td class="p-2 border border-slate-200 text-yellow-600">warning</td><td class="p-2 border border-slate-200">Warning conditions</td></tr>
+                                        <tr><td class="p-2 border border-slate-200 text-slate-600">5</td><td class="p-2 border border-slate-200">notice</td><td class="p-2 border border-slate-200">Normal but significant</td></tr>
+                                        <tr><td class="p-2 border border-slate-200 text-slate-500">6</td><td class="p-2 border border-slate-200">info</td><td class="p-2 border border-slate-200">Informational</td></tr>
+                                        <tr><td class="p-2 border border-slate-200 text-slate-400">7</td><td class="p-2 border border-slate-200">debug</td><td class="p-2 border border-slate-200">Debug-level messages</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="tool-graf" class="tool-content hidden bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+                            <h4 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Grafana Dashboards</h4>
+                            <p class="text-slate-600 mb-6">Grafana is a datasource-agnostic visualization layer. A dashboard is simply a JSON file containing panels, queries, and variables. A good dashboard answers <strong>one question</strong> clearly.</p>
+
+                            <h5 class="font-bold text-slate-800 mb-4">Hierarchy of Usefulness</h5>
+                            <div class="space-y-4">
+                                <div class="flex gap-4 items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <div class="w-20 text-center font-bold text-slate-400">Top Row<br><span class="text-xs font-normal">(10 sec)</span></div>
+                                    <div class="flex-1"><strong class="text-slate-700">Is the system OK?</strong> Big number, traffic-light color.</div>
+                                </div>
+                                <div class="flex gap-4 items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <div class="w-20 text-center font-bold text-slate-400">Middle<br><span class="text-xs font-normal">(30 sec)</span></div>
+                                    <div class="flex-1">
+                                        <strong class="text-slate-700">RED Metrics per service:</strong>
+                                        <ul class="flex gap-4 mt-1 text-sm text-red-600 font-medium">
+                                            <li>Rate</li><li>Errors</li><li>Duration</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4 items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <div class="w-20 text-center font-bold text-slate-400">Bottom<br><span class="text-xs font-normal">(3 min)</span></div>
+                                    <div class="flex-1"><strong class="text-slate-700">Drill-downs:</strong> per-endpoint latency, per-pod CPU, etc.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tool-alert" class="tool-content hidden bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+                            <h4 class="text-2xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Alertmanager</h4>
+                            <p class="text-slate-600 mb-6">An alert is a promise that a human will be woken up. Alertmanager's job is to protect humans through grouping, inhibition, silencing, and routing.</p>
+
+                            <div class="bg-red-50 rounded-xl p-6 border border-red-100 mb-6 relative overflow-hidden">
+                                <h5 class="font-bold text-red-800 mb-4 relative z-10">The 3 Properties of a Valid Alert</h5>
+                                <ul class="space-y-3 relative z-10 text-red-900">
+                                    <li class="flex gap-3"><span class="bg-red-200 text-red-800 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">1</span> <strong>Actionable:</strong> There is something a human can do about it.</li>
+                                    <li class="flex gap-3"><span class="bg-red-200 text-red-800 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">2</span> <strong>Symptom-based:</strong> Describes user-visible pain, not internal cause.</li>
+                                    <li class="flex gap-3"><span class="bg-red-200 text-red-800 rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm shrink-0">3</span> <strong>Documented:</strong> Every alert links to a runbook.</li>
+                                </ul>
+                                <div class="absolute -right-4 -bottom-4 text-9xl text-red-100 opacity-50">&#9888;</div>
+                            </div>
+
+                            <h5 class="font-bold text-slate-800 mb-3">Severity Routing Convention</h5>
+                            <div class="grid grid-cols-3 gap-2 text-sm text-center">
+                                <div class="bg-slate-100 p-2 rounded-t font-bold text-slate-600">Severity</div>
+                                <div class="bg-slate-100 p-2 rounded-t font-bold text-slate-600">Destination</div>
+                                <div class="bg-slate-100 p-2 rounded-t font-bold text-slate-600">Meaning</div>
+                                
+                                <div class="bg-red-100 p-3 font-bold text-red-700">critical</div>
+                                <div class="border border-slate-200 p-3 flex items-center justify-center">PagerDuty</div>
+                                <div class="border border-slate-200 p-3 flex items-center justify-center text-xs">Users in pain right now</div>
+
+                                <div class="bg-orange-100 p-3 font-bold text-orange-700">warning</div>
+                                <div class="border border-slate-200 p-3 flex items-center justify-center">Slack</div>
+                                <div class="border border-slate-200 p-3 flex items-center justify-center text-xs">Will be in pain soon</div>
+
+                                <div class="bg-blue-100 p-3 rounded-bl font-bold text-blue-700">info</div>
+                                <div class="border border-slate-200 p-3 flex items-center justify-center">Email Digest</div>
+                                <div class="border border-slate-200 p-3 rounded-br flex items-center justify-center text-xs">Awareness only</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <section id="architecture" class="section-content max-w-5xl mx-auto">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-2">The Production Stack</h3>
+                    <p class="text-slate-600 text-lg leading-relaxed">
+                        This diagram illustrates how the tools connect in a typical modern observability stack. Notice the distinct layers: Collection (one per pillar), Storage (one per pillar), and single unification points for UI (Grafana) and Alerting (Alertmanager). Hover over the components to understand the flow.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-6 md:p-10 rounded-2xl border border-slate-200 overflow-x-auto">
+                    <div class="min-w-[700px] flex flex-col items-center gap-6">
+                        
+                        <div class="w-full flex justify-center">
+                            <div class="diagram-box w-64 border-indigo-300 bg-indigo-50 shadow-md">
+                                <h4 class="font-bold text-indigo-800 text-lg">Application Code</h4>
+                                <p class="text-xs text-indigo-600 mt-1">Instrumented Target</p>
+                            </div>
+                        </div>
+
+                        <div class="w-full flex justify-center gap-16 relative">
+                            <div class="diagram-arrow absolute left-[20%] top-[-1.5rem] h-6 border-l-2 border-slate-300"></div>
+                            <div class="diagram-arrow absolute left-[50%] top-[-1.5rem] h-6 border-l-2 border-slate-300"></div>
+                            <div class="diagram-arrow absolute left-[80%] top-[-1.5rem] h-6 border-l-2 border-slate-300"></div>
+                            
+                            <div class="w-full border-t-2 border-slate-300 absolute top-[-1.5rem] max-w-[60%]"></div>
+                        </div>
+
+                        <div class="w-full flex justify-between gap-4">
+                            <div class="diagram-box flex-1 border-blue-200 group hover:border-blue-400 transition-colors">
+                                <div class="text-xs font-bold text-slate-400 mb-1">LOGS via stdout</div>
+                                <h4 class="font-bold text-slate-700">journald</h4>
+                                <div class="diagram-arrow my-2">&#8595;</div>
+                                <h4 class="font-bold text-blue-600">Loki / Elasticsearch</h4>
+                            </div>
+                            <div class="diagram-box flex-1 border-indigo-200 group hover:border-indigo-400 transition-colors relative">
+                                <div class="absolute -top-3 -right-3 bg-teal-500 text-white text-[10px] px-2 py-1 rounded-full font-bold shadow animate-pulse">PULL</div>
+                                <div class="text-xs font-bold text-slate-400 mb-1">METRICS via /metrics</div>
+                                <h4 class="font-bold text-slate-700 bg-slate-100 py-1 rounded mb-2">Exposition Format</h4>
+                                <div class="diagram-arrow my-2">&#8595;</div>
+                                <h4 class="font-bold text-indigo-600 text-xl">Prometheus</h4>
+                            </div>
+                            <div class="diagram-box flex-1 border-purple-200 group hover:border-purple-400 transition-colors">
+                                <div class="text-xs font-bold text-slate-400 mb-1">TRACES via OTel SDK</div>
+                                <h4 class="font-bold text-slate-700">OpenTelemetry</h4>
+                                <div class="diagram-arrow my-2">&#8595;</div>
+                                <h4 class="font-bold text-purple-600">Jaeger / Tempo</h4>
+                            </div>
+                        </div>
+
+                        <div class="w-full flex justify-center gap-16 relative h-8">
+                            <div class="diagram-arrow absolute left-[20%] top-0 h-full border-l-2 border-slate-300"></div>
+                            <div class="diagram-arrow absolute left-[50%] top-0 h-full border-l-2 border-slate-300"></div>
+                            <div class="diagram-arrow absolute left-[80%] top-0 h-full border-l-2 border-slate-300"></div>
+                            
+                            <div class="w-full border-b-2 border-slate-300 absolute bottom-0 max-w-[60%]"></div>
+                            <div class="diagram-arrow absolute left-[50%] bottom-[-1.5rem] h-6 border-l-2 border-slate-300"></div>
+                        </div>
+
+                        <div class="w-full flex justify-center gap-16 mt-4 relative">
+                            <div class="diagram-box w-[400px] border-orange-300 bg-orange-50 shadow-md">
+                                <h4 class="font-bold text-orange-800 text-xl">Grafana</h4>
+                                <p class="text-xs text-orange-600 mt-1">Single UI Layer</p>
+                                <div class="flex justify-between mt-4 border-t border-orange-200 pt-2">
+                                    <div class="diagram-arrow text-orange-400 text-sm">&#8592; Humans Read</div>
+                                </div>
+                            </div>
+                            
+                            <div class="absolute top-[50%] left-[50%] w-[100px] border-t-2 border-dashed border-red-300 -z-10 translate-x-[150px] translate-y-[-50px]"></div>
+                        </div>
+
+                        <div class="w-full flex justify-end pr-[15%] relative mt-[-20px]">
+                            <div class="diagram-box w-48 border-red-300 bg-red-50 shadow-md transform -translate-y-12">
+                                <div class="text-[10px] text-red-500 font-bold uppercase mb-1 flex items-center justify-center gap-1">
+                                    <span class="inline-block w-2 h-2 bg-red-500 rounded-full"></span> Rules match
+                                </div>
+                                <h4 class="font-bold text-red-800">Alertmanager</h4>
+                                <div class="diagram-arrow my-1 text-sm">&#8595; Route</div>
+                                <div class="flex gap-2 justify-center">
+                                    <span class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">PagerDuty</span>
+                                    <span class="bg-slate-200 text-slate-700 text-xs px-2 py-1 rounded">Slack</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <div class="mt-6 bg-blue-50 border border-blue-100 p-4 rounded-lg flex items-start gap-4">
+                    <span class="text-2xl">&#8505;</span>
+                    <p class="text-sm text-blue-900">
+                        <strong>Why this exact shape?</strong> Humans only learn one tool well (Grafana). On-call is managed in one place (Alertmanager). However, collection and storage are specialized per data type (Logs, Metrics, Traces) because they have fundamentally different storage requirements.
+                    </p>
+                </div>
+            </section>
+
+            <section id="practices" class="section-content max-w-5xl mx-auto">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-2">Rules & Best Practices</h3>
+                    <p class="text-slate-600 text-lg leading-relaxed">
+                        Observability is the layer you debug *with*; it must never be the layer you debug. Review these hard-won rules from production engineers regarding alerting and the essential glossary terms for exams and professional environments.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <span class="text-amber-500">&#9888;</span> 5 Rules of Alerting
+                        </h4>
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
+                                <strong class="block text-slate-800 mb-1">1. Alert on symptoms, not causes.</strong>
+                                <span class="text-sm text-slate-600">"Checkout error rate > 1%" beats "Redis CPU > 80%".</span>
+                            </div>
+                            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
+                                <strong class="block text-slate-800 mb-1">2. Every alert links to a runbook.</strong>
+                                <span class="text-sm text-slate-600">No runbook &rarr; no alert.</span>
+                            </div>
+                            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
+                                <strong class="block text-slate-800 mb-1">3. Not actionable at 3 AM = Not a page.</strong>
+                                <span class="text-sm text-slate-600">Send it to a dashboard or a digest instead.</span>
+                            </div>
+                            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
+                                <strong class="block text-slate-800 mb-1">4. Track your alert volume.</strong>
+                                <span class="text-sm text-slate-600">A page-per-week per engineer is healthy. A page-per-day is a bug.</span>
+                            </div>
+                            <div class="bg-white p-4 rounded border-l-4 border-slate-800 shadow-sm">
+                                <strong class="block text-slate-800 mb-1">5. Post-mortems update alerts.</strong>
+                                <span class="text-sm text-slate-600">Every incident either tightens, loosens, or deletes a rule.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <span class="text-blue-500">&#128214;</span> Must-Know Glossary
+                        </h4>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <div class="mb-6">
+                                <h5 class="font-bold text-teal-700 bg-teal-50 inline-block px-2 py-1 rounded mb-2">The Golden Signals</h5>
+                                <ul class="space-y-2 text-sm">
+                                    <li><strong class="text-slate-800">RED (For Services):</strong> Rate, Errors, Duration.</li>
+                                    <li><strong class="text-slate-800">USE (For Hosts):</strong> Utilisation, Saturation, Errors.</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="relative">
+                                <input type="text" id="glossarySearch" placeholder="Search terms (e.g., TSDB, SLI)..." class="w-full p-2 pl-8 border border-slate-300 rounded mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <span class="absolute left-2 top-2 text-slate-400">&#128269;</span>
+                            </div>
+
+                            <ul id="glossaryList" class="space-y-3 h-64 overflow-y-auto custom-scrollbar pr-2">
+                                <li class="text-sm pb-2 border-b border-slate-100">
+                                    <strong class="text-indigo-600 block">TSDB</strong> Time-Series Database
+                                </li>
+                                <li class="text-sm pb-2 border-b border-slate-100">
+                                    <strong class="text-indigo-600 block">CNCF</strong> Cloud Native Computing Foundation
+                                </li>
+                                <li class="text-sm pb-2 border-b border-slate-100">
+                                    <strong class="text-indigo-600 block">PromQL</strong> Prometheus Query Language
+                                </li>
+                                <li class="text-sm pb-2 border-b border-slate-100">
+                                    <strong class="text-indigo-600 block">MTTR / MTTD</strong> Mean Time To Recover / Detect
+                                </li>
+                                <li class="text-sm pb-2 border-b border-slate-100">
+                                    <strong class="text-indigo-600 block">SLI / SLO / SLA</strong> Service Level Indicator / Objective / Agreement
+                                </li>
+                                <li class="text-sm pb-2 border-b border-slate-100">
+                                    <strong class="text-indigo-600 block">OTel</strong> OpenTelemetry
+                                </li>
+                                <li class="text-sm pb-2 border-b border-slate-100">
+                                    <strong class="text-indigo-600 block">APM</strong> Application Performance Monitoring
+                                </li>
+                                <li class="text-sm">
+                                    <strong class="text-indigo-600 block">SIEM</strong> Security Information and Event Management
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="mt-16 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm pb-8">
+                <p>Cyber.SoHo Educational Hub - Building the IT's Future, Today and Together.</p>
+                <p class="mt-2 text-xs">All techniques shown must be applied only to systems you own or are explicitly authorised to operate.</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('.section-content');
+            
+            function switchSection(targetId) {
+                navItems.forEach(btn => btn.classList.remove('nav-active', 'bg-e2e8f0'));
+                const activeBtn = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+                if(activeBtn) activeBtn.classList.add('nav-active');
+
+                sections.forEach(sec => {
+                    sec.classList.remove('section-active');
+                    if (sec.id === targetId) {
+                        sec.classList.add('section-active');
+                        sec.scrollTop = 0;
+                    }
+                });
+            }
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    switchSection(item.getAttribute('data-target'));
+                });
+            });
+
+            const pillarTabs = document.querySelectorAll('.pillar-tab');
+            const pillarContents = document.querySelectorAll('.pillar-content');
+
+            pillarTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    pillarTabs.forEach(t => {
+                        t.classList.remove('bg-slate-800', 'text-white');
+                        t.classList.add('text-slate-500', 'hover:bg-slate-200');
+                    });
+                    tab.classList.remove('text-slate-500', 'hover:bg-slate-200');
+                    tab.classList.add('bg-slate-800', 'text-white');
+
+                    const target = tab.getAttribute('data-target');
+                    pillarContents.forEach(c => c.classList.add('hidden'));
+                    document.getElementById(target).classList.remove('hidden');
+                });
+            });
+
+            const toolBtns = document.querySelectorAll('.tool-btn');
+            const toolContents = document.querySelectorAll('.tool-content');
+
+            toolBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toolBtns.forEach(b => {
+                        b.classList.remove('bg-slate-50', 'border-l-4', 'border-indigo-500');
+                        b.classList.add('border-l-4', 'border-transparent');
+                    });
+                    btn.classList.add('bg-slate-50', 'border-l-4', 'border-indigo-500');
+
+                    const target = btn.getAttribute('data-target');
+                    toolContents.forEach(c => c.classList.add('hidden'));
+                    document.getElementById(target).classList.remove('hidden');
+                });
+            });
+
+            const ctx = document.getElementById('metricChart').getContext('2d');
+            let metricChart;
+
+            const chartData = {
+                counter: {
+                    type: 'line',
+                    data: [10, 15, 22, 22, 45, 60, 65, 80],
+                    label: 'http_requests_total',
+                    desc: 'A Counter only goes up (until a process restarts). It represents cumulative events. Always combine with rate() in queries to find requests per second.'
+                },
+                gauge: {
+                    type: 'line',
+                    data: [45, 60, 30, 80, 50, 45, 70, 65],
+                    label: 'temperature_celsius',
+                    desc: 'A Gauge can go up and down. It represents a snapshot of current state (e.g., memory usage, queue depth). Take it as-is without rate().'
+                },
+                histogram: {
+                    type: 'bar',
+                    data: [150, 85, 45, 12, 3, 1],
+                    labels: ['0.1s', '0.2s', '0.5s', '1.0s', '2.0s', '+Inf'],
+                    label: 'request_latency_seconds_bucket',
+                    desc: 'A Histogram groups observations into configurable buckets. Used primarily for calculating percentiles (p99 latency) server-side across many instances.'
+                }
+            };
+
+            function renderChart(metricType) {
+                const config = chartData[metricType];
+                
+                document.getElementById('metricDescription').innerHTML = `<strong>${metricType.toUpperCase()}:</strong> ${config.desc}`;
+
+                if (metricChart) {
+                    metricChart.destroy();
+                }
+
+                const labels = config.labels || ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8'];
+
+                metricChart = new Chart(ctx, {
+                    type: config.type,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: config.label,
+                            data: config.data,
+                            backgroundColor: metricType === 'histogram' ? 'rgba(99, 102, 241, 0.6)' : 'rgba(99, 102, 241, 0.2)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 2,
+                            fill: metricType !== 'histogram',
+                            tension: 0.3,
+                            stepped: metricType === 'counter'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            renderChart('counter');
+
+            document.getElementById('metricSelector').addEventListener('change', (e) => {
+                renderChart(e.target.value);
+            });
+
+            const searchInput = document.getElementById('glossarySearch');
+            const glossaryList = document.getElementById('glossaryList');
+            const items = glossaryList.getElementsByTagName('li');
+
+            searchInput.addEventListener('input', function() {
+                const filter = searchInput.value.toLowerCase();
+                for (let i = 0; i < items.length; i++) {
+                    const textValue = items[i].textContent || items[i].innerText;
+                    if (textValue.toLowerCase().indexOf(filter) > -1) {
+                        items[i].style.display = "";
+                    } else {
+                        items[i].style.display = "none";
+                    }
+                }
+            });
+
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.querySelector('aside');
+            
+            mobileBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('hidden');
+                sidebar.classList.toggle('absolute');
+                sidebar.classList.toggle('h-full');
+            });
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('hidden');
+                        sidebar.classList.remove('absolute', 'h-full');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+

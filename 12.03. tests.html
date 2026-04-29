@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observability Study Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        /* Tab CSS */
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 24px;
+            transition: 0.3s;
+            font-size: 16px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .tab button:hover {
+            background-color: #e9ecef;
+        }
+        .tab button.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .tabcontent {
+            display: none;
+            padding: 25px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            background-color: #ffffff;
+        }
+        
+        /* Flashcard & Quiz Item CSS */
+        .item-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fdfdfd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        summary {
+            font-weight: 600;
+            font-size: 1.1em;
+            cursor: pointer;
+            padding: 12px;
+            background: #eef2f5;
+            border-radius: 4px;
+            list-style: none; /* Hides default arrow in some browsers */
+            position: relative;
+        }
+        summary::-webkit-details-marker {
+            display: none; /* Hides default arrow in Chrome/Safari */
+        }
+        summary:hover {
+            background: #e2e8ed;
+        }
+        .back-content {
+            padding: 15px;
+            margin-top: 10px;
+            border-left: 4px solid #007bff;
+            background: #f8faff;
+            border-radius: 0 4px 4px 0;
+        }
+        .quiz-question {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .hint {
+            font-style: italic;
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        .options {
+            list-style-type: lower-alpha;
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        .options li {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .correct-answer {
+            padding: 15px;
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            border-radius: 0 4px 4px 0;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Observability: Logs, Metrics, and Traces</h1>
+
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'Flashcards')">Flashcards (25)</button>
+        <button class="tablinks" onclick="openTab(event, 'Quiz')">Practice Quiz (10)</button>
+    </div>
+
+    <div id="Flashcards" class="tabcontent" style="display:block;">
+        <h2>Key Concepts Review</h2>
+        <p><em>Click on a concept to reveal its definition.</em></p>
+
+        <div class="item-container"><details><summary>1. Monitoring</summary><div class="back-content">Watching a known set of indicators to answer if something expected to break is broken.</div></details></div>
+        <div class="item-container"><details><summary>2. Observability</summary><div class="back-content">The property of a system that lets you ask new questions about its behavior from the outside without shipping new code.</div></details></div>
+        <div class="item-container"><details><summary>3. Primary use case for logs</summary><div class="back-content">Forensics, audit trails, and answering exactly what a user clicked or did.</div></details></div>
+        <div class="item-container"><details><summary>4. Primary use case for metrics</summary><div class="back-content">Trend graphs, alerting, and high-level aggregations over time.</div></details></div>
+        <div class="item-container"><details><summary>5. Primary use case for traces</summary><div class="back-content">Identifying exactly where in a complex call graph latency or errors are occurring.</div></details></div>
+        <div class="item-container"><details><summary>6. Correlation ID (trace_id)</summary><div class="back-content">A unique identifier attached to a request that binds its logs, metrics, and traces together.</div></details></div>
+        <div class="item-container"><details><summary>7. syslog</summary><div class="back-content">The original Unix logging protocol that stores plain text logs based on facility and severity.</div></details></div>
+        <div class="item-container"><details><summary>8. journald</summary><div class="back-content">A systemd component that stores structured, binary, and indexed log records.</div></details></div>
+        <div class="item-container"><details><summary>9. Most useful journalctl command for viewing specific unit logs</summary><div class="back-content">journalctl -u [unit name]</div></details></div>
+        <div class="item-container"><details><summary>10. Standard syslog severity threshold for production alerts</summary><div class="back-content">Level 3 (err) - Error conditions.</div></details></div>
+        <div class="item-container"><details><summary>11. Prometheus data collection architecture</summary><div class="back-content">Pull-based; it periodically scrapes an HTTP endpoint (/metrics) on every target.</div></details></div>
+        <div class="item-container"><details><summary>12. Prometheus Exporters</summary><div class="back-content">Components that translate non-native data sources into the Prometheus exposition format.</div></details></div>
+        <div class="item-container"><details><summary>13. Counter metric</summary><div class="back-content">A numeric measurement that only goes up, representing cumulative events, usually queried with a rate() function.</div></details></div>
+        <div class="item-container"><details><summary>14. Gauge metric</summary><div class="back-content">A numeric measurement that can go up and down, representing a snapshot of current state like queue depth.</div></details></div>
+        <div class="item-container"><details><summary>15. Histogram metric</summary><div class="back-content">A metric type that groups observations into buckets, primarily used for calculating server-side percentiles like p99 latency.</div></details></div>
+        <div class="item-container"><details><summary>16. Primary risk of using unbounded values in metric labels</summary><div class="back-content">Cardinality explosion, which can crash the Time-Series Database (TSDB).</div></details></div>
+        <div class="item-container"><details><summary>17. Grafana</summary><div class="back-content">A datasource-agnostic visualization layer that owns the display and alerting UI but no underlying storage.</div></details></div>
+        <div class="item-container"><details><summary>18. Ideal design for the top row of a Grafana dashboard</summary><div class="back-content">A big number or traffic-light color indicating if the system is generally okay, readable in 10 seconds.</div></details></div>
+        <div class="item-container"><details><summary>19. Core function of Alertmanager</summary><div class="back-content">To protect humans from alert fatigue through grouping, inhibition, silencing, and routing.</div></details></div>
+        <div class="item-container"><details><summary>20. Three mandatory properties of a production alert</summary><div class="back-content">It must be actionable, symptom-based (describing user-visible pain), and documented with a runbook.</div></details></div>
+        <div class="item-container"><details><summary>21. RED golden signals</summary><div class="back-content">Rate, Errors, Duration (used primarily for monitoring services).</div></details></div>
+        <div class="item-container"><details><summary>22. USE golden signals</summary><div class="back-content">Utilisation, Saturation, Errors (used primarily for monitoring hosts).</div></details></div>
+        <div class="item-container"><details><summary>23. TSDB</summary><div class="back-content">Time-Series Database, the purpose-built storage mechanism used by tools like Prometheus.</div></details></div>
+        <div class="item-container"><details><summary>24. Alerting inhibition</summary><div class="back-content">Suppressing downstream alerts when a broader system failure (like a datacenter outage) is already firing.</div></details></div>
+        <div class="item-container"><details><summary>25. OpenTelemetry (OTel)</summary><div class="back-content">A vendor-neutral instrumentation standard and SDK used primarily to generate and route trace data.</div></details></div>
+    </div>
+
+    <div id="Quiz" class="tabcontent">
+        <h2>Practical Application Quiz</h2>
+        <p><em>Read the question and select your answer in your head, then click to reveal the correct option and rationale.</em></p>
+
+        <div class="item-container">
+            <div class="quiz-question">1. An e-commerce system is experiencing slow load times specifically for users in Spain on Tuesdays. Which discipline provides the tools required to investigate this novel, unpredictable issue?</div>
+            <div class="hint">Hint: Consider the distinction between verifying expected behavior on a dashboard and investigating entirely unknown failure modes.</div>
+            <ul class="options">
+                <li>Monitoring</li>
+                <li>High-cardinality Logging</li>
+                <li>Observability</li>
+                <li>Alertmanager Grouping</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: Observability</strong><br><br>
+                    Slicing raw signals at query time allows engineers to ask new questions about unexpected behaviors without deploying new code. <em>Monitoring</em> watches known indicators; <em>Logging</em> alone lacks combined querying across signals; <em>Alertmanager</em> is for notifications.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">2. A customer claims their shopping cart emptied itself right after they clicked 'Submit Order.' Which observability pillar is best suited to determine exactly what actions this specific user took?</div>
+            <div class="hint">Hint: If you need a step-by-step audit trail of user actions, think about the system's 'diary'.</div>
+            <ul class="options">
+                <li>Logs</li>
+                <li>Metrics</li>
+                <li>Traces</li>
+                <li>PromQL</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: Logs</strong><br><br>
+                    Discrete, time-stamped events provide the necessary audit trail and forensics to reconstruct individual user sessions. <em>Metrics</em> aggregate numbers; <em>Traces</em> track latency call graphs; <em>PromQL</em> queries metrics.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">3. A PagerDuty alert fires because the p99 latency has spiked. To investigate, an engineer needs to find the exact microservice causing the bottleneck. Which mechanism bridges the gap between the latency spike and the specific call graph?</div>
+            <div class="hint">Hint: Look for the element that acts as a unique identifier passed between services to map the entire request journey.</div>
+            <ul class="options">
+                <li>Syslog facilities</li>
+                <li>Correlation IDs (trace_id)</li>
+                <li>Prometheus Exporters</li>
+                <li>Alertmanager inhibition rules</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: Correlation IDs (trace_id)</strong><br><br>
+                    A unique identifier propagated through the system allows an engineer to pivot from a high-level metric alert to the specific path of a failing request.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">4. An application running as a systemd unit on a modern Linux distribution fails to start. What is the most direct command to view the structured, binary records associated exclusively with this application?</div>
+            <div class="hint">Hint: Focus on the command-line tool designed specifically to interact with systemd's local log collection service.</div>
+            <ul class="options">
+                <li>tail -f /var/log/syslog</li>
+                <li>journalctl -k</li>
+                <li>systemctl status [unit name]</li>
+                <li>journalctl -u [unit name]</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: journalctl -u [unit name]</strong><br><br>
+                    This command specifically queries the systemd journal to retrieve logs isolated to a single, specified service unit.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">5. In the Prometheus architecture, the central server periodically scrapes an HTTP endpoint on every target. What is the primary architectural advantage of this approach in a dynamic environment?</div>
+            <div class="hint">Hint: Consider the simplest way a central system can determine if a remote microservice has completely crashed.</div>
+            <ul class="options">
+                <li>It allows clients to implement back-pressure to protect the central server from traffic spikes.</li>
+                <li>It inherently acts as a health check, meaning if a scrape fails, the target is known to be down.</li>
+                <li>It requires targets to use a heavy SDK to push metrics over the network.</li>
+                <li>It bypasses the need for service discovery mechanisms like Consul or Kubernetes.</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: It inherently acts as a health check...</strong><br><br>
+                    Relying on the server to retrieve data removes the need for separate liveness checks, as unresponsiveness directly indicates a failure.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">6. A developer wants to track the total number of HTTP requests handled by an application since it was last deployed. Which metric type should be used, and how should it typically be queried?</div>
+            <div class="hint">Hint: Compare a metric that acts like a car's speedometer with one that acts like its odometer, accumulating distance over time.</div>
+            <ul class="options">
+                <li>A Gauge, which fluctuates up and down and is queried as an absolute value.</li>
+                <li>A Counter, which only goes up and is typically queried using a rate() function.</li>
+                <li>A Histogram, which calculates percentiles on the server side based on bucketed observations.</li>
+                <li>A Summary, which pre-computes quantiles on the client side before scraping.</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: A Counter...</strong><br><br>
+                    Tracking cumulative events that reset to zero on restart requires a monotonically increasing metric, mathematically converted to a per-second value using rate() for dashboards.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">7. To create a highly detailed dashboard, an engineer adds the user's universally unique identifier (UUID) as a label to the `http_requests_total` metric. What is the most likely consequence of this action?</div>
+            <div class="hint">Hint: Consider how a time-series database organizes dimensions and what happens when the number of distinct tracking categories approaches infinity.</div>
+            <ul class="options">
+                <li>It will automatically convert the metric from a Counter into a Histogram.</li>
+                <li>It will seamlessly allow Grafana to filter traffic by individual users.</li>
+                <li>It will cause a cardinality explosion that crashes the Time-Series Database (TSDB).</li>
+                <li>It will trigger an Alertmanager inhibition rule due to excessive data generation.</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: It will cause a cardinality explosion...</strong><br><br>
+                    Storing a unique time-series for every possible permutation of unbounded values rapidly exhausts the memory and storage capacity of the monitoring backend.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">8. When designing the top row of a new Grafana dashboard for a critical service, what information should be prioritized for immediate visibility?</div>
+            <div class="hint">Hint: Apply the 'hierarchy of usefulness'—imagine opening a dashboard at 3 AM and needing an immediate assessment of the situation.</div>
+            <ul class="options">
+                <li>The RED metrics (Rate, Errors, Duration) broken down by individual endpoints.</li>
+                <li>Highly specific drill-downs, such as per-pod CPU utilization.</li>
+                <li>A continuously scrolling feed of the raw application logs from the journald service.</li>
+                <li>A high-level, traffic-light colored indicator answering if the overall system is okay.</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: A high-level, traffic-light colored indicator...</strong><br><br>
+                    Information positioned at the highest visual hierarchy should provide an immediate, 10-second assessment of system health before requiring further investigation into deeper metrics.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">9. An alert is configured to page an on-call engineer at 3 AM if the background job queue depth exceeds 500. However, the jobs are processing normally without customer impact, and the queue naturally drains by 5 AM. Why is this considered a poorly designed alert?</div>
+            <div class="hint">Hint: Evaluate the scenario against the core rules of alerting, specifically regarding the direct impact on the end user.</div>
+            <ul class="options">
+                <li>It should trigger based on CPU saturation rather than the depth of the queue.</li>
+                <li>It uses a Gauge metric when it should be using a Counter metric to track the queue.</li>
+                <li>It is not symptom-based and does not represent actionable, user-visible pain.</li>
+                <li>It lacks a correlation ID to tie the queue depth to a specific trace.</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: It is not symptom-based...</strong><br><br>
+                    Notifications that wake a human must be tied to actual degradation of service, otherwise they train engineers to ignore alerts and contribute to alert fatigue.
+                </div>
+            </details>
+        </div>
+
+        <div class="item-container">
+            <div class="quiz-question">10. According to standard severity conventions, an alert fires indicating that an SSL certificate will expire in 14 days. How should Alertmanager ideally route this 'warning' severity alert?</div>
+            <div class="hint">Hint: Align the severity 'warning' with the standard routing convention for issues that are pending but not yet causing immediate pain.</div>
+            <ul class="options">
+                <li>To PagerDuty, because certificate expiration will eventually cause a total system outage.</li>
+                <li>To a team Slack channel, as the issue requires attention before it becomes a critical failure.</li>
+                <li>To an email digest, because the issue is purely informational and requires no human action.</li>
+                <li>To an inhibition rule, ensuring the alert is suppressed until the certificate actually expires.</li>
+            </ul>
+            <details>
+                <summary>View Correct Answer & Rationale</summary>
+                <div class="correct-answer">
+                    <strong>Correct Answer: To a team Slack channel...</strong><br><br>
+                    Issues that indicate impending, but not immediate, pain are best suited for asynchronous team communication platforms rather than high-urgency pagers designed for active outages.
+                </div>
+            </details>
+        </div>
+
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            // Declare variables
+            var i, tabcontent, tablinks;
+
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tablinks" and remove the class "active"
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+
+</body>
+</html>
+
+
+
