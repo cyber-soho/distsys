@@ -1,0 +1,283 @@
+<div style="max-width: 800px; margin: auto; font-family: sans-serif; color: #333;">
+
+  <div style="background-color: #1e293b; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="margin: 0; font-size: 24px;">CI/CD & GitOps Study Hub</h1>
+  </div>
+
+  <div style="border: 1px solid #cbd5e1; padding: 20px; border-radius: 0 0 8px 8px; background-color: #f8fafc;">
+
+    <h2 style="color: #0f172a; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px;">📇 Flashcards (Click to reveal)</h2>
+    <p style="font-size: 14px; color: #64748b;">Click on any concept to see its definition.</p>
+
+    <div style="margin-bottom: 40px;">
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Continuous Integration (CI)</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">The practice of merging, building, and testing code on every commit to a repository.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Continuous Delivery vs. Continuous Deployment</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">In Delivery, the validated build is ready for production but requires manual approval. In Deployment, it automatically reaches production.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Shift-left testing</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">The practice of moving testing, quality, and security checks earlier in the software development lifecycle.</p>
+      </details>
+      
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Core idea of GitOps</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">The cluster pulls from Git. Git is the absolute source of truth, and the cluster continually reflects it.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">The Four GitOps Principles</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Declarative, Versioned & immutable, Pulled automatically, and Continuously reconciled.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Push vs. Pull deployment models</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">In Push (classic CI), the CI pipeline holds cluster credentials. In Pull (GitOps), the cluster controller initiates the fetch, keeping credentials out of CI.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Drift correction in GitOps</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Automatic. The controller continuously reconciles the cluster state against the Git repository.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Argo CD vs Flux CD origin</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Argo CD is Intuit-born and dashboard-rich; Flux CD is Weaveworks-born and GitOps-native.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Fundamental architecture of Tekton</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">The pipeline engine is Kubernetes itself. Each pipeline step runs as a Pod, and definitions are standard Kubernetes CRDs.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Tekton Primitive: Task</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">One unit of work, executed as a Pod with one or more sequential steps.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Tekton Primitive: PipelineRun</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">An active execution of a Pipeline; it is the object that actually creates the Pods to do the work.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Tekton Primitive: Workspace</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Shared storage between Tasks, usually backed by Persistent Volume Claims (PVCs).</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Tekton Primitive: Trigger</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Listens for external events (like webhooks) and automatically starts PipelineRuns.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Rolling Deployment</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Replaces Pods one (or N) at a time, resulting in mixed versions running simultaneously during the rollout.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Blue-Green Deployment</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Maintains two complete environments. Cutover happens instantly by flipping the load balancer, allowing for instant rollbacks.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Major downside of Blue-Green deployments</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">It costs roughly double during the cutover window because two full environments must run simultaneously.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Canary Deployment</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">A gradual percentage-based rollout of traffic to a new version (e.g., 1%, then 10%, then 100%).</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Recreate Deployment</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Kills all old pods before starting the new ones. Best for version incompatibilities, but guarantees downtime.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Primary focus of Terraform</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Infrastructure provisioning (creating VMs, VPCs, Firewalls) using declarative configuration.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Primary focus of Ansible</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Configuration management (installing software and configuring the OS inside the provisioned machines).</p>
+      </details>
+      
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Ansible execution method</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Agentless execution, running commands remotely over SSH or WinRM.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Terraform State File</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">A file that tracks the current state of managed resources, allowing Terraform to know what needs to be created, updated, or deleted.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">OpenTofu</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">An open-source fork of Terraform created by the Linux Foundation after HashiCorp moved to a Business Source License.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">Idempotent Tasks (Ansible)</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Tasks that are safe to run repeatedly. Running them multiple times produces the same result as running them once.</p>
+      </details>
+
+      <details style="background: white; border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <summary style="font-weight: bold; cursor: pointer; color: #0284c7; outline: none;">The Unified Principle of the Module</summary>
+        <p style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">Every change is a pull request; every truth lives in Git; every system reconciles itself toward that truth.</p>
+      </details>
+    </div>
+
+    <h2 style="color: #0f172a; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px;">📝 Practice Quiz</h2>
+    <p style="font-size: 14px; color: #64748b;">Read the question, choose your answer in your head, and click "Show Answer & Rationale" to check.</p>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">1. A development team has automated their pipeline to the point where every validated build sits in a staging environment awaiting a manual approval click from a release manager before it goes live. Which practice does this workflow represent?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Continuous Deployment</li>
+        <li>Continuous Integration</li>
+        <li>Shift-left testing</li>
+        <li><strong>Continuous Delivery</strong></li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Continuous Delivery.</strong><br> Requiring a manual approval step before a validated build goes to production is the defining characteristic that separates this practice from fully automated deployments (Continuous Deployment).</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">2. A security team wants to catch code vulnerabilities as soon as developers commit their code, rather than waiting for a dedicated security scan in the staging environment days later. Which concept are they implementing?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li><strong>Shift-left testing</strong></li>
+        <li>Smoke testing</li>
+        <li>Continuous Deployment</li>
+        <li>Infrastructure as Code</li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Shift-left testing.</strong><br> Moving security and quality checks to the earliest possible stages of development prevents vulnerabilities from progressing further down the pipeline.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">3. A junior administrator uses the command line to manually increase the number of replicas for a production deployment. Shortly after, the replicas automatically revert back to their original count. Which GitOps principle caused this behavior?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Declarative configuration</li>
+        <li>Versioned and immutable</li>
+        <li>Push deployment</li>
+        <li><strong>Continuous reconciliation</strong></li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Continuous reconciliation.</strong><br> GitOps controllers constantly monitor the cluster state and automatically overwrite any manual changes that do not match the declared state in the repository.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">4. A security auditor is reviewing your deployment architecture and insists that the continuous integration server must not store any credentials that allow direct modification of the production cluster. Which deployment model satisfies this requirement?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>A classic Push-based CI pipeline</li>
+        <li>A Blue-Green deployment strategy</li>
+        <li><strong>A Pull-based GitOps model</strong></li>
+        <li>A procedural configuration management model</li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: A Pull-based GitOps model.</strong><br> The cluster controller reaches out to fetch configurations securely from within the cluster, eliminating the need to expose production credentials to an external build server.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">5. You have defined a complex workflow for building and packaging an application in Tekton, but no pods are spinning up to actually perform the work. Which primitive must you create to trigger the execution?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Workspace</li>
+        <li>Trigger</li>
+        <li><strong>PipelineRun</strong></li>
+        <li>Task</li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: PipelineRun.</strong><br> This object instructs Kubernetes to actually instantiate the required Pods and execute the defined workflow using specific inputs.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">6. An engineering director wants to reduce infrastructure costs by eliminating the need for a dedicated, always-on continuous integration server, preferring a solution that scales dynamically using their existing Kubernetes compute capacity. Which tool is best suited for this?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Jenkins</li>
+        <li><strong>Tekton</strong></li>
+        <li>GitLab CI/CD</li>
+        <li>CircleCI</li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Tekton.</strong><br> Operating natively as a set of Kubernetes Custom Resource Definitions allows this engine to utilize the cluster's existing compute nodes and scale automatically.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">7. An e-commerce site is launching a major overhaul of its payment gateway on Black Friday. They require zero downtime during the switch and the ability to instantly revert to the old version if errors occur, regardless of infrastructure costs. Which deployment strategy should they use?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Rolling deployment</li>
+        <li>Canary deployment</li>
+        <li><strong>Blue-Green deployment</strong></li>
+        <li>Recreate deployment</li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Blue-Green deployment.</strong><br> Maintaining a completely separate, pre-warmed environment allows traffic to be flipped instantly, ensuring zero downtime and immediate reversion capabilities despite doubled infrastructure costs.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">8. A legacy application is being updated, and the new version cannot run concurrently with the old version due to strict database schema locks. Which strategy must the team utilize, even though it will cause a brief outage?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Rolling deployment</li>
+        <li><strong>Recreate deployment</strong></li>
+        <li>Blue-Green deployment</li>
+        <li>Shadow deployment</li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Recreate deployment.</strong><br> Completely terminating the old application instances before starting the new ones guarantees that no two incompatible versions are attempting to access locked resources simultaneously.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">9. A cloud engineering team needs to provision 50 new virtual machines across three cloud regions, and then install and configure a proprietary web server application inside each of those operating systems. Which combination of tools fits this workflow best?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Ansible for the virtual machines, Terraform for the web server</li>
+        <li>OpenTofu for both tasks</li>
+        <li><strong>Terraform for the virtual machines, Ansible for the web server</strong></li>
+        <li>Argo CD for the virtual machines, Tekton for the web server</li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Terraform for the virtual machines, Ansible for the web server.</strong><br> HCL is highly optimized for declarative cloud resource provisioning, while agentless YAML playbooks excel at configuring the internal state of those operating systems.</p>
+      </details>
+    </div>
+
+    <div style="background: white; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; border-radius: 6px;">
+      <p style="font-weight: bold; margin-top: 0;">10. A systems administrator accidentally runs an Ansible playbook three times in a row against a fleet of servers. The servers remain in the exact desired state without any duplicate configurations or errors. Which property of Ansible tasks makes this possible?</p>
+      <ul style="list-style-type: upper-alpha; padding-left: 20px;">
+        <li>Declarative syntax</li>
+        <li>Drift detection</li>
+        <li>Continuous reconciliation</li>
+        <li><strong>Idempotency</strong></li>
+      </ul>
+      <details style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 4px;">
+        <summary style="cursor: pointer; color: #166534; font-weight: bold; outline: none;">✅ Show Answer & Rationale</summary>
+        <p style="margin-bottom: 0; padding-top: 10px;"><strong>Correct Answer: Idempotency.</strong><br> Designing tasks so they only apply changes if the current state differs from the desired state ensures that repeated executions remain perfectly safe and predictable.</p>
+      </details>
+    </div>
+
+  </div>
+</div>

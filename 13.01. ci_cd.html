@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 13 — CI/CD & GitOps Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals & Sky/Amber Accents (stone-50 bg, slate-800 text, sky-600 interactive, amber-600 highlights) -->
+    <!-- Application Structure Plan: The SPA uses a module-based dashboard layout. Instead of a long scrolling document, content is divided into 5 logical "Lessons" accessible via a persistent sidebar/top-nav. This allows students to focus on one conceptual domain at a time (e.g., CI/CD concepts vs GitOps vs IaC). Interactive elements like the clickable pipeline timeline and the deployment strategy chart transform static bullet points into explorable data, aiding synthesis and active recall for their upcoming lab. -->
+    <!-- Visualization & Content Choices: 
+         1. Pipeline Stages -> Interactive horizontal progression (HTML/JS) -> Goal: Show flow and relationship. Justification: Better than a static list to convey chronological processes. NO SVG used (Unicode icons).
+         2. GitOps Push vs Pull -> Interactive Toggle/Table -> Goal: Compare models. Justification: Highlighting differences directly supports the "Source of Truth" concept.
+         3. Tekton Primitives -> Card Grid (HTML/CSS) -> Goal: Organize terminology. Justification: Clean compartmentalization of concepts.
+         4. Deployment Strategies -> Bar Chart (Chart.js) -> Goal: Compare strategies by Cost vs Rollback Speed vs Downtime Risk. Justification: Transforms a static markdown matrix into visual data, making trade-offs instantly obvious.
+         5. IaC Workflow -> CSS/HTML text diagram -> Goal: Show relationship between Terraform and Ansible. Justification: Avoids SVG/Mermaid while still providing structural visual context. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #FAFAF9; 
+            color: #1E293B; 
+        }
+        
+        .nav-btn.active {
+            background-color: #0284C7;
+            color: white;
+            border-left: 4px solid #0369A1;
+        }
+        
+        .nav-btn:not(.active):hover {
+            background-color: #E2E8F0;
+        }
+        
+        .pipeline-step {
+            transition: all 0.3s ease;
+        }
+        
+        .pipeline-step.active-step {
+            border-color: #0284C7;
+            background-color: #F0F9FF;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row min-h-screen">
+
+    <nav class="w-full md:w-64 bg-white shadow-lg flex-shrink-0 z-10 md:min-h-screen flex flex-col border-r border-stone-200">
+        <div class="p-6 bg-slate-800 text-white">
+            <h1 class="text-xl font-bold tracking-tight">Cyber.SoHo Hub</h1>
+            <p class="text-xs text-slate-300 mt-1 uppercase tracking-wider">420-D01-AB · CYB-01</p>
+            <div class="mt-4 text-sm font-medium text-amber-400">Week 13: CI/CD</div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto py-4">
+            <button onclick="switchTab('overview')" id="btn-overview" class="nav-btn active w-full text-left px-6 py-3 text-sm font-medium transition-colors border-l-4 border-transparent">
+                🏠 Module Overview
+            </button>
+            <button onclick="switchTab('pipeline')" id="btn-pipeline" class="nav-btn w-full text-left px-6 py-3 text-sm font-medium transition-colors border-l-4 border-transparent">
+                1️⃣ CI/CD Concepts
+            </button>
+            <button onclick="switchTab('gitops')" id="btn-gitops" class="nav-btn w-full text-left px-6 py-3 text-sm font-medium transition-colors border-l-4 border-transparent">
+                2️⃣ GitOps Workflow
+            </button>
+            <button onclick="switchTab('tekton')" id="btn-tekton" class="nav-btn w-full text-left px-6 py-3 text-sm font-medium transition-colors border-l-4 border-transparent">
+                3️⃣ Tekton (OpenShift)
+            </button>
+            <button onclick="switchTab('deployment')" id="btn-deployment" class="nav-btn w-full text-left px-6 py-3 text-sm font-medium transition-colors border-l-4 border-transparent">
+                4️⃣ Deployment Strategies
+            </button>
+            <button onclick="switchTab('iac')" id="btn-iac" class="nav-btn w-full text-left px-6 py-3 text-sm font-medium transition-colors border-l-4 border-transparent">
+                5️⃣ Infrastructure as Code
+            </button>
+        </div>
+        
+        <div class="p-4 bg-stone-100 text-xs text-stone-500 border-t border-stone-200">
+            <p>From the Industry to the Classroom.</p>
+        </div>
+    </nav>
+
+    <main class="flex-1 p-6 md:p-10 overflow-y-auto max-w-6xl mx-auto w-full">
+
+        <section id="tab-overview" class="tab-content block">
+            <header class="mb-10">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Distributed Systems: CI/CD & Automation</h2>
+                <p class="text-lg text-slate-600 border-b pb-4">Understanding the difference between a 14-minute fix and a 3-week release.</p>
+            </header>
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 mb-8">
+                <h3 class="text-xl font-semibold text-sky-700 mb-3">Welcome to Week 13</h3>
+                <p class="text-slate-700 leading-relaxed mb-4">
+                    This interactive hub explores the automated chains that turn code commits into production deployments. In modern infrastructure, manual releases are obsolete. We will explore the industrial processes that make software delivery reliable, repeatable, and scalable.
+                </p>
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-6">
+                    <h4 class="font-bold text-amber-800">The Unified Principle</h4>
+                    <p class="text-amber-900 mt-1 italic">"Every change is a pull request; every truth lives in Git; every system reconciles itself toward that truth."</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-lg font-bold mb-4 flex items-center">📝 Lab Preview (Week 14)</h3>
+                    <ul class="space-y-2 text-sm text-slate-700">
+                        <li class="flex items-start"><span class="mr-2">▪️</span> Build an end-to-end stack on local Kind cluster</li>
+                        <li class="flex items-start"><span class="mr-2">▪️</span> GitHub Actions build & push to registry</li>
+                        <li class="flex items-start"><span class="mr-2">▪️</span> PR opened to manifest repo</li>
+                        <li class="flex items-start"><span class="mr-2">▪️</span> Argo CD picks up changes</li>
+                        <li class="flex items-start"><span class="mr-2">▪️</span> Rolling deployment execution</li>
+                    </ul>
+                    <div class="mt-4 pt-4 border-t border-stone-100 text-sm font-semibold text-sky-600">
+                        Requirement: Laptop with Docker + Kind installed.
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <h3 class="text-lg font-bold mb-4">📚 Key Tooling Ecosystem</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">GitHub Actions</span>
+                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Tekton</span>
+                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Argo CD</span>
+                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Flux CD</span>
+                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Terraform / OpenTofu</span>
+                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Ansible</span>
+                        <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Kubernetes</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-pipeline" class="tab-content hidden">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">Lesson 1: CI/CD Pipeline Concepts</h2>
+                <p class="text-slate-600">Explore the automated chain that turns a commit into a deployment. Without it, you have a release ritual; with it, you have an industrial process.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-stone-200 border-t-4 border-t-sky-500">
+                    <h3 class="font-bold text-sky-700">CI: Continuous Integration</h3>
+                    <p class="text-sm mt-2 text-slate-600">Merge, build, and test on every commit to the repository.</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-stone-200 border-t-4 border-t-amber-500">
+                    <h3 class="font-bold text-amber-600">CD: Continuous Delivery</h3>
+                    <p class="text-sm mt-2 text-slate-600">Validated build is always ready for production deployment manually.</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-stone-200 border-t-4 border-t-emerald-500">
+                    <h3 class="font-bold text-emerald-600">CD: Continuous Deployment</h3>
+                    <p class="text-sm mt-2 text-slate-600">Validated build automatically reaches production without human intervention.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <h3 class="text-xl font-bold mb-6">Interactive Pipeline Stages</h3>
+                <p class="text-sm text-slate-500 mb-6">Click on any stage in the pipeline below to understand what happens inside that phase.</p>
+                
+                <div class="flex flex-wrap md:flex-nowrap justify-between items-center gap-2 mb-8 relative">
+                    <div class="absolute top-1/2 left-0 w-full h-1 bg-stone-200 -z-10 hidden md:block transform -translate-y-1/2"></div>
+                    
+                    <button onclick="showPipelineDetail('source')" class="pipeline-step bg-white border-2 border-stone-300 rounded-full w-14 h-14 flex items-center justify-center z-0 hover:border-sky-500 hover:text-sky-600 focus:outline-none">
+                        📁
+                    </button>
+                    <span class="text-stone-400 md:hidden">↓</span>
+                    
+                    <button onclick="showPipelineDetail('build')" class="pipeline-step bg-white border-2 border-stone-300 rounded-full w-14 h-14 flex items-center justify-center z-0 hover:border-sky-500 hover:text-sky-600 focus:outline-none">
+                        🏗️
+                    </button>
+                    <span class="text-stone-400 md:hidden">↓</span>
+
+                    <button onclick="showPipelineDetail('test')" class="pipeline-step bg-white border-2 border-stone-300 rounded-full w-14 h-14 flex items-center justify-center z-0 hover:border-sky-500 hover:text-sky-600 focus:outline-none">
+                        🧪
+                    </button>
+                    <span class="text-stone-400 md:hidden">↓</span>
+
+                    <button onclick="showPipelineDetail('package')" class="pipeline-step bg-white border-2 border-stone-300 rounded-full w-14 h-14 flex items-center justify-center z-0 hover:border-sky-500 hover:text-sky-600 focus:outline-none">
+                        📦
+                    </button>
+                    <span class="text-stone-400 md:hidden">↓</span>
+
+                    <button onclick="showPipelineDetail('push')" class="pipeline-step bg-white border-2 border-stone-300 rounded-full w-14 h-14 flex items-center justify-center z-0 hover:border-sky-500 hover:text-sky-600 focus:outline-none">
+                        ☁️
+                    </button>
+                    <span class="text-stone-400 md:hidden">↓</span>
+
+                    <button onclick="showPipelineDetail('deploy')" class="pipeline-step bg-white border-2 border-stone-300 rounded-full w-14 h-14 flex items-center justify-center z-0 hover:border-sky-500 hover:text-sky-600 focus:outline-none">
+                        🚢
+                    </button>
+                    <span class="text-stone-400 md:hidden">↓</span>
+
+                    <button onclick="showPipelineDetail('promote')" class="pipeline-step bg-white border-2 border-stone-300 rounded-full w-14 h-14 flex items-center justify-center z-0 hover:border-sky-500 hover:text-sky-600 focus:outline-none">
+                        🚀
+                    </button>
+                </div>
+
+                <div id="pipeline-detail-box" class="bg-stone-50 p-6 rounded-lg border border-stone-200 min-h-[120px]">
+                    <h4 class="text-lg font-bold text-slate-800">Select a stage</h4>
+                    <p class="text-slate-600 mt-2">Click the icons above to reveal details about each pipeline stage.</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-sky-50 p-6 rounded-xl border border-sky-100">
+                <h3 class="font-bold text-sky-800 mb-2">Key Vocabulary Context</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                    <div class="bg-white p-3 rounded shadow-sm text-sm"><span class="font-bold block text-slate-700">Runner / Agent</span>Executes the pipeline jobs.</div>
+                    <div class="bg-white p-3 rounded shadow-sm text-sm"><span class="font-bold block text-slate-700">Pipeline-as-Code</span>Pipeline logic stored in Git.</div>
+                    <div class="bg-white p-3 rounded shadow-sm text-sm"><span class="font-bold block text-slate-700">Shift-left</span>Testing earlier in the dev cycle.</div>
+                    <div class="bg-white p-3 rounded shadow-sm text-sm"><span class="font-bold block text-slate-700">Triggers</span>Push, PR, Schedule, Webhook.</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-gitops" class="tab-content hidden">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">Lesson 2: GitOps Workflow</h2>
+                <p class="text-slate-600">The paradigm shift: The cluster pulls from Git. Git is the source of truth. Reality follows Git, not the other way around.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-slate-800">The Four Principles</h3>
+                    <div class="space-y-3">
+                        <div class="bg-white p-4 rounded shadow-sm border-l-4 border-sky-500">
+                            <span class="font-bold">1. Declarative</span>
+                            <p class="text-sm text-slate-600 mt-1">Desired state described entirely in code.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border-l-4 border-sky-500">
+                            <span class="font-bold">2. Versioned & Immutable</span>
+                            <p class="text-sm text-slate-600 mt-1">Every change is a tracked Git commit.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border-l-4 border-sky-500">
+                            <span class="font-bold">3. Pulled Automatically</span>
+                            <p class="text-sm text-slate-600 mt-1">Controllers fetch and apply configurations.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border-l-4 border-sky-500">
+                            <span class="font-bold">4. Continuously Reconciled</span>
+                            <p class="text-sm text-slate-600 mt-1">Configuration drift is detected and corrected.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-slate-800">Model Comparison</h3>
+                    <p class="text-sm text-slate-600 mb-4">Interact with the table below to compare traditional Push CI with modern GitOps Pull mechanisms.</p>
+                    
+                    <div class="overflow-x-auto bg-white rounded-lg shadow-sm border border-stone-200">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-stone-100 text-stone-700 text-sm uppercase tracking-wider">
+                                    <th class="p-4 font-semibold border-b border-stone-200">Feature</th>
+                                    <th class="p-4 font-semibold border-b border-stone-200 bg-red-50 text-red-800">Push (Classic CI)</th>
+                                    <th class="p-4 font-semibold border-b border-stone-200 bg-emerald-50 text-emerald-800">Pull (GitOps)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm text-slate-700">
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 border-b border-stone-100 font-medium">Who initiates?</td>
+                                    <td class="p-4 border-b border-stone-100">CI Pipeline Server</td>
+                                    <td class="p-4 border-b border-stone-100 font-bold text-emerald-700">Cluster Controller</td>
+                                </tr>
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 border-b border-stone-100 font-medium">Credentials in CI?</td>
+                                    <td class="p-4 border-b border-stone-100 text-red-600 font-bold">Yes (Security Risk)</td>
+                                    <td class="p-4 border-b border-stone-100 font-bold text-emerald-700">No (Secure)</td>
+                                </tr>
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 border-b border-stone-100 font-medium">Audit Trail</td>
+                                    <td class="p-4 border-b border-stone-100">Pipeline logs</td>
+                                    <td class="p-4 border-b border-stone-100 font-bold text-emerald-700">Git history</td>
+                                </tr>
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 font-medium">Drift Correction</td>
+                                    <td class="p-4 text-red-600">Manual</td>
+                                    <td class="p-4 font-bold text-emerald-700">Automatic (Reconciliation)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 flex gap-4">
+                        <div class="bg-stone-100 p-3 rounded flex-1 text-center border border-stone-200">
+                            <div class="text-2xl mb-1">🦑</div>
+                            <div class="font-bold text-sm">Argo CD</div>
+                            <div class="text-xs text-stone-500">Dashboard-rich, Intuit-born</div>
+                        </div>
+                        <div class="bg-stone-100 p-3 rounded flex-1 text-center border border-stone-200">
+                            <div class="text-2xl mb-1">🌊</div>
+                            <div class="font-bold text-sm">Flux CD</div>
+                            <div class="text-xs text-stone-500">GitOps-native, Weaveworks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-tekton" class="tab-content hidden">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">Lesson 3: OpenShift Pipelines (Tekton)</h2>
+                <p class="text-slate-600">Tekton makes CI/CD a first-class Kubernetes citizen. Your pipeline is just another workload running natively on the cluster.</p>
+            </header>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 mb-8">
+                <h3 class="text-xl font-bold mb-4 text-slate-800">Why Tekton over Jenkins?</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 bg-stone-50 rounded">
+                        <div class="text-2xl mb-2">☁️</div>
+                        <div class="font-bold text-sm">Vendor-Neutral</div>
+                        <div class="text-xs mt-1 text-slate-500">Runs on any K8s cluster</div>
+                    </div>
+                    <div class="text-center p-4 bg-stone-50 rounded">
+                        <div class="text-2xl mb-2">💰</div>
+                        <div class="font-bold text-sm">Cost-Efficient</div>
+                        <div class="text-xs mt-1 text-slate-500">Uses existing capacity, scales automatically</div>
+                    </div>
+                    <div class="text-center p-4 bg-stone-50 rounded">
+                        <div class="text-2xl mb-2">🔐</div>
+                        <div class="font-bold text-sm">Native K8s</div>
+                        <div class="text-xs mt-1 text-slate-500">Integrates with RBAC & Secrets naturally</div>
+                    </div>
+                    <div class="text-center p-4 bg-stone-50 rounded">
+                        <div class="text-2xl mb-2">🌐</div>
+                        <div class="font-bold text-sm">No Central SPOF</div>
+                        <div class="text-xs mt-1 text-slate-500">No single point of failure server needed</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold mb-4 text-slate-800">The 5 Core Tekton Primitives</h3>
+            <p class="text-sm text-slate-600 mb-6">Pipeline definitions in Tekton are standard Kubernetes Custom Resource Definitions (CRDs). Click to explore.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <button onclick="showTektonInfo('task')" class="bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold py-4 px-2 rounded border border-blue-200 text-center transition">
+                    Task
+                </button>
+                <button onclick="showTektonInfo('pipeline')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold py-4 px-2 rounded border border-indigo-200 text-center transition">
+                    Pipeline
+                </button>
+                <button onclick="showTektonInfo('pipelinerun')" class="bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold py-4 px-2 rounded border border-purple-200 text-center transition">
+                    PipelineRun
+                </button>
+                <button onclick="showTektonInfo('workspace')" class="bg-pink-50 hover:bg-pink-100 text-pink-800 font-bold py-4 px-2 rounded border border-pink-200 text-center transition">
+                    Workspace
+                </button>
+                <button onclick="showTektonInfo('trigger')" class="bg-rose-50 hover:bg-rose-100 text-rose-800 font-bold py-4 px-2 rounded border border-rose-200 text-center transition">
+                    Trigger
+                </button>
+            </div>
+
+            <div id="tekton-info-box" class="mt-6 bg-slate-800 text-white p-6 rounded-lg min-h-[120px] shadow-inner">
+                <h4 class="text-lg font-bold text-sky-400">Select a primitive</h4>
+                <p class="text-slate-300 mt-2">Click one of the resources above to view its definition within the Tekton ecosystem.</p>
+            </div>
+            
+            <div class="mt-6 text-sm text-slate-500 italic">
+                *Note: OpenShift Pipelines adds Red Hat polish to Tekton: Web-console UI, Operator-based installs, opinionated security, and Tekton Hub integration.
+            </div>
+        </section>
+
+        <section id="tab-deployment" class="tab-content hidden">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">Lesson 4: Deployment Strategies</h2>
+                <p class="text-slate-600">Match the strategy to the application's tolerance for mixed-version operation and the cost of an outage. There is no universal best answer.</p>
+            </header>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 mb-8">
+                <h3 class="text-xl font-bold mb-4 text-slate-800">Strategy Trade-offs Analysis</h3>
+                <p class="text-sm text-slate-600 mb-6">This chart visualizes the matrix of deployment strategies based on their inherent costs, downtime risk, and how fast you can rollback if things go wrong. Lower scores are better for Downtime/Cost, higher scores are better for Rollback speed.</p>
+                
+                <div class="chart-container">
+                    <canvas id="deploymentChart"></canvas>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 border-t-4 border-t-sky-500">
+                    <h3 class="text-lg font-bold text-sky-800 mb-2">🔄 Rolling Deployment (The Default)</h3>
+                    <ul class="space-y-2 text-sm text-slate-700">
+                        <li>• Replaces Pods one (or N) at a time.</li>
+                        <li>• Mixed versions exist during rollout.</li>
+                        <li>• Controlled by <code class="bg-stone-100 px-1 rounded text-pink-600">maxSurge</code> and <code class="bg-stone-100 px-1 rounded text-pink-600">maxUnavailable</code>.</li>
+                        <li>• <span class="font-bold">Best for:</span> Stateless services, low-risk changes.</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 border-t-4 border-t-emerald-500">
+                    <h3 class="text-lg font-bold text-emerald-800 mb-2">🔵🟢 Blue-Green Deployment</h3>
+                    <ul class="space-y-2 text-sm text-slate-700">
+                        <li>• Two complete environments (Blue=current, Green=new).</li>
+                        <li>• Cutover happens instantly by flipping the load balancer/Ingress.</li>
+                        <li>• Instant rollback capability.</li>
+                        <li>• <span class="font-bold">Downside:</span> Costs ~2x during the cutover window.</li>
+                        <li>• <span class="font-bold">Best for:</span> Critical correctness, big major releases.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-6 bg-stone-100 p-4 rounded-lg">
+                <h4 class="font-bold text-sm text-slate-700 mb-2">Other Noted Strategies</h4>
+                <div class="flex flex-wrap gap-4 text-sm text-slate-600">
+                    <div><span class="font-bold">Canary:</span> Gradual % rollout (1% → 10% → 100%).</div>
+                    <div><span class="font-bold">A/B Testing:</span> Variant routing for product experiments.</div>
+                    <div><span class="font-bold">Shadow:</span> Copy of traffic, discarded responses.</div>
+                    <div><span class="font-bold text-red-600">Recreate:</span> Kill all, start all (causes downtime).</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-iac" class="tab-content hidden">
+            <header class="mb-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-2">Lesson 5: Infrastructure as Code (IaC)</h2>
+                <p class="text-slate-600">Cloud accounts and OS configurations are code. They go in Git. They get reviewed. Snowflake servers are a 2010s problem.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-purple-700">Terraform / OpenTofu</h3>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded font-bold">Provisioning</span>
+                    </div>
+                    <ul class="space-y-3 text-sm text-slate-700">
+                        <li><span class="font-bold">Type:</span> Declarative (HCL)</li>
+                        <li><span class="font-bold">Mechanism:</span> State file tracks managed resources.</li>
+                        <li><span class="font-bold">Safety:</span> <code class="bg-stone-100 px-1 rounded">plan</code> previews changes before applying.</li>
+                        <li><span class="font-bold">Reusability:</span> Uses Modules for building blocks.</li>
+                        <li><span class="font-bold">Scope:</span> Multi-cloud (~3,000 providers).</li>
+                    </ul>
+                    <div class="mt-4 text-xs text-stone-500 italic border-t pt-2">
+                        *2026 Footnote: OpenTofu is the open-source fork (Linux Foundation) drop-in replacement after HashiCorp's BSL licensing change.
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-red-700">Ansible</h3>
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">Configuration</span>
+                    </div>
+                    <ul class="space-y-3 text-sm text-slate-700">
+                        <li><span class="font-bold">Type:</span> Procedural / Hybrid (YAML playbooks)</li>
+                        <li><span class="font-bold">Mechanism:</span> Agentless (runs over SSH or WinRM).</li>
+                        <li><span class="font-bold">Safety:</span> Idempotent tasks (safe to run repeatedly without breaking things).</li>
+                        <li><span class="font-bold">Targeting:</span> Inventory-driven.</li>
+                        <li><span class="font-bold">Scope:</span> Best for what runs <em>inside</em> the provisioned machines.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-stone-800 text-white p-8 rounded-xl text-center shadow-lg">
+                <h3 class="text-xl font-bold text-amber-400 mb-6">How they fit together</h3>
+                
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 font-mono text-sm">
+                    <div class="bg-purple-900/50 border border-purple-500 p-4 rounded-lg w-48 shadow-inner">
+                        <div class="font-bold text-purple-300">Terraform</div>
+                        <div class="text-stone-400 text-xs mt-1">Creates the VMs, VPCs, Firewalls</div>
+                    </div>
+                    
+                    <div class="text-stone-400 text-2xl hidden md:block">→</div>
+                    <div class="text-stone-400 text-2xl md:hidden">↓</div>
+                    
+                    <div class="bg-stone-700 border border-stone-500 p-4 rounded-lg w-48 shadow-inner relative">
+                        <div class="font-bold text-stone-200">Ready Environment</div>
+                        <div class="text-stone-400 text-xs mt-1">Empty servers sitting in the cloud</div>
+                    </div>
+                    
+                    <div class="text-stone-400 text-2xl hidden md:block">←</div>
+                    <div class="text-stone-400 text-2xl md:hidden">↑</div>
+                    
+                    <div class="bg-red-900/50 border border-red-500 p-4 rounded-lg w-48 shadow-inner">
+                        <div class="font-bold text-red-300">Ansible</div>
+                        <div class="text-stone-400 text-xs mt-1">Installs software, configures OS</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="mt-16 pt-8 border-t border-stone-200 text-center text-xs text-stone-400">
+            <p>Cyber.SoHo Educational Hub · Distributed Systems · 420-D01-AB</p>
+            <p class="mt-1">Provided "as is" for educational use. Copyright references third-party marks via fair use.</p>
+        </footer>
+
+    </main>
+
+    <script>
+        const pipelineData = {
+            'source': { title: 'Source (Git Repository)', desc: 'The trigger point. Developers push code or open a Pull Request. Version control is the absolute source of truth.' },
+            'build': { title: 'Build', desc: 'Code is compiled or bundled. Dependencies are fetched. If this fails, the code is broken at a fundamental level.' },
+            'test': { title: 'Test', desc: 'Unit tests, integration tests, and static linting run. Shift-left testing ensures security and quality checks happen here, not later.' },
+            'package': { title: 'Package', desc: 'The validated build is packaged into a deployable artifact (e.g., a Docker Image, JAR file, or binary).' },
+            'push': { title: 'Push to Registry', desc: 'The immutable artifact is stored in an artifact repository (like Docker Hub, Quay, or Artifactory) tagged with a unique version.' },
+            'deploy': { title: 'Deploy to Staging', desc: 'The artifact is deployed to a non-production environment that mirrors production for final verification.' },
+            'promote': { title: 'Smoke Test & Promote', desc: 'Automated smoke tests run on staging. If they pass, the release is promoted to Production.' }
+        };
+
+        function showPipelineDetail(stepId) {
+            document.querySelectorAll('.pipeline-step').forEach(el => el.classList.remove('active-step'));
+            
+            event.currentTarget.classList.add('active-step');
+            
+            const detailBox = document.getElementById('pipeline-detail-box');
+            const data = pipelineData[stepId];
+            
+            detailBox.innerHTML = `
+                <h4 class="text-lg font-bold text-sky-700">${data.title}</h4>
+                <p class="text-slate-700 mt-2 leading-relaxed">${data.desc}</p>
+            `;
+        }
+
+        const tektonData = {
+            'task': { title: 'Task', desc: 'The smallest configurable unit. It defines a series of Steps that run sequentially in a single Pod. Example: A task to "git clone" or "build-docker-image".' },
+            'pipeline': { title: 'Pipeline', desc: 'A collection of Tasks arranged in a specific execution order (graph) or run in parallel. It defines the workflow but doesn\'t execute it.' },
+            'pipelinerun': { title: 'PipelineRun', desc: 'The actual execution of a Pipeline. Creating this object is what tells Kubernetes to instantiate the Pods and run the Tasks based on defined inputs/outputs.' },
+            'workspace': { title: 'Workspace', desc: 'Shared storage volumes (usually PVCs) that allow Tasks within a Pipeline to share data. Crucial because each Task runs in an isolated Pod.' },
+            'trigger': { title: 'Trigger', desc: 'An event listener that catches external events (like a GitHub Webhook from a push event) and automatically creates a PipelineRun.' }
+        };
+
+        function showTektonInfo(primId) {
+            const detailBox = document.getElementById('tekton-info-box');
+            const data = tektonData[primId];
+            detailBox.innerHTML = `
+                <h4 class="text-xl font-bold text-sky-400 mb-2">${data.title}</h4>
+                <p class="text-slate-200 leading-relaxed text-sm">${data.desc}</p>
+            `;
+        }
+
+        let chartInstance = null;
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active');
+
+            if (tabId === 'deployment' && !chartInstance) {
+                initChart();
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('deploymentChart').getContext('2d');
+            
+            Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
+            Chart.defaults.color = '#64748B';
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Rolling', 'Blue-Green', 'Canary', 'Recreate'],
+                    datasets: [
+                        {
+                            label: 'Cost Level',
+                            data: [1, 5, 3, 1], 
+                            backgroundColor: 'rgba(217, 119, 6, 0.7)', 
+                            borderColor: 'rgb(217, 119, 6)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Rollback Speed',
+                            data: [2, 5, 4, 1], 
+                            backgroundColor: 'rgba(2, 132, 199, 0.7)', 
+                            borderColor: 'rgb(2, 132, 199)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Downtime Risk',
+                            data: [1, 0.5, 1, 5], 
+                            backgroundColor: 'rgba(225, 29, 72, 0.7)', 
+                            borderColor: 'rgb(225, 29, 72)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, 
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                padding: 20,
+                                font: { weight: 'bold' }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let val = context.parsed.y;
+                                    let text = '';
+                                    if (label === 'Cost Level') {
+                                        text = val === 5 ? 'High (~2x)' : (val === 3 ? 'Medium' : 'Low');
+                                    } else if (label === 'Rollback Speed') {
+                                        text = val === 5 ? 'Instant' : (val === 4 ? 'Fast' : (val === 2 ? 'Slow (Re-roll)' : 'Very Slow'));
+                                    } else {
+                                        text = val === 5 ? 'High (Guaranteed)' : (val === 1 ? 'Low' : 'None');
+                                    }
+                                    return `${label}: ${text}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 6,
+                            ticks: {
+                                display: false 
+                            },
+                            grid: {
+                                color: '#F5F5F4'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Relative Scale (Lower vs Higher)',
+                                font: { weight: 'bold' }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { weight: 'bold', size: 13 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
+
